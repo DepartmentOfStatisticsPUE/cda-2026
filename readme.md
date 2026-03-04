@@ -2,7 +2,7 @@
 
 ## Outline of lecture
 
-1. Categorical data
+1. Categorical data - [notebook](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes/01-categorical-data.html)
 
 ## Case study
 
