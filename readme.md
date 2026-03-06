@@ -3,6 +3,9 @@
 ## Outline of lecture
 
 1. Categorical data - [notebook](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes/01-categorical-data.html)
+2. Contingency tables - [notebook](https://htmlpreview.github.io/?https://github.com/Department
+OfStatisticsPUE/cda-2026/blob/main/codes/02-ctables.html)
+
 
 ## Case study
 

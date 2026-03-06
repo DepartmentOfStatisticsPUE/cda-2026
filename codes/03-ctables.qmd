@@ -1,0 +1,269 @@
+---
+title: "Contingency tables and Cramer's V"
+format: 
+  html:
+    self-contained: true
+    table-of-contents: true
+    number-sections: true
+    df-print: kable
+editor: source
+execute: 
+  eval: true
+  warning: false
+  message: false
+---
+
+```{r setup, echo = FALSE}
+JuliaCall::julia_setup(JULIA_HOME = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/")
+knitr::opts_chunk$set(engine.path = list(
+  python = "/opt/anaconda3/bin/python3.12",
+  julia = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/"
+))
+```
+
+## Setup
+
+::: panel-tabset
+## R
+
+Install `vcd` packages if necessary.
+
+```{r, eval = FALSE}
+install.packages("vcd")
+```
+
+```{r}
+library(vcd)
+```
+
+Read in the dataset for the lecture.
+
+```{r}
+df <- read.csv("../data/polish-jvs.csv", colClasses = c(rep("character", 6), "numeric"))
+head(df)
+```
+
+## Python
+
+Load modules
+
+```{bash, eval = F}
+!pip install pingouin 
+```
+
+```{python}
+import numpy as np
+import scipy.stats as st
+import pingouin as pg
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.graphics.mosaicplot import mosaic
+from scipy.stats import chi2_contingency, fisher_exact, chi2
+```
+
+```{python}
+df = pd.read_csv("../data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
+df.head()
+```
+
+## Julia
+
+Install modules
+
+```{julia, eval = F}
+using Pkg
+Pkg.add(["HypothesisTests", "StatsBase", "CSV", "FreqTables"])
+```
+
+Load packages
+
+```{julia}
+using Random
+using Distributions
+using HypothesisTests
+using StatsBase
+using DataFrames
+using CSV
+using FreqTables
+```
+
+```{julia}
+df=CSV.read("../data/polish-jvs.csv", DataFrame, 
+            types = Dict(:id => Int64, :woj=> String, :public=> String, 
+                         :size => String, :nace_division => String, :nace => String));
+first(df, 5)
+```
+:::
+
+## Contingency tables -- $\chi^2$ test and Cramer's V correlation coefficient
+
+Is there an association between size, and having at least one vacancy?
+If yes, what is the size of this effect (i.e. correlation)?
+
+::: panel-tabset
+## R
+
+```{r}
+df$vac <- df$vacancies > 0
+table(df$size, df$vac)
+tab1 <- with(df, table(size, vac))
+tab1
+
+prop.table(tab1, margin=1)
+prop.table(tab1, margin=1) |> addmargins()
+prop.table(tab1, margin=2)
+prop.table(tab1, margin=2) |> addmargins()
+mosaicplot(tab1)
+chisq.test(tab1)
+```
+
+```{r}
+assocstats(tab1) ## vcd
+```
+
+```{r}
+xtabs(~size+vac, df) |> summary()
+tab1 |> summary()
+```
+
+## Python
+
+```{python}
+df["vac"] = np.where(df["vacancies"] > 0, True, False)
+mosaic(df, ['size', 'vac'])
+plt.show()
+tab1 = st.contingency.crosstab(df["size"], df["vac"])
+res1=st.chi2_contingency(tab1.count)
+[res1.statistic, np.sqrt(res1.statistic/np.sum(tab1.count))]
+pg.chi2_independence(df, x = "size", y = "vac")
+```
+
+## Julia
+
+```{julia}
+df.vac = ifelse.(df.vacancies .> 0, true, false);
+tab1=freqtable(df, :size, :vac)
+res1=ChisqTest(tab1)
+sqrt(res1.stat / sum(tab1))
+```
+:::
+
+## Additional code
+
+Codes for the slide "When $\chi^2$ approximation fails -- example"
+
+::: panel-tabset
+## R
+
+```{r}
+tab <- matrix(c(1, 5, 9, 5), nrow = 2, byrow = TRUE,
+              dimnames = list(c("Treatment", "Control"),
+                              c("Success", "Failure")))
+tab
+
+cat("\nExpected counts:\n")
+chisq.test(tab, correct = FALSE)$expected
+
+pearson <- chisq.test(tab, correct = FALSE)
+yates   <- chisq.test(tab, correct = TRUE)
+fisher  <- fisher.test(tab)
+
+obs <- as.vector(tab)
+exp_counts <- as.vector(chisq.test(tab, correct = FALSE)$expected)
+G2 <- 2 * sum(obs * log(obs / exp_counts))
+p_G2 <- 1 - pchisq(G2, df = 1)
+
+results <- data.frame(
+  Test      = c("Pearson chi2", "Yates chi2", "G2", "Fisher exact"),
+  Statistic = c(pearson$statistic, yates$statistic, G2, NA),
+  p_value   = c(pearson$p.value, yates$p.value, p_G2, fisher$p.value)
+)
+results
+```
+
+## Python
+
+```{python}
+tab = np.array([[1, 9],
+                [5, 5]])
+tab_df = pd.DataFrame(tab,
+                       index=["Treatment", "Control"],
+                       columns=["Success", "Failure"])
+print(tab_df)
+
+# Expected counts
+_, _, _, expected = chi2_contingency(tab, correction=False)
+print("\nExpected counts:")
+print(pd.DataFrame(expected,
+                    index=["Treatment", "Control"],
+                    columns=["Success", "Failure"]))
+
+# Pearson chi-squared (no correction)
+pearson_stat, pearson_p, _, _ = chi2_contingency(tab, correction=False)
+
+# Yates' continuity correction
+yates_stat, yates_p, _, _ = chi2_contingency(tab, correction=True)
+
+# Fisher's exact test
+fisher_or, fisher_p = fisher_exact(tab)
+
+# G^2 (log-likelihood ratio)
+obs = tab.flatten()
+exp_counts = expected.flatten()
+G2 = 2 * np.sum(obs * np.log(obs / exp_counts))
+p_G2 = 1 - chi2.cdf(G2, df=1)
+
+results = pd.DataFrame({
+    "Test":      ["Pearson chi2", "Yates chi2", "G2", "Fisher exact"],
+    "Statistic": [pearson_stat, yates_stat, G2, np.nan],
+    "p_value":   [pearson_p, yates_p, p_G2, fisher_p]
+})
+print("\n", results)
+```
+
+## Julia
+
+```{julia}
+tab = [1 9;
+       5 5]
+println("Observed counts:")
+display(tab)
+
+# Expected counts
+n = sum(tab)
+row_sums = sum(tab, dims=2)
+col_sums = sum(tab, dims=1)
+expected = row_sums * col_sums / n
+println("\nExpected counts:")
+display(expected)
+
+# Pearson chi-squared (no correction)
+pearson = ChisqTest(tab)
+pearson_stat = pearson.stat
+pearson_p = pvalue(pearson)
+
+# Yates' continuity correction
+obs = vec(tab)
+exp_counts = vec(expected)
+yates_stat = sum((abs.(obs .- exp_counts) .- 0.5).^2 ./ exp_counts)
+yates_p = 1 - cdf(Chisq(1), yates_stat)
+
+# G^2 (log-likelihood ratio)
+G2 = 2 * sum(obs .* log.(obs ./ exp_counts))
+p_G2 = 1 - cdf(Chisq(1), G2)
+
+# Fisher's exact test
+fisher = FisherExactTest(tab[1,1], tab[1,2], tab[2,1], tab[2,2])
+fisher_p = pvalue(fisher)
+
+results = DataFrame(
+    Test      = ["Pearson chi2", "Yates chi2", "G2", "Fisher exact"],
+    Statistic = [pearson_stat, yates_stat, G2, missing],
+    p_value   = [pearson_p, yates_p, p_G2, fisher_p]
+)
+println("\n")
+display(results)
+```
+
+:::
+
