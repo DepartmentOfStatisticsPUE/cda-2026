@@ -5,7 +5,7 @@ format:
     self-contained: true
     table-of-contents: true
     number-sections: true
-editor: visual
+editor: source
 execute: 
   eval: true
   warning: false
@@ -55,7 +55,6 @@ df.group_B = Int.(df.group .== "B");
 df.group_C = Int.(df.group .== "C");
 df
 ```
-
 :::
 
 ## Example 2: factor coding via model.matrix()
@@ -98,14 +97,13 @@ using StatsModels, CategoricalArrays
 df.group = categorical(df.group)   # reference: A (alphabetical)
 modelmatrix(@formula(0 ~ group), df)
 ```
+
 change reference level
 
 ```{julia, eval=F}
 # TBA
 ```
-
 :::
-
 
 ## Example 3: contrast schemes
 
@@ -116,7 +114,6 @@ change reference level
 df <- data.frame(group = factor(c("A", "B", "C", "B", "A")))
 contrasts(df$group)
 ```
-
 
 ```{r}
 contrasts(df$group) <- contr.treatment(3)
@@ -149,14 +146,17 @@ df = pd.DataFrame({"group": pd.Categorical(["A", "B", "C", "B", "A"])})
 # treatment (default)
 dmatrix("C(group)", df, return_type="dataframe")
 ```
+
 ```{python}
 # treatment coding -- explicit
 dmatrix("C(group, Treatment)", df, return_type="dataframe")
 ```
+
 ```{python}
 # effects (sum) coding
 dmatrix("C(group, Sum)", df, return_type="dataframe")
 ```
+
 ```{python}
 # polynomial coding (ordinal only!)
 df["size"] = pd.Categorical(["S", "M", "L", "M", "S"],
@@ -170,9 +170,7 @@ dmatrix("C(size, Poly)", df, return_type="dataframe")
 ```{julia, eval=F}
 # TBA
 ```
-
 :::
-
 
 # Exercises
 
@@ -180,36 +178,40 @@ dmatrix("C(size, Poly)", df, return_type="dataframe")
 
 Create the following dataset:
 
-| id | education |
-|----|-----------|
-| 1  | primary   |
-| 2  | secondary |
-| 3  | tertiary  |
-| 4  | secondary |
-| 5  | primary   |
-| 6  | tertiary  |
+| id  | education |
+|-----|-----------|
+| 1   | primary   |
+| 2   | secondary |
+| 3   | tertiary  |
+| 4   | secondary |
+| 5   | primary   |
+| 6   | tertiary  |
 
-Excercises:
+Exercises:
 
-1. Manually create $k-1 = 2$ dummy variables with `primary` as the reference level.
-2. Declare `education` as a factor/categorical variable with `primary` as the reference level and inspect the model matrix.
-3. Verify that (1) and (2) produce the same indicator columns.
+1.  Manually create $k-1 = 2$ dummy variables with `primary` as the
+    reference level.
+2.  Declare `education` as a factor/categorical variable with `primary`
+    as the reference level and inspect the model matrix.
+3.  Verify that (1) and (2) produce the same indicator columns.
 
-  
 ## Exercise 2
 
-
-Using the built-in `mtcars` dataset, focus on the `cyl` variable (number of cylinders: 4, 6, 8).
+Using the built-in `mtcars` dataset, focus on the `cyl` variable (number
+of cylinders: 4, 6, 8).
 
 Where to find `mtcars`:
 
-+ **R** -- built-in, load with `data(mtcars)` or use directly
-+ **Python** -- available via `statsmodels`: `sm.datasets.get_rdataset("mtcars").data`
-+ **Julia** -- available via `RDatasets.jl`: `dataset("datasets", "mtcars")`
+-   **R** -- built-in, load with `data(mtcars)` or use directly
+-   **Python** -- available via `statsmodels`:
+    `sm.datasets.get_rdataset("mtcars").data`
+-   **Julia** -- available via `RDatasets.jl`:
+    `dataset("datasets", "mtcars")`
 
-
-1. Declare `cyl` as a factor/categorical variable and inspect the default model matrix. Which level is the reference? How many dummy columns are there and why?
-2. Change the reference level to `8` and inspect the model matrix again. How do the coefficients change?
-3. Apply effects (sum) coding and inspect the model matrix. How do the columns differ from (1)?
-
-
+1.  Declare `cyl` as a factor/categorical variable and inspect the
+    default model matrix. Which level is the reference? How many dummy
+    columns are there and why?
+2.  Change the reference level to `8` and inspect the model matrix
+    again. How do the coefficients change?
+3.  Apply effects (sum) coding and inspect the model matrix. How do the
+    columns differ from (1)?
