@@ -1,8 +1,9 @@
 ---
 title: "Contingency tables and Cramer's V"
+author: "Maciej Beręsewicz"
 format: 
   html:
-    self-contained: true
+    embed-resources: true
     table-of-contents: true
     number-sections: true
     df-print: kable

@@ -1,0 +1,285 @@
+---
+title: "Discrete distributions"
+author: "Maciej Beręsewicz"
+format: 
+  html:
+    embed-resources: true
+    table-of-contents: true
+    number-sections: true
+editor: source
+execute: 
+  eval: true
+  warning: false
+  message: false
+---
+
+```{r setup, echo = FALSE}
+JuliaCall::julia_setup(JULIA_HOME = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/")
+knitr::opts_chunk$set(engine.path = list(
+  python = "/opt/anaconda3/bin/python3.12",
+  julia = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/"
+))
+```
+
+## Setup
+
+::: panel-tabset
+## R
+
+There is no need to install or load packages. All functionalities are
+build in. One may consider installing `distributions3` package which
+mimics `Distributions.jl` package.
+
+```{r, eval = FALSE}
+install.packages("distributions3")
+```
+
+```{r}
+library(distributions3)
+```
+
+## Python
+
+Load modules
+
+```{python}
+import scipy.stats as st
+import numpy as np
+import pandas as pd
+```
+
+## Julia
+
+Install modules
+
+```{julia, eval = F}
+using Pkg
+Pkg.add(["DataFrames", "Distributions"])
+```
+
+Load packages
+
+```{julia}
+using DataFrames
+using Distributions
+using Random
+```
+:::
+
+## Exercises from lectures
+
+::: panel-tabset
+## R
+
+Exercise 1: generate 10 pseudo-random numbers from Bernoulli(0.7)
+
+```{r}
+set.seed(20230228)
+rbinom(n=10,size=1,prob=0.7)
+```
+
+Exercise 2: generate 10 pseudo-random numbers from Binomial(50,0.7)
+
+```{r}
+set.seed(20230228)
+rbinom(n=10,size=50,prob=0.7)
+```
+
+Exercise 3: generate 10 pseudo-random numbers from Poisson(1.5)
+
+```{r}
+set.seed(20230228)
+rpois(n=10,lambda=1.5)
+rpois(10,1.5)
+```
+
+## R (`distributions3`)
+
+Exercise 1: generate 10 pseudo-random numbers from Bernoulli(0.7)
+
+```{r}
+set.seed(20230228)
+X <- Bernoulli(0.7)
+random(X, 10)
+```
+
+Exercise 2: generate 10 pseudo-random numbers from Binomial(50,0.7)
+
+```{r}
+set.seed(20230228)
+X <- Binomial(50, 0.7)
+random(X, 10)
+```
+
+Exercise 3: generate 10 pseudo-random numbers from Poisson(1.5)
+
+```{r}
+set.seed(20230228)
+X <- Poisson(1.5)
+random(X, 10)
+```
+
+## Python
+
+Exercise 1: generate 10 pseudo-random numbers from Bernoulli(0.7)
+
+```{python}
+np.random.seed(20230228)
+st.bernoulli(0.7).rvs(10)
+```
+
+Exercise 2: generate 10 pseudo-random numbers from Binomial(50,0.7)
+
+```{python}
+np.random.seed(20230228)
+st.binom(50,0.7).rvs(10)
+```
+
+Exercise 3: generate 10 pseudo-random numbers from Poisson(1.5)
+
+```{python}
+np.random.seed(20230228)
+st.poisson(1.5).rvs(10)
+```
+
+## Julia
+
+Exercise 1: generate 10 pseudo-random numbers from Bernoulli(0.7)
+
+```{julia}
+Random.seed!(20230228);
+rand(Bernoulli(0.7),10)
+```
+
+Exercise 2: generate 10 pseudo-random numbers from Binomial(50,0.7)
+
+```{julia}
+Random.seed!(20230228);
+rand(Binomial(50,0.7),10)
+```
+
+Exercise 3: generate 10 pseudo-random numbers from Poisson(1.5)
+
+```{julia}
+Random.seed!(20230228);
+rand(Poisson(1.5),10)
+```
+:::
+
+## Exercises from lectures
+
+### Exercise 1
+
+Assume that football player with success rate 0.4 shot 10 times on goal.
+Let $X$ be a random variable denoting number of successful scores.
+Please find:
+
+-   Distribution of $X$
+-   Probability that football player score exactly 4 times ($P(X=4)$)
+-   Probability that football player score at least 7 times
+    ($P(X>=7) = 1- P(X <= 6)$)
+
+::: panel-tabset
+## R
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+## R (`distributions3`)
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+## Python
+
+```{python}
+
+```
+
+```{python}
+
+```
+
+```{python}
+
+```
+
+## Julia
+
+Declare distribution
+
+```{julia}
+
+```
+
+```{julia}
+
+```
+
+```{julia}
+
+```
+
+```{julia}
+
+```
+:::
+
+### Exercise 2
+
+Number of car accidents in one day in some city follows Poisson
+distribution with expected value $\lambda=2$. Find the probability that
+at most 4 car accidents happen.
+
+::: panel-tabset
+## R
+
+```{r}
+
+```
+
+## R (`distributions3`)
+
+```{r}
+
+```
+
+## Python
+
+```{python}
+
+```
+
+## Julia
+
+```{julia}
+
+```
+:::
+
+### Exercise 3
+
+Read in ``
+

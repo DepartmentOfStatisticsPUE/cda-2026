@@ -1,8 +1,9 @@
 ---
 title: "Simpson's paradox"
+author: "Maciej Beręsewicz"
 format: 
   html:
-    self-contained: true
+    embed-resources: true
     table-of-contents: true
     number-sections: true
 editor: source
