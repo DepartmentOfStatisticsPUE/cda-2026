@@ -1,0 +1,1306 @@
+\documentclass[10pt,ignorenonframetext,aspectratio=169]{beamer}
+\input{settings/settings.tex}
+
+\usepackage{ragged2e}
+\usepackage{etoolbox}
+\usepackage{float}
+\usepackage{epigraph}
+\usepackage{multicol}
+\usepackage{tikz}
+\usepackage[caption = false]{subfig}
+
+\let\proglang=\textsf
+\newcommand{\pkg}[1]{{\fontseries{b}\selectfont #1}}
+
+\apptocmd{\frame}{}{\justifying}{} % Allow optional arguments after frame.
+
+\makeatletter
+\def\beamer@writeslidentry{\clearpage\beamer@notesactions}
+\makeatother
+
+\author[Beręsewicz (PUEB \& SOP)]{dr Maciej Beręsewicz, prof. UEP 
+    \\ \small{Department of Statistics, Poznań University of Economics and Business}  
+    \\ \small{Centre for the Methodology of Population Studies, Statistical Office in Poznań}
+    }
+
+\title{Categorical Data Analysis 2025/26}
+\date{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% additional settings
+\newcommand{\bs}[1]{\boldsymbol{#1}}
+\newcommand{\bSigma}{\boldsymbol{\Sigma}}
+\newcommand{\bOmega}{\boldsymbol{\Omega}}
+\newcommand{\bTheta}{\boldsymbol{\Theta}}
+\newcommand{\bPi}{\boldsymbol{\Pi}}
+\newcommand{\bbeta}{\boldsymbol{\beta}}
+\newcommand{\bx}{\boldsymbol{x}}
+\newcommand{\bmu}{\boldsymbol{\mu}}
+\newcommand{\bV}{\boldsymbol{V}}
+\newcommand{\bv}{\boldsymbol{v}}
+\newcommand{\bY}{\boldsymbol{Y}}
+\newcommand{\bA}{\boldsymbol{A}}
+\newcommand{\bR}{\boldsymbol{R}}
+\newcommand{\balpha}{\boldsymbol{\alpha}}
+\newcommand{\bI}{\boldsymbol{I}}
+\newcommand{\bC}{\boldsymbol{C}}
+\newcommand{\bZero}{\boldsymbol{0}}
+\newcommand{\bW}{\boldsymbol{W}}
+\newcommand{\bw}{\boldsymbol{w}}
+\newcommand{\bd}{\boldsymbol{d}}
+\newcommand{\bOne}{\boldsymbol{1}}
+\newcommand{\bT}{\boldsymbol{T}}
+\newcommand{\bt}{\boldsymbol{t}}
+\newcommand{\bpi}{\boldsymbol{\pi}}
+\newcommand{\bZ}{\boldsymbol{Z}}
+\newcommand{\bX}{\boldsymbol{X}}
+\newcommand{\bz}{\boldsymbol{z}}
+\newcommand{\by}{\boldsymbol{y}}
+\newcommand{\br}{\boldsymbol{r}}
+\newcommand{\bp}{\boldsymbol{p}}
+\newcommand{\beps}{\boldsymbol{\epsilon}}
+\newcommand{\blambda}{\boldsymbol{\lambda}}
+\newcommand{\logit}{\operatorname{logit}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+\begin{frame}[plain]{}
+\titlepage
+\end{frame}
+
+\section{About the lecture}
+
+\begin{frame}{About the lecture -- lecturer}
+\begin{columns}
+\column{.3\textwidth}
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{profile-small.jpg}
+\end{figure}
+
+\column{.7\textwidth}
+    \begin{itemize}
+        \item \textbf{Who}: dr Maciej Beręsewicz, prof.UEP
+        \item \textbf{Where}: Department of Statistics UEP / Statistical Office in Poznań
+        \item \textbf{Contact}: maciej.beresewicz@ue.poznan.pl / MS Teams
+        \item \textbf{Interests}: modern data sources for statistics; non-probability samples; big data; statistical software
+        \item \textbf{Duty hours}: TBA
+    \end{itemize}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{About the lecture -- organization}
+    \begin{itemize}
+        \item Lectures will be divided into two parts -- 40 min, 5 min break, the rest.
+        \item Final test: \textbf{3rd of June}. Therefore, some lectures will need to be made up earlier.
+        \item Course syllabus: \url{https://esylabus.ue.poznan.pl/pl/document/b4543077-68a2-42fb-83dc-7c1337ec5e33.html}
+        \item Contact via email, MS Teams or during duty hours.
+        \item Lecture covers both theoretical and practical parts (implementation in programming languages). 
+        \item Materials will be held on:
+        \begin{itemize}
+            \item Github -- \url{https://github.com/DepartmentOfStatisticsPUE/cda-2026}
+            \item Moodle
+        \end{itemize}
+        \item Materials from previous years:  \url{https://github.com/DepartmentOfStatisticsPUE/cda-2025}, \url{https://github.com/DepartmentOfStatisticsPUE/cda-2024}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{About the lecture -- topics}
+\begin{itemize}
+    \item Introduction to categorical data analysis: categorical variables, factors, contingency tables.
+    \item Discrete distributions: binomial, multinomial, Poisson and others.	
+    \item Categorical variables in linear regression models	
+    \item Logistic regression models (binary, multinomial)	
+    \item Count regression models	
+    \item Basic machine learning models: classification and regression trees, random forest	
+\end{itemize}
+\end{frame}
+
+\begin{frame}{About the lecture -- literature}
+    \begin{itemize}
+        \item Agresti, A, (2013). Categorical data analysis, 3rd Edition, Wiley.
+        \item Bilder, C. R., \& Loughin, T. M. (2014). Analysis of categorical data with R. CRC Press.
+        \item Brzezińska Justyna, 2015, Analiza logarytmiczno-liniowa. Teoria i zastosowania z wykorzystaniem programu R
+        \item Gatnar Eugeniusz, Walesiak Marek, 2011, Analiza danych jakościowych i symbolicznych z wykorzystaniem programu R
+        \item Friendly, M., \& Meyer, D. (2015). Discrete Data Analysis with R: Visualization and Modeling Techniques for Categorical and Count Data (Vol. 120). CRC Press
+        \item Faraway, J. J. (2016). Extending the linear model with R: generalized linear, mixed effects and nonparametric regression models (Vol. 124). CRC pres
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{About the lecture -- the final test and problem sets}
+\begin{itemize}
+    \item The final test on the last lecture -- for max 4.0.
+    \item 3 problem sets -- for extra 1.0 [only if the final test will be at least 3.0]
+\end{itemize}
+\vspace{1cm}
+\textbf{For students with individual organisation of classes or who are not satisfied with grades from problem sets} -- you can get a higher grade during the individual conversation (i.e. oral exam) after the final test.
+\end{frame}
+
+\begin{frame}{About the lecture -- The final test}
+\begin{itemize}
+    \item Covers all topics discussed during the lecture.
+    \item Final test: \textbf{3rd of June}. 
+    \item Exercises that should be solved using any programming language (R, Python, Julia, SAS, etc.).
+    \item A sample test will be given 3--4 weeks before the test.
+    \item Grading:
+    \begin{itemize}
+        \item to 24 pts -- 2.0
+        \item $[25, 35)$ -- 3.0
+        \item $[35, 40)$ -- 3.5
+        \item $[40, 50)$ -- 4.0
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{About the lecture -- problem sets}
+\begin{itemize}
+    \item There will be 3 problem sets.
+    \item The goal of the problem sets is to verify your knowledge, not how well you can prompt an AI/LLM.
+    \item All problem sets will be checked to ensure you have completed them independently.
+    \item Grading:
+    \begin{itemize}
+        \item 1 problem set -- no bonus
+        \item 2 problem sets -- +0.5
+        \item 3 problem sets -- +1.0
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{About the lecture -- moodle}
+Course entitled: \textbf{Categorical Data Analysis (id 22066)}
+
+\vspace{0.5cm}
+
+Keys to enroll to the moodle course:
+
+    \begin{itemize}
+        \item cda2026ag -- Analityka Gospodarcza
+        \item cda2026if -- Inżynieria Finansowa
+        \item cda2026iw -- Informatyka w Gospodarce i Administracji
+        \item cda2026eb -- Elektroniczny Biznes
+        \item cda2026pt -- part-time students
+    \end{itemize}
+
+\vspace{0.5cm}
+
+%MS Teams: \textbf{8jufga9}
+
+\end{frame}
+
+
+\begin{frame}{About the lecture}
+\begin{center}
+    \Large
+    Any questions?
+\end{center}
+\end{frame}
+
+
+
+\section{Categorical variables}
+
+\begin{frame}{What is a categorical variable? Provide examples}
+\begin{itemize}
+    \item ...
+    \item ...
+    \item ...
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Coding categorical data}
+Since most statistical models require numerical predictors, categorical variables must be
+represented via dummy (indicator) variables in the model matrix prior to model fitting.
+There are two approaches:
+\begin{itemize}
+    \item \textbf{Manual dummy coding} -- explicitly define $k-1$ binary indicator variables
+    for a categorical predictor with $k$ levels, selecting a reference category by hand.
+    \item \textbf{Factor/categorical types} -- declare the variable as a factor and let the
+    software populate the model matrix automatically:
+    \begin{itemize}
+        \item \texttt{factor()} / \texttt{as.factor()} in R,
+        \item \texttt{pd.Categorical()} / \texttt{astype("category")} or \texttt{C()} in Python (statsmodels),
+        \item \texttt{categorical()} from \texttt{CategoricalArrays.jl} or \texttt{StatsModels.jl} in Julia.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Types of discrete variables}
+Not all discrete variables are categorical. Consider:
+
+\begin{columns}
+    \begin{column}{0.48\textwidth}
+        \textbf{Categorical (nominal/ordinal)}
+        \begin{itemize}
+            \item Values are labels or ranks
+            \item No natural spacing between levels
+            \item Examples: gender, education level, blood type
+            \item Requires dummy coding
+        \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+        \textbf{Count data}
+        \begin{itemize}
+            \item Values are non-negative integers
+            \item Natural ordering \textbf{and} spacing
+            \item Examples: number of smartphones, number of children, number of hospital visits
+            \item Requires different models (e.g. Poisson, negative binomial)
+        \end{itemize}
+    \end{column}
+\end{columns}
+
+\end{frame}
+
+\begin{frame}{Examples}
+
+\begin{center}
+Now, proceed to the example.
+\end{center}
+
+\end{frame}
+
+
+
+\begin{frame}{Contrasts -- what is coding?}
+When a categorical variable has $k$ levels, a naive approach would be to create 
+$k$ binary indicator columns -- one per level. However, this causes a problem:
+
+\begin{quote}
+The $k$ columns always sum to 1 (a column of ones already present in the model 
+matrix as the intercept), making the model matrix \textbf{rank-deficient}. The 
+system of equations has no unique solution -- the model is not identifiable. 
+\end{quote}
+
+
+Dropping any one column (the \textbf{reference level}) resolves this: we use 
+$k - 1$ columns, and the reference level is implicitly captured by the intercept.
+
+\medskip
+\textbf{The choice of how to construct these $k-1$ columns is called coding} 
+(or a contrast scheme), and different schemes answer different questions:
+\begin{itemize}
+    \item Which level do we compare others against?
+    \item Do we compare against the grand mean?
+    \item Is there a meaningful order among levels?
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Contrasts -- formal definition}
+Formally, a \textbf{contrast} is a linear combination of group means $\mu_i$:
+\begin{equation}
+    L = \sum_{i=1}^k c_i \mu_i,
+\end{equation}
+where $c_i$ are contrast coefficients. The full set of contrasts is described by 
+a matrix $\boldsymbol{C}$. See \texttt{gmodels}, \texttt{multcomp} in R for details.
+\end{frame}
+
+
+\begin{frame}{Contrasts -- example}
+Suppose we study the effect of a drug with $k = 2$ groups: 
+\textbf{treatment} and \textbf{control}, with group means $\mu_T$ and $\mu_C$.
+
+\medskip
+The natural question is: \textit{is there a difference between the groups?}
+\begin{equation}
+    L = \mu_T - \mu_C = 1 \cdot \mu_T + (-1) \cdot \mu_C,
+\end{equation}
+so the contrast coefficients are $\boldsymbol{c} = (1, -1)^{\top}$.
+
+\medskip
+Note that $\sum c_i = 1 + (-1) = 0$ -- this is the defining property of a 
+\textbf{true contrast}: the coefficients must sum to zero.
+
+\medskip
+If $L = 0$, there is no difference between the groups. Testing whether $L = 0$ 
+is equivalent to the familiar two-sample $t$-test.
+\end{frame}
+
+
+
+\begin{frame}{Contrasts -- dummy (treatment) coding}
+\textbf{The most common scheme.} Each level is compared to a chosen \textbf{reference level}.
+
+\smallskip
+For a variable with 4 levels (A, B, C, D), with \textbf{A as reference}:
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrr}
+  \hline
+  Level & B & C & D \\
+  \hline
+  A & 0 & 0 & 0 \\
+  B & 1 & 0 & 0 \\
+  C & 0 & 1 & 0 \\
+  D & 0 & 0 & 1 \\
+  \hline
+\end{tabular}
+\end{table}
+
+Model coefficients represent \textbf{differences from the reference level A}.
+
+\smallskip
+\texttt{contr.treatment} (R); \texttt{DummyCoding()} (Julia); \texttt{C(X, Treatment)} (Python)
+
+\smallskip
+\textit{Note: \texttt{contr.SAS()} in R works identically but takes the \textbf{last} level as reference.}
+\end{frame}
+
+
+\begin{frame}{Contrasts -- effects (sum) coding}
+Each level is compared to the \textbf{grand mean} (average over all levels).
+
+\smallskip
+For a variable with 4 levels (A, B, C, D), with \textbf{D as reference}:
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrr}
+  \hline
+  Level & A & B & C \\
+  \hline
+  A &  1 &  0 &  0 \\
+  B &  0 &  1 &  0 \\
+  C &  0 &  0 &  1 \\
+  D & -1 & -1 & -1 \\
+  \hline
+\end{tabular}
+\end{table}
+
+Model coefficients represent \textbf{deviations of each level from the overall mean}. 
+The reference level's effect is recovered as the negative sum of the others.
+
+\smallskip
+\texttt{contr.sum} (R); \texttt{EffectsCoding()} (Julia); \texttt{C(X, Sum)} (Python)
+\end{frame}
+
+
+
+
+\begin{frame}{Contrasts -- polynomial coding}
+
+Use this scheme only when levels have a meaningful, equally-spaced order.
+
+Coefficients capture \textbf{trend components} (linear, quadratic, cubic, \ldots) 
+in the response across ordered levels.
+
+\smallskip
+For 4 ordered levels:
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrr}
+  \hline
+  Level & Linear (.L) & Quadratic (.Q) & Cubic (.C) \\
+  \hline
+  1 & $-0.67$ &  $0.50$ & $-0.22$ \\
+  2 & $-0.22$ & $-0.50$ &  $0.67$ \\
+  3 &  $0.22$ & $-0.50$ & $-0.67$ \\
+  4 &  $0.67$ &  $0.50$ &  $0.22$ \\
+  \hline
+\end{tabular}
+\end{table}
+
+\texttt{contr.poly} (R); \texttt{C(X, Poly)} (Python)
+\end{frame}
+
+
+
+
+
+\begin{frame}{Practice -- contrasts}
+      \begin{table}[]
+        \centering
+        \caption{Overview of functions}
+        %\label{tab:my_label}
+        \begin{tabular}{cp{3cm}p{2cm}p{2cm}}
+        \hline
+          \textbf{Language}   & \textbf{R} &  \textbf{Python} & \textbf{Julia} \\
+        \hline
+         Packages  & 
+         stat  &  StatModels & StatsModels.jl\\
+        Functions &
+          contr.<>() & C() & contrasts() \\
+        \hline
+        \end{tabular}
+    \end{table}
+\end{frame}
+
+
+\begin{frame}{Using categorical data in regression}
+
+\begin{center}
+Now, proceed to the examples 
+\end{center}
+
+\end{frame}
+
+\section{Contingency tables}
+
+\subsection{Contingency tables, independence, correlation}
+
+\begin{frame}{Contingency tables}
+    \begin{itemize}
+        \item Two-way contingency tables are a convenient and compact way to represent a data set cross-classified by two discrete variables, $A$ and $B$.
+        \begin{itemize}
+            \item $2 \times 2$ tables: two binary factors,
+            \item $2 \times 2 \times k$ tables: a collection of $s \times 2$, stratified by another variable,
+            \item $r \times c$  tables,
+            \item $r \times c$ tables with ordered scale (factor). \end{itemize}
+        \item Research questions
+            \begin{itemize}
+                \item Are $A$ and $B$ independent? If no, what is the strength of association
+                \item For tables $2 \times 2$ use odds ratio, for other -- e.g. Pearson $\chi^2$
+            \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Contingency tables}
+
+\begin{table}
+	\begin{center}
+			\begin{tabular}{|l|l|l|l|l|l|}
+\hline
+\multicolumn{1}{|c|}{Variable $X$} & \multicolumn{4}{c|}{Variable $Y$ levels} & \multicolumn{1}{c|}{Row} \\ 
+\cline{2-5}
+\multicolumn{1}{|c|}{Levels} & \multicolumn{1}{c|}{$Y_{1}$} & \multicolumn{1}{c|}{$Y_{2}$} & \multicolumn{1}{c|}{$\ldots$} & \multicolumn{1}{c|}{$Y_{J}$} & \multicolumn{1}{c|}{sums} \\ 
+\hline
+\multicolumn{1}{|c|}{$X_{1}$} & \multicolumn{1}{c|}{$n_{11}$} & \multicolumn{1}{c|}{$n_{12}$} & \multicolumn{1}{c|}{$\ldots$} & \multicolumn{1}{c|}{$n_{1J}$} & \multicolumn{1}{c|}{$n_{1.}$} \\ 
+\hline
+\multicolumn{1}{|c|}{$X_{2}$} & \multicolumn{1}{c|}{$n_{21}$} & \multicolumn{1}{c|}{$n_{22}$} & \multicolumn{1}{c|}{$\ldots$} & \multicolumn{1}{c|}{$n_{2J}$} & \multicolumn{1}{c|}{$n_{2.}$} \\ 
+\hline
+\multicolumn{1}{|c|}{$\vdots$} & \multicolumn{1}{c|}{$\vdots$} & \multicolumn{1}{c|}{$\vdots$} & \multicolumn{1}{c|}{$\vdots$} & \multicolumn{1}{c|}{$\vdots$} & \multicolumn{1}{c|}{$\vdots$} \\ 
+\hline
+\multicolumn{1}{|c|}{$X_{I}$} & \multicolumn{1}{c|}{$n_{I1}$} & \multicolumn{1}{c|}{$n_{I2}$} & \multicolumn{1}{c|}{$\ldots$} & \multicolumn{1}{c|}{$n_{IJ}$} & \multicolumn{1}{c|}{$n_{I.}$} \\ 
+\hline
+\multicolumn{1}{|c|}{Column sums} & \multicolumn{1}{c|}{$n_{.1}$} & \multicolumn{1}{c|}{$n_{.2}$} & \multicolumn{1}{c|}{$\ldots$} & \multicolumn{1}{c|}{$n_{.J}$} & \multicolumn{1}{c|}{$n$} \\ 
+\hline
+\end{tabular}
+	\label{tab1}
+	\end{center}
+\end{table}
+
+\end{frame}
+
+
+\subsection{Simpson's paradox}
+
+\begin{frame}{Simpson's paradox}
+    \textbf{Simpson's paradox} is a~phenomenon in probability and statistics in which a trend appears in several groups of data but disappears or reverses when the groups are combined. 
+
+    \vspace{1cm}
+
+    Source: \url{https://plato.stanford.edu/entries/paradox-simpson/}
+
+    \vspace{1cm}
+
+    Edward Hugh Simpson (10 December 1922 –- 5 February 2019) was a British codebreaker, statistician and civil servant. 
+    
+\end{frame}
+
+
+\begin{frame}{Simpson's paradox -- origin}
+\begin{figure}
+    \centering
+   \includegraphics[width=\textwidth]{figs/lit-sim-1.png}
+    \caption{Simpson, Edward H. (1951). "The Interpretation of Interaction in Contingency Tables". Journal of the Royal Statistical Society, Series B. 13: 238–241.}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}{Simpson's paradox -- origin}
+\begin{figure}
+    \centering
+   \includegraphics[width=\textwidth]{figs/lit-sim-2.png}
+    \caption{Colin R. Blyth (June 1972). "On Simpson's Paradox and the Sure-Thing Principle". Journal of the American Statistical Association. 67 (338): 364–366}
+\end{figure}
+        
+\end{frame}
+
+\begin{frame}{UC Berkeley gender bias}
+\begin{table}
+\centering
+\caption{A study of gender bias among graduate school admissions to the Uni\-ver\-si\-ty of California, Berkeley in 1973}
+\scriptsize
+\begin{tabular}{crrrrrr}
+\hline
+& \multicolumn{2}{c}{All} & \multicolumn{2}{c}{Men} & \multicolumn{2}{c}{Women} \\ 
+& Applicants & Admitted
+& Applicants & Admitted
+& Applicants & Admitted \\
+\hline
+\text{Total} & 12,763 & 41\% & 8,442 & \alert{44\%} & 4,321 & 35\% \\
+\hline
+\end{tabular}
+\begin{flushleft}
+Source: \url{https://en.wikipedia.org/wiki/Simpsons_paradox}
+\end{flushleft}
+\end{table}
+\end{frame}
+
+\begin{frame}{UC Berkeley gender bias}
+   \begin{table}[h]
+\centering
+\caption{A study of gender bias among graduate school admissions to the Uni\-ver\-si\-ty of California, Berkeley in 1973 -- the data from the six largest departments}
+\scriptsize
+\begin{tabular}{crrrrrr}
+\hline
+Department & \multicolumn{2}{c}{All} & \multicolumn{2}{c}{Men} & \multicolumn{2}{c}{Women} \\ 
+& Applicants & Admitted
+& Applicants & Admitted
+& Applicants & Admitted \\
+\hline
+\text{A} & 933 & 64\% & {825} & 62\% & 108 & \alert{82\%} \\
+\hline
+\text{B} & 585 & 63\% & {560} & 63\% & 25 & \alert{68\%} \\
+\hline
+\text{C} & 918 & 35\% & 325 & \alert{37\%} & 593 & 34\% \\
+\hline
+\text{D} & 792 & 34\% & 417 & 33\% & 375 & \alert{35\%} \\
+\hline
+\text{E} & 584 & 25\% & 191 & \alert{28\%} & 393 & 24\% \\
+\hline
+\text{F} & 714 & 6\% & 373 & 6\% & 341 & \alert{7\%} \\
+\hline
+\text{Total} & \textbf{4526} & \textbf{39\%} & \textbf{2691} & \textbf{45\%} & \textbf{1835} & \textbf{30\%} \\
+\hline
+\end{tabular}
+\begin{flushleft}
+Source: \url{https://en.wikipedia.org/wiki/Simpsons_paradox}
+\end{flushleft}
+\end{table} 
+\end{frame}
+
+
+\begin{frame}{Kidney stone treatment}
+\begin{table}[h]
+\caption{Comparison of he success rates of two treatments for kidney stones}
+\centering
+\begin{tabular}{lll}
+\hline
+Stone size / Treatment & Treatment A & Treatment B \\
+\hline
+Small stones & \alert{93\%} (81/87) & 87\% (234/270) \\
+Large stones & \alert{73\%} (192/263) & 69\% (55/80) \\
+\hline
+Both & 78\% (273/350) & \alert{83\%} (289/350) \\
+\hline
+\end{tabular}
+\begin{flushleft}
+
+\small
+The table below shows the success rates (the term success rate here actually means the success proportion) and numbers of treatments for treatments involving both small and large kidney stones, where Treatment A includes open surgical procedures and Treatment B includes closed surgical procedures. The numbers in parentheses indicate the number of success cases over the total size of the group.
+
+\vspace{0.5cm}
+
+Source: \url{https://en.wikipedia.org/wiki/Simpsons_paradox} and Julious \& Mullee (1994). Confounding and Simpson's paradox. Bmj, 309(6967), 1480-1481.
+\end{flushleft}
+\end{table}
+\end{frame}
+
+\begin{frame}{Simpson's paradox in regression}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\textwidth]{figs/fig-simps-1.png}
+        \caption{Example of Simpson's paradox on simulated data}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Simpson's paradox in regression}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\textwidth]{figs/fig-simps-2.png}
+        \caption{Example of Simpson's paradox on simulated data}
+    \end{figure}
+\end{frame}
+
+
+
+\begin{frame}{Simpson's paradox -- causal perspective}
+
+The paradox arises due to a \textbf{confounding variable} $Z$ that influences both the treatment/exposure $X$ and the outcome $Y$.
+
+\vspace{0.5cm}
+
+\begin{center}
+\begin{tikzpicture}[node distance=2.5cm, >=stealth, thick]
+    \node (Z) {$Z$ (confounder)};
+    \node (X) [below left of=Z] {$X$ (exposure)};
+    \node (Y) [below right of=Z] {$Y$ (outcome)};
+    \draw[->] (Z) -- (X);
+    \draw[->] (Z) -- (Y);
+    \draw[->] (X) -- (Y);
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.5cm}
+
+\begin{itemize}
+    \item In the Berkeley example: $Z$ = department, $X$ = gender, $Y$ = admission.
+    \item In the kidney stone example: $Z$ = stone size, $X$ = treatment, $Y$ = success.
+    \item The marginal association between $X$ and $Y$ can reverse once we condition on $Z$.
+    \item Key question: should we condition on $Z$? The answer depends on the \textbf{causal structure}, not just the data.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{}
+\begin{center}
+    \includegraphics[width=0.4\textwidth]{figs/bookwhy.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{}
+\begin{center}
+    \includegraphics[width=0.6\textwidth]{figs/scott1.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{}
+\begin{center}
+    \includegraphics[width=0.7\textwidth]{figs/scott2.png}
+\end{center}
+\end{frame}
+
+
+
+\begin{frame}{Literature}
+    \begin{itemize}
+    \justifying
+        \item Simpson, Edward H. (1951). "The Interpretation of Interaction in Contingency Tables". Journal of the Royal Statistical Society, Series B. 13: 238–241.
+        \item Pearson, Karl; Lee, Alice; Bramley-Moore, Lesley (1899). "Genetic (reproductive) selection: Inheritance of fertility in man, and of fecundity in thoroughbred racehorses". Philosophical Transactions of the Royal Society A. 192: 257–330. doi:10.1098/rsta.1899.0006
+        \item G. U. Yule (1903). "Notes on the Theory of Association of Attributes in Statistics". Biometrika. 2 (2): 121–134. doi:10.1093/biomet/2.2.121.
+        \item Colin R. Blyth (June 1972). "On Simpson's Paradox and the Sure-Thing Principle". Journal of the American Statistical Association. 67 (338): 364–366. doi:10.2307/2284382. JSTOR 2284382.
+        \item Pearl, J. (2009). \textit{Causality: Models, Reasoning, and Inference}. Cambridge University Press.
+    \end{itemize}
+\end{frame}
+
+
+
+\subsection{Measuring associations}
+\begin{frame}{Contingency tables -- $\chi^2$ statistic}
+
+\begin{itemize}
+    \item In practice, the most popular way to verify if two variables ($X,Y$) are associated is to apply $\chi^2$ test (independence test). Hypotheses are as follows
+    
+    \begin{itemize}
+        \item[H0:] variables ($X,Y$) are independent,
+        \item[H1:] variables ($X,Y$) are dependent,
+    \end{itemize}
+    and the test statistic is given by
+\begin{equation}
+    \chi^{2}=\sum_{i=1}^{I} \sum_{j=1}^{J} \frac{\left(n_{i j}-\hat{n}_{i j}\right)^{2}}{\hat{n}_{i j}} \sim \chi^2((I-1)(J-1)).
+\end{equation}
+
+where $n_{ij}$ and $\hat{n}_{i j}$ are observed and expected counts respectively.
+\item Expected (theoretical) counts are calculated according to
+
+\begin{equation}
+    \hat{n}_{i j}=\frac{n_{i .} n_{ . j}}{n}.
+\end{equation}
+
+
+\end{itemize}
+
+
+\end{frame}
+
+\begin{frame}{Contingency tables -- $\chi^2$ and $G^2$ statistic}
+
+For tables with small frequencies a continuity correction should be applied.
+
+\begin{equation}
+    \chi_{\mathrm{Yates}}^{2}=\sum_{i=1}^{I}\sum_{j=1}^J \frac{\left(\left|n_{ij}-\hat{n}_{ij}\right|-0.5\right)^{2}}{\hat{n}_{ij}}.
+\end{equation}
+
+Log-likelihood $G^2$ statistic
+
+\begin{equation}
+    G^{2}=2 \sum_{i=1}^{I} \sum_{j=1}^{J} n_{i j} \log \left(\frac{n_{i j}}{\hat{n}_{i j}}\right),
+\end{equation}
+
+\noindent $\log$ refers to the natural logarithm.
+\end{frame}
+
+\begin{frame}{Contingency tables -- Fisher's exact test}
+
+\begin{itemize}
+    \item For $2 \times 2$ tables with small expected counts (e.g. $\hat{n}_{ij} < 5$), even Yates' correction may be insufficient. Fisher's exact test provides an \textbf{exact} $p$-value.
+
+    \item Under $H_0$ of independence, conditioning on both row and column marginals, the cell count $n_{11}$ follows a hypergeometric distribution:
+
+\begin{equation}
+    P(n_{11} = x) = \frac{\binom{n_{1.}}{x}\binom{n_{2.}}{n_{.1}-x}}{\binom{n}{n_{.1}}}.
+\end{equation}
+
+    \item The $p$-value is computed by summing probabilities over all tables as extreme or more extreme than the observed one.
+
+    \item No asymptotic approximation is involved -- the test is valid for \textbf{any} sample size.
+
+    \item Extensions to $r \times c$ tables exist but become computationally intensive (e.g. Freeman-Halton test).
+\end{itemize}
+
+\end{frame}
+
+
+
+\begin{frame}{When $\chi^2$ approximation fails -- example}
+
+\begin{table}[h]
+\centering
+\caption{A hypothetical $2 \times 2$ table with small expected counts (left) and testing results (right)}
+\small
+\begin{tabular}{lccc}
+\hline
+ & Success & Failure & Total \\
+\hline
+Treatment & 1 & 9 & 10 \\
+Control   & 5 & 5 & 10 \\
+\hline
+Total     & 6 & 14 & 20 \\
+\hline
+\end{tabular}
+%
+\hspace{1cm}
+\begin{tabular}{lcc}
+\hline
+Test & Statistic & $p$-value \\
+\hline
+Pearson $\chi^2$ & 3.810 & 0.051 \\
+$\chi^2_{\text{Yates}}$ & 2.143 & 0.143 \\
+$G^2$ & 4.011 & 0.045 \\
+Fisher's exact & -- & 0.141 \\
+\hline
+\end{tabular}
+\end{table}
+
+Expected counts: $\hat{n}_{11} = 3$, $\hat{n}_{12} = 7$, $\hat{n}_{21} = 3$, $\hat{n}_{22} = 7$.
+
+\vspace{0.3cm}
+
+\small
+Pearson's $\chi^2$ is \textbf{anti-conservative} here -- its $p$-value is too small because the $\chi^2$ approximation is poor when expected counts are low. Yates' correction and Fisher's exact test give more appropriate (larger) $p$-values. The $G^2$ statistic is also anti-conservative in small samples.
+
+\end{frame}
+
+
+\begin{frame}{Contingency tables -- generalization}
+
+Cressie-Read statistic (aka Power Divergence statistic)
+
+\begin{equation}
+    CR=\frac{2}{\lambda(\lambda+1)} \sum_{i=1}^{I} \sum_{j=1}^{J} n_{i j}\left[\left(\frac{n_{i j}}{\hat{n}_{i j}}\right)^{\lambda}-1\right].
+\end{equation}
+
+When $\lambda=1$ then we get $\chi^2$, if $\lambda \to 0$ then we get $G^{2}$. Cressie and Read (1984) suggested $\lambda=2/3$.
+
+\vspace{0.5cm}
+
+Literature: 
+\begin{itemize}
+    \small
+    \item Cressie \& Read (1984). Multinomial goodness‐of‐fit tests. Journal of the Royal Statistical Society: Series B (Methodological), 46(3), 440-464.
+    \item Cressie \& Read (1989). Pearson's X2 and the log-likelihood ratio statistic G2: a comparative review. International Statistical Review, 19-43.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Contingency tables -- correlation}
+    \begin{itemize}
+        \item Yule's $\phi$, range: $[0,\infty)$
+        \begin{equation}
+            \Phi=\sqrt{\frac{\chi^{2}}{n}}
+        \end{equation}
+        \item Pearson's $C$, range: $[0,\infty)$
+        \begin{equation}
+            C=\sqrt{\frac{\chi^{2}}{\chi^{2}+n}}
+        \end{equation}
+        \item Chuprov's $T$, range: $[0,1]$
+        \begin{equation}
+            T=\sqrt{\frac{\chi^{2}}{n \sqrt{(I-1)(J-1)}}}
+        \end{equation}
+        \item Cramer's $V$, range: $[0,1]$
+        \begin{equation}
+            V=\sqrt{\frac{\chi^{2}}{n \cdot \min \{I-1, J-1\}}}
+        \end{equation}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Literature (selected)}
+    \begin{itemize}
+        \item Fagerland, M., Lydersen, S., \& Laake, P. (2017). Statistical analysis of contingency tables. Chapman and Hall/CRC. see \url{https://contingencytables.com/software-resources}
+    \end{itemize}
+\end{frame}
+\begin{frame}{Practice -- contingency tables}
+      \begin{table}[]
+        \centering
+        \caption{Overview of functions}
+        %\label{tab:my_label}
+        \begin{tabular}{cp{3cm}p{3cm}p{3cm}}
+        \hline
+          \textbf{Language}   & \textbf{R} &  \textbf{Python} & \textbf{Julia} \\
+        \hline
+         Packages  & 
+         stats, vcd & scipy.stats, pingouin &  Hypothesis\-Tests.jl \\
+        Functions &
+          xtabs(), table(); assocstats() & chi\_contingency()  & Power\-Divergence\-Test() \\
+        \hline
+        \end{tabular}
+ 
+    \end{table}
+\end{frame}
+
+\section{Discrete distributions}
+
+\begin{frame}{}
+\begin{center}
+    \Large{Discrete distributions}
+\end{center}    
+\end{frame}
+
+
+\subsection{Theory}
+
+\begin{frame}{Discrete Statistical Distributions}
+
+\begin{itemize}
+    \item \textbf{Probability Mass/Density Function} -- The probability mass function of a random variable $X$ is defined as the probability that the random variable takes on a particular value.
+        \begin{equation}
+            p \left( x _ { k } \right) = P \left[ X = x _ { k } \right]
+        \end{equation}
+    \item \textbf{Cumulative Distribution Function} -- The cumulative distribution function is
+    
+    \begin{equation}
+        F ( x ) = P [ X \leq x ] = \sum _ { x _ { k } \leq x } p \left( x _ { k } \right)
+    \end{equation}
+\end{itemize}    
+\end{frame}
+
+
+\begin{frame}[fragile]{Discrete distributions}
+
+During the lecture we will discuss the following distributions
+
+\begin{itemize}
+    \item univariate
+    
+    \begin{itemize}
+        \item Bernoulli distribution
+        \item Binomial distribution
+        \item Geometric distribution
+        \item Negative binomial distribution
+        \item Poisson distribution
+    \end{itemize}
+    \item multivariate
+    
+        \begin{itemize}
+        \item Multinomial distribution 
+    \end{itemize}
+    
+    \end{itemize}
+
+For more information see the following links
+
+
+\begin{itemize}
+    \item \href{https://en.wikipedia.org/wiki/List_of_probability_distributions#Discrete_distributions}{Distributions (Wikipedia)}
+    \item \href{https://cran.r-project.org/web/views/Distributions.html}{R CRAN Task View: Probability Distributions} 
+    \item \href{https://docs.scipy.org/doc/scipy/reference/stats.html}{Python Statistical functions (scipy.stats)} 
+    \item \href{https://juliastats.github.io/Distributions.jl/stable/}{Julia Distributions.jl Package}
+\end{itemize}
+\end{frame}
+
+
+%%%%%%%%%%%% Bernoulli %%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Bernoulli distribution}
+    A Bernoulli distribution is parameterized by a success rate $p$, which takes value $1$ with probability $p$ and $0$ with probability $1-p$
+
+\begin{equation}
+    P(X = k) = \begin{cases}
+1 - p & \quad \text{for } k = 0, \\
+p & \quad \text{for } k = 1.
+\end{cases}
+\end{equation}
+
+We can denote this distribution as $X \sim \mathrm{Bernoulli}(p)$.
+
+\vspace{0.5cm}
+
+\textbf{Example}: a (single) coin toss.
+
+\end{frame}
+
+\begin{frame}{Bernoulli distribution -- properties}
+
+\begin{itemize}
+    \item Expected value 
+        \begin{equation}
+            E(X) = p
+        \end{equation}
+    \item Variance
+            \begin{equation}
+            V(X) = p(1-p) = pq
+        \end{equation}
+    \item Skewness
+            \begin{equation}
+            Skew(X) = \frac{q-p}{\sqrt{pq}} = \frac{1-2p}{\sqrt{pq}}
+        \end{equation}
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%% Binomial %%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Binomial distribution}
+    A Binomial distribution characterizes the number of successes in a sequence of independent trials. It has two parameters: $n$, the number of trials, and $p$, the probability of success in an individual trial, with the distribution:
+    
+    \begin{equation}
+        P(X = k) = {n \choose k}p^k(1-p)^{n-k},  \quad \text{ for } k = 0,1,2, \ldots, n.
+    \end{equation}
+
+We can denote this distribution as $X \sim \mathrm{B}(n,p)$.
+
+\vspace{0.5cm}
+
+\textbf{Example}: multiple, independent, coin toss.
+
+
+\end{frame}
+
+\begin{frame}{Binomial distribution}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/binomial_example.png}
+    \caption{Probability density function (PDF) of the binomial distribution}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}{Binomial distribution -- properties}
+
+\begin{itemize}
+    \item Expected value 
+        \begin{equation}
+            E(X) = np
+        \end{equation}
+    \item Variance
+            \begin{equation}
+            V(X) = np(1-p) = npq
+        \end{equation}
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%% Geometric %%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Geometric distribution}
+    A Geometric distribution characterizes the number of failures before the first success in a sequence of independent Bernoulli trials with success rate $p \in (0,1]$
+    
+    \begin{equation}
+        P(X = k) = p (1 - p)^{k-1}, \quad \text{for } k = 1, 2, 3, \ldots.
+    \end{equation}
+
+We can denote this distribution as $X \sim \mathrm{G}(p)$.
+
+
+\vspace{0.5cm}
+
+\textbf{Example}: throwing a die until 6 appears. 
+
+
+
+\end{frame}
+
+
+\begin{frame}{Geometric distribution}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/geometric_example.png}
+    \caption{Probability density function (PDF) of the geometric distribution}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}{Geometric distribution -- properties}
+
+\begin{itemize}
+    \item Expected value 
+        \begin{equation}
+            E(X) = \frac{1-p}{p}
+        \end{equation}
+    \item Variance
+            \begin{equation}
+            V(X) = \frac{1-p}{p^2}
+        \end{equation}
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%% Negative binomial %%%%%%%%%%%%%%%%%%
+
+
+\begin{frame}{Negative binomial (Pascal) distribution}
+    A Negative binomial distribution describes the number of failures before the $r$th success in a sequence of independent Bernoulli trials. It is parameterized by $r$, the number of successes, and $p$, the probability of success in an individual trial.
+    
+    \begin{equation}
+        P(X = k) = {k + r - 1 \choose k} p^r (1 - p)^k, \quad \text{for } k = 0,1,2,\ldots.
+\end{equation}
+    
+    The distribution remains well-defined for any positive $r$, in which case
+     
+\begin{equation}
+        P(X = k) = \frac{\Gamma(k+r)}{k! \Gamma(r)} p^r (1 - p)^k, \quad \text{for } k = 0,1,2,\ldots.
+\end{equation}
+
+
+We can denote this distribution as $X \sim \mathrm{NB}(r,p)$.
+
+\vspace{0.5cm}
+
+\textbf{Example}: For example, we can define rolling a 6 on a dice as a success, and rolling any other number as a failure, and ask how many failure rolls will occur before we see the third success (r=3).
+\end{frame}
+
+\begin{frame}{Negative Binomial: Mean and Size Parameterization}
+    An alternative parameterization ses the mean $\mu$ and size $\theta$ (dispersion parameter):
+    \[
+    p = \frac{\theta}{\theta + \mu}, \quad \text{where } r = \theta
+    \]
+    \textbf{Mean and Variance:}
+    \[
+    E(X) = \mu, \quad \text{Var}(X) = \mu + \frac{\mu^2}{\theta}
+    \]
+
+    \textbf{PMF:}
+    \[
+    P(X = k) = \binom{k + \theta - 1}{k} \left(\frac{\theta}{\theta + \mu}\right)^\theta \left(\frac{\mu}{\theta + \mu}\right)^k, \quad k = 0, 1, \ldots
+    \]
+
+    \vspace{0.3cm}
+
+    \textbf{Example}: Rolling a 6 ($p = 1/6$), $r = 3$ in standard form.
+    \begin{itemize}
+    \scriptsize
+        \item Standard: $\mu = \frac{3 (1 - 1/6)}{1/6} = 15$, $\theta = r = 3$
+        \item Variance: $\mu + \frac{\mu^2}{\theta} = 15 + \frac{15^2}{3} = 15 + 75 = 90$
+        \item Check: $p = \frac{3}{3 + 15} = \frac{3}{18} = \frac{1}{6}$
+        \item $P(X = 7) = \binom{9}{7} \left(\frac{3}{18}\right)^3 \left(\frac{15}{18}\right)^7 \approx 0.043$
+    \end{itemize}
+
+    Larger $\theta$ reduces variance toward $\mu$ (Poisson-like)!
+\end{frame}
+
+\begin{frame}{Negative binomial (Pascal) distribution}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/nbinomial_example.png}
+    \caption{Probability density function (PDF) of the negative binomial distribution}
+\end{figure}
+
+\end{frame}
+
+
+\begin{frame}{Negative binomial (Pascal) distribution -- properties}
+
+\begin{itemize}
+    \item Expected value 
+        \begin{equation}
+            E(X) = \frac{pr}{1-p}
+        \end{equation}
+    \item Variance
+            \begin{equation}
+            V(X) = \frac{pr}{(1-p)^2}
+        \end{equation}
+\end{itemize}
+\end{frame}
+
+
+%%%%%%%%%%%% Poisson %%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Poisson distribution}
+    A Poisson distribution describes the number of independent events occurring within a unit time interval, given the average rate of occurrence $\lambda$.
+    
+    \begin{equation}
+        P(X = k) = \frac{\lambda^k}{k!} e^{-\lambda}, \quad \text{ for } k = 0,1,2,\ldots.
+    \end{equation}
+ 
+ We can denote this distribution as $X \sim \mathrm{Po}(\lambda)$ or $X \sim \mathrm{Pois}(\lambda)$.
+
+  
+  \vspace{0.5cm}
+
+\textbf{Example}: Number of patients in the clinic.
+  
+\end{frame}
+
+\begin{frame}{Poisson distribution}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/poisson_example.png}
+    \caption{Probability density function (PDF) of the poisson binomial distribution}
+\end{figure}
+
+\end{frame}
+
+
+\begin{frame}{Poisson distribution -- properties}
+
+\begin{itemize}
+    \item Expected value 
+        \begin{equation}
+            E(X) = \lambda
+        \end{equation}
+    \item Variance
+            \begin{equation}
+            V(X) = \lambda
+        \end{equation}
+\end{itemize}
+\end{frame}
+
+
+%%%%%%%%%%%% Multinomial %%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Multinomial distribution}
+    The Multinomial distribution generalizes the binomial distribution. Consider $n$ independent draws from a categorical distribution over a finite set of size $k$, and let $X=(X_1,...,X_k)$ where $X_i$ represents the number of times the element $i$ occurs, then the distribution of $X$ is a multinomial distribution. Each sample of a multinomial distribution is a $k$-dimensional integer vector that sums to $n$.
+    
+    \vspace{1cm}
+    
+    The probability mass function is given by
+
+    \begin{equation}
+        f(x; n, p) = \frac{n!}{x_1! \cdots x_k!} \prod_{i=1}^k p_i^{x_i},
+\quad x_1 + \cdots + x_k = n
+    \end{equation}
+
+ We can denote this distribution as $X \sim \mathrm{Mult}(n, \pi)$
+
+\vspace{0.2cm}
+
+    \textbf{Example}: Labour market status (i.e. employed, unemployed, inactive).
+  
+\end{frame}
+
+
+\begin{frame}{Multinomial distribution -- properties}
+
+\begin{itemize}
+    \item Expected value 
+        \begin{equation}
+            E \left\{ X _ { i } \right\} = n p _ { i }
+        \end{equation}
+    \item Variance and covariance
+            \begin{equation}
+            \operatorname { Var } \left( X _ { i } \right) = n p _ { i } \left( 1 - p _ { i } \right)
+        \end{equation}
+        \begin{equation}
+           \operatorname { Cov } \left( X _ { i } , X _ { j } \right) = - n p _ { i } p _ { j } ( i \neq j )
+        \end{equation}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Relation between Poisson and Multinomial distribution}
+Suppose that $X_1, X_2, ..., X_k$ are independent Poisson random variables ($X_k \sim Po(\lambda_k)$) where the $\lambda_j$ are not necessarily equal ($j \in 1:k)$. Then the conditional distribution of the vector
+
+\begin{equation}
+    X=(X_1,X_2,\ldots,X_k),
+\end{equation}
+
+given the total
+
+\begin{equation}
+    n=X_1+X_2+\ldots+X_k
+\end{equation}
+is $Mult(n, \pi),$  where
+
+\begin{equation}
+    \pi=(\pi_1,\pi_2,\ldots,\pi_k)
+\end{equation}
+and
+\begin{equation}
+    \pi_j=\dfrac{\lambda_j}{\lambda_1+\lambda_2+\cdots+\lambda_k}.
+\end{equation}
+
+\end{frame}
+
+%%%%%%%%%%%% relations %%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Relations between distributions}
+
+\begin{itemize}
+    \item A binomial $(n, p)$ random variable with $n = 1$, is a Bernoulli ($p$) random variable.
+    \item A negative binomial distribution with $n = 1$ is a geometric distribution.
+    \item If $X$ is a binomial $(n, p)$ random variable and if $n$ is large and $np$ is small then $X$ approximately has a Poisson($\lambda=np$) distribution.
+    \item If $X$ is a negative binomial random variable with $r$ large, $P$ near $1$, and $r(1-P) = \lambda$, then $X$ approximately has a Poisson distribution with mean $\lambda$.
+\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}[fragile]{Relations between distributions}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth]{figs/probs-rel.png}
+        \caption{Relationships among some of univariate probability distributions. Source:  \href{https://en.wikipedia.org/wiki/Relationships_among_probability_distributions}{Wikipedia (2019)}}
+    \end{figure}
+    
+    For more see article "Relationships among probability distributions" at \href{https://en.wikipedia.org/wiki/Relationships_among_probability_distributions}{Wikipedia}
+\end{frame}
+
+%%%%%%%%%%%% software %%%%%%%%%%%%%%%%%%
+
+\subsection{Practice}
+
+\begin{frame}[fragile]{Overview of main function in open-source packages}
+    \begin{table}[]
+        \centering
+        \caption{Overview of functions}
+        \label{tab:my_label}
+        \begin{tabular}{c|ccc}
+            \hline
+            \textbf{Language} & \textbf{R} & \textbf{Python} & \textbf{Julia} \\
+            \hline
+            Package/module & -- & scipy.stats & Distributions \\
+            Density & d<name>() & <name>.pmf() & pdf(<name>)\\
+            Cumulative & p<name>() & <name>.cdf() & cdf(<name>) \\
+            Quantile & q<name>() & <name>.ppf() & quantile(<name>) \\
+            Random & r<name>() & <name>.rvs() & rand(<name>) \\
+            \hline
+        \end{tabular}
+where <name> denotes name of distribution. In R see also \texttt{distributions3} package which mimics \texttt{Distributions.jl} package.
+    \end{table}
+\end{frame}
+
+\subsection{Exercises}
+
+\begin{frame}{Exercise 1}
+    Assume that football player with success rate 0.4 shot 10 times on goal. Let $X$ be a random variable denoting number of successful scores.  Please find:
+
+\begin{enumerate}
+    \item Distribution of $X$
+    \item Probability that football player score exactly 4 times ($P(X=4)$)
+    \item Probability that football player score at least 7 times ($P(X>=7) = 1- P(X <= 6)$)
+\end{enumerate}
+
+\end{frame}
+
+\begin{frame}{Exercise 2}
+    Number of car accidents in one day in some city follows Poisson distribution with expected value $\lambda=2$. Find the probability that at most 4 car accidents happen.
+\end{frame}
+
+\begin{frame}{Interesting discrete distributions}
+\begin{itemize}
+    \item Beta-Binomial
+    \item Zero-inflated Poisson/NB 
+    \item Tweedie
+    \item Generalized Poisson
+\end{itemize}
+\end{frame}
+
+
+
+
+\end{document}
+
+
