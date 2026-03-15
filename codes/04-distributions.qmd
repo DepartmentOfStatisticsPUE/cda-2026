@@ -281,5 +281,7 @@ at most 4 car accidents happen.
 
 ### Exercise 3
 
-Read in ``
+Read in `data/polish-jvs.csv` and do the following exercise:
+
+
 
