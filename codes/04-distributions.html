@@ -6,6 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Maciej Beręsewicz">
 
 <title>Discrete distributions</title>
 <style>
@@ -3234,6 +3235,7 @@ window.Quarto = {
   <li><a href="#exercise-2" id="toc-exercise-2" class="nav-link" data-scroll-target="#exercise-2"><span class="header-section-number">3.2</span> Exercise 2</a></li>
   <li><a href="#exercise-3" id="toc-exercise-3" class="nav-link" data-scroll-target="#exercise-3"><span class="header-section-number">3.3</span> Exercise 3</a></li>
   </ul></li>
+  <li><a href="#advanced-example-poisson-multinomial-connection" id="toc-advanced-example-poisson-multinomial-connection" class="nav-link" data-scroll-target="#advanced-example-poisson-multinomial-connection"><span class="header-section-number">4</span> Advanced example: Poisson-Multinomial connection</a></li>
   </ul>
 </nav>
 </div>
@@ -3248,6 +3250,12 @@ window.Quarto = {
 
 <div class="quarto-title-meta">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Maciej Beręsewicz </p>
+          </div>
+  </div>
     
   
     
@@ -3496,8 +3504,423 @@ window.Quarto = {
 </section>
 <section id="exercise-3" class="level3" data-number="3.3">
 <h3 data-number="3.3" class="anchored" data-anchor-id="exercise-3"><span class="header-section-number">3.3</span> Exercise 3</h3>
-<p>Read in ``</p>
+<p>Read in <code>data/polish-jvs.csv</code> dataset (Polish Job Vacancy Survey) and do the following:</p>
+<ol type="1">
+<li>Calculate the average number of vacancies (<span class="math inline">\(\hat{\lambda}\)</span>) from the data. Using the Poisson distribution with this <span class="math inline">\(\hat{\lambda}\)</span>, calculate the probability that a randomly selected entity reports exactly 0 vacancies (<span class="math inline">\(P(X=0)\)</span>). Compare with the observed proportion of zeros in the data.</li>
+<li>Create a binary variable <code>has_vacancy</code> equal to 1 if <code>vacancies &gt; 0</code> and 0 otherwise. Calculate <span class="math inline">\(\hat{p}\)</span> as the proportion of entities with at least one vacancy. Using the Binomial distribution with <span class="math inline">\(n=10\)</span> and this <span class="math inline">\(\hat{p}\)</span>, calculate the probability that out of 10 randomly selected entities, at least 3 report a vacancy (<span class="math inline">\(P(Y \geq 3)\)</span>).</li>
+<li>Generate 1000 random draws from Poisson(<span class="math inline">\(\hat{\lambda}\)</span>) distribution (where <span class="math inline">\(\hat{\lambda}\)</span> is the mean from point 1). Compare the distribution of simulated values with the observed distribution of vacancies (e.g. using a table of frequencies or a bar plot).</li>
+</ol>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-5-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-1" role="tab" aria-controls="tabset-5-1" aria-selected="true" href>R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-5-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-2" role="tab" aria-controls="tabset-5-2" aria-selected="false" href>R (<code>distributions3</code>)</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-5-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-3" role="tab" aria-controls="tabset-5-3" aria-selected="false" href>Python</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-5-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-4" role="tab" aria-controls="tabset-5-4" aria-selected="false" href>Julia</a></li></ul>
+<div class="tab-content">
+<div id="tabset-5-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-5-1-tab">
+
+</div>
+<div id="tabset-5-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-2-tab">
+
+</div>
+<div id="tabset-5-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-3-tab">
+
+</div>
+<div id="tabset-5-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-4-tab">
+
+</div>
+</div>
+</div>
 </section>
+</section>
+<section id="advanced-example-poisson-multinomial-connection" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="advanced-example-poisson-multinomial-connection"><span class="header-section-number">4</span> Advanced example: Poisson-Multinomial connection</h2>
+<p>Using the <code>polish-jvs.csv</code> dataset, consider 3 NACE sections: <strong>C</strong> (manufacturing), <strong>G</strong> (trade), <strong>P</strong> (education). If vacancies in each section follow independent Poisson distributions, then conditional on the total number of vacancies, the allocation across sections follows a Multinomial distribution.</p>
+<ol type="1">
+<li>For each section, calculate the per-entity mean <span class="math inline">\(\hat{\lambda}_j\)</span> and the total Poisson rate <span class="math inline">\(\hat{\Lambda}_j = n_j \cdot \hat{\lambda}_j\)</span> (where <span class="math inline">\(n_j\)</span> is the number of entities in section <span class="math inline">\(j\)</span>). Compute the theoretical proportions <span class="math inline">\(\hat{\pi}_j = \hat{\Lambda}_j / \sum_k \hat{\Lambda}_k\)</span>.</li>
+<li>Simulate 1000 independent Poisson draws from <span class="math inline">\(\mathrm{Pois}(\hat{\Lambda}_j)\)</span> for each section. For each draw compute the total <span class="math inline">\(N = X_C + X_G + X_P\)</span> and conditional proportions <span class="math inline">\(X_j / N\)</span>. Compare mean conditional proportions with <span class="math inline">\(\hat{\pi}\)</span>.</li>
+<li>Draw from <span class="math inline">\(\mathrm{Mult}(N_{\text{obs}}, \hat{\pi})\)</span> where <span class="math inline">\(N_{\text{obs}}\)</span> is the observed total vacancies across the 3 sections. Compare the expected counts <span class="math inline">\(N_{\text{obs}} \cdot \hat{\pi}_j\)</span> with the observed totals.</li>
+</ol>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-6-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-1" role="tab" aria-controls="tabset-6-1" aria-selected="true" href>R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-6-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-2" role="tab" aria-controls="tabset-6-2" aria-selected="false" href>Python</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-6-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-3" role="tab" aria-controls="tabset-6-3" aria-selected="false" href>Julia</a></li></ul>
+<div class="tab-content">
+<div id="tabset-6-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-6-1-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="do">## read data and filter 3 sections</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>jvs <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;../data/polish-jvs.csv&quot;</span>)</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>jvs3 <span class="ot">&lt;-</span> jvs[jvs<span class="sc">$</span>nace <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;C&quot;</span>, <span class="st">&quot;G&quot;</span>, <span class="st">&quot;P&quot;</span>), ]</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="do">## step 1: estimate per-entity lambdas, total rates (Lambda), and pi</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>lambda_hat <span class="ot">&lt;-</span> <span class="fu">tapply</span>(jvs3<span class="sc">$</span>vacancies, jvs3<span class="sc">$</span>nace, mean)</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>n_entities <span class="ot">&lt;-</span> <span class="fu">tapply</span>(jvs3<span class="sc">$</span>vacancies, jvs3<span class="sc">$</span>nace, length)</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>Lambda_hat <span class="ot">&lt;-</span> n_entities <span class="sc">*</span> lambda_hat  <span class="do">## total Poisson rates</span></span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>pi_hat <span class="ot">&lt;-</span> Lambda_hat <span class="sc">/</span> <span class="fu">sum</span>(Lambda_hat)</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>lambda_hat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        C         G         P 
+2.2528930 1.2360319 0.1792275 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>Lambda_hat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    C     G     P 
+15964  6504  1805 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>pi_hat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         C          G          P 
+0.65768549 0.26795205 0.07436246 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="do">## step 2: simulate 1000 independent Poisson draws per section</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>n_sim <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>sim_C <span class="ot">&lt;-</span> <span class="fu">rpois</span>(n_sim, Lambda_hat[<span class="st">&quot;C&quot;</span>])</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>sim_G <span class="ot">&lt;-</span> <span class="fu">rpois</span>(n_sim, Lambda_hat[<span class="st">&quot;G&quot;</span>])</span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>sim_P <span class="ot">&lt;-</span> <span class="fu">rpois</span>(n_sim, Lambda_hat[<span class="st">&quot;P&quot;</span>])</span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a><span class="do">## conditional proportions (exclude cases where total = 0)</span></span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>totals <span class="ot">&lt;-</span> sim_C <span class="sc">+</span> sim_G <span class="sc">+</span> sim_P</span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>valid <span class="ot">&lt;-</span> totals <span class="sc">&gt;</span> <span class="dv">0</span></span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>cond_prop <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">C =</span> <span class="fu">mean</span>(sim_C[valid] <span class="sc">/</span> totals[valid]),</span>
+<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">G =</span> <span class="fu">mean</span>(sim_G[valid] <span class="sc">/</span> totals[valid]),</span>
+<span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">P =</span> <span class="fu">mean</span>(sim_P[valid] <span class="sc">/</span> totals[valid])</span>
+<span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb38-16"><a href="#cb38-16" aria-hidden="true" tabindex="-1"></a><span class="do">## compare with theoretical pi</span></span>
+<span id="cb38-17"><a href="#cb38-17" aria-hidden="true" tabindex="-1"></a><span class="fu">rbind</span>(<span class="at">simulated =</span> <span class="fu">unlist</span>(cond_prop), <span class="at">theoretical =</span> pi_hat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                    C         G          P
+simulated   0.6576137 0.2680009 0.07438534
+theoretical 0.6576855 0.2679520 0.07436246</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="do">## step 3: multinomial -- expected vs observed</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>obs_totals <span class="ot">&lt;-</span> <span class="fu">tapply</span>(jvs3<span class="sc">$</span>vacancies, jvs3<span class="sc">$</span>nace, sum)</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>n_total <span class="ot">&lt;-</span> <span class="fu">sum</span>(obs_totals)</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>expected <span class="ot">&lt;-</span> n_total <span class="sc">*</span> pi_hat</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a><span class="fu">rbind</span>(<span class="at">observed =</span> obs_totals, <span class="at">expected =</span> expected)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             C    G    P
+observed 15964 6504 1805
+expected 15964 6504 1805</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="do">## simulate from multinomial</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>mult_draws <span class="ot">&lt;-</span> <span class="fu">rmultinom</span>(<span class="dv">1000</span>, <span class="at">size =</span> n_total, <span class="at">prob =</span> pi_hat)</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(mult_draws) <span class="ot">&lt;-</span> <span class="fu">names</span>(pi_hat)</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a><span class="do">## compare means of multinomial draws with observed</span></span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">observed =</span> obs_totals,</span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">mult_mean =</span> <span class="fu">rowMeans</span>(mult_draws)</span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  observed mult_mean
+C    15964 15964.061
+G     6504  6504.274
+P     1805  1804.665</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-6-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy <span class="im">import</span> stats</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a><span class="co">## read data and filter 3 sections</span></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>jvs <span class="op">=</span> pd.read_csv(<span class="st">&quot;../data/polish-jvs.csv&quot;</span>)</span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>jvs3 <span class="op">=</span> jvs[jvs[<span class="st">&quot;nace&quot;</span>].isin([<span class="st">&quot;C&quot;</span>, <span class="st">&quot;G&quot;</span>, <span class="st">&quot;P&quot;</span>])]</span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a><span class="co">## step 1: estimate per-entity lambdas, total rates (Lambda), and pi</span></span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>lambda_hat <span class="op">=</span> jvs3.groupby(<span class="st">&quot;nace&quot;</span>)[<span class="st">&quot;vacancies&quot;</span>].mean()</span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>n_entities <span class="op">=</span> jvs3.groupby(<span class="st">&quot;nace&quot;</span>)[<span class="st">&quot;vacancies&quot;</span>].count()</span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>Lambda_hat <span class="op">=</span> n_entities <span class="op">*</span> lambda_hat  <span class="co">## total Poisson rates</span></span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>pi_hat <span class="op">=</span> Lambda_hat <span class="op">/</span> Lambda_hat.<span class="bu">sum</span>()</span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Lambda (per-entity):&quot;</span>, lambda_hat.to_dict())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Lambda (per-entity): {&#39;C&#39;: 2.252893028506915, &#39;G&#39;: 1.2360319270239453, &#39;P&#39;: 0.17922748485751167}</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Lambda (total):&quot;</span>, Lambda_hat.to_dict())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Lambda (total): {&#39;C&#39;: 15963.999999999998, &#39;G&#39;: 6504.0, &#39;P&#39;: 1805.0}</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Pi:&quot;</span>, pi_hat.to_dict())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Pi: {&#39;C&#39;: 0.6576854941704774, &#39;G&#39;: 0.267952045482635, &#39;P&#39;: 0.07436246034688748}</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="co">## step 2: simulate 1000 independent Poisson draws per section</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">123</span>)</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>n_sim <span class="op">=</span> <span class="dv">1000</span></span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>sim <span class="op">=</span> {s: stats.poisson(Lambda_hat[s]).rvs(n_sim) <span class="cf">for</span> s <span class="kw">in</span> [<span class="st">&quot;C&quot;</span>, <span class="st">&quot;G&quot;</span>, <span class="st">&quot;P&quot;</span>]}</span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>totals <span class="op">=</span> sim[<span class="st">&quot;C&quot;</span>] <span class="op">+</span> sim[<span class="st">&quot;G&quot;</span>] <span class="op">+</span> sim[<span class="st">&quot;P&quot;</span>]</span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>valid <span class="op">=</span> totals <span class="op">&gt;</span> <span class="dv">0</span></span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>cond_prop <span class="op">=</span> {s: np.mean(sim[s][valid] <span class="op">/</span> totals[valid]) <span class="cf">for</span> s <span class="kw">in</span> [<span class="st">&quot;C&quot;</span>, <span class="st">&quot;G&quot;</span>, <span class="st">&quot;P&quot;</span>]}</span>
+<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Simulated proportions:&quot;</span>, {k: <span class="bu">round</span>(v, <span class="dv">4</span>) <span class="cf">for</span> k, v <span class="kw">in</span> cond_prop.items()})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Simulated proportions: {&#39;C&#39;: 0.6576, &#39;G&#39;: 0.2679, &#39;P&#39;: 0.0744}</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Theoretical pi:&quot;</span>, {k: <span class="bu">round</span>(v, <span class="dv">4</span>) <span class="cf">for</span> k, v <span class="kw">in</span> pi_hat.items()})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Theoretical pi: {&#39;C&#39;: 0.6577, &#39;G&#39;: 0.268, &#39;P&#39;: 0.0744}</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="co">## step 3: multinomial -- expected vs observed</span></span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>obs_totals <span class="op">=</span> jvs3.groupby(<span class="st">&quot;nace&quot;</span>)[<span class="st">&quot;vacancies&quot;</span>].<span class="bu">sum</span>()</span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>n_total <span class="op">=</span> obs_totals.<span class="bu">sum</span>()</span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>expected <span class="op">=</span> n_total <span class="op">*</span> pi_hat</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Observed:&quot;</span>, obs_totals.to_dict())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Observed: {&#39;C&#39;: 15964, &#39;G&#39;: 6504, &#39;P&#39;: 1805}</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Expected:&quot;</span>, {k: <span class="bu">round</span>(v, <span class="dv">1</span>) <span class="cf">for</span> k, v <span class="kw">in</span> expected.items()})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Expected: {&#39;C&#39;: 15964.0, &#39;G&#39;: 6504.0, &#39;P&#39;: 1805.0}</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="co">## simulate from multinomial</span></span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">123</span>)</span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>mult_draws <span class="op">=</span> np.random.multinomial(n_total, pi_hat.values, size<span class="op">=</span><span class="dv">1000</span>)</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Multinomial means:&quot;</span>, <span class="bu">dict</span>(<span class="bu">zip</span>(pi_hat.index, mult_draws.mean(axis<span class="op">=</span><span class="dv">0</span>).<span class="bu">round</span>(<span class="dv">1</span>))))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Multinomial means: {&#39;C&#39;: 15960.9, &#39;G&#39;: 6506.7, &#39;P&#39;: 1805.4}</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-6-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-3-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">CSV</span>, <span class="bu">DataFrames</span>, <span class="bu">Distributions</span>, <span class="bu">Random</span>, <span class="bu">Statistics</span></span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a><span class="co">## read data and filter 3 sections</span></span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>jvs <span class="op">=</span> CSV.<span class="fu">read</span>(<span class="st">&quot;../data/polish-jvs.csv&quot;</span>, DataFrame)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>57480×7 DataFrame
+   Row │ id        woj    public  size     nace     nace_division  vacancies
+       │ Float64   Int64  Int64   String7  String1  Int64          Int64
+───────┼─────────────────────────────────────────────────────────────────────
+     1 │  27350.0     14       1  Large    O                   84          2
+     2 │  26705.0     14       1  Large    O                   84          1
+     3 │ 257456.0     24       1  Large    O                   84          2
+     4 │ 183657.0     16       1  Medium   O                   84          0
+     5 │ 200042.0     18       1  Medium   O                   84          0
+     6 │  26050.0     14       1  Large    R                   91          4
+     7 │  27351.0     14       1  Large    R                   91          2
+     8 │  26707.0     14       1  Large    R                   91          0
+   ⋮   │    ⋮        ⋮      ⋮        ⋮        ⋮           ⋮            ⋮
+ 57474 │  12042.0      8       1  Medium   R                   91          0
+ 57475 │ 203343.0      8       0  Small    A                    1          0
+ 57476 │ 244800.0      8       1  Medium   P                   85          0
+ 57477 │  62309.0      8       1  Medium   R                   93          0
+ 57478 │ 106708.0      8       0  Medium   B                    8          0
+ 57479 │  62264.0      8       0  Medium   B                    8          0
+ 57480 │ 255865.0      8       0  Small    C                   23          0
+                                                           57465 rows omitted</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>jvs3 <span class="op">=</span> <span class="fu">filter</span>(r <span class="op">-&gt;</span> r.nace <span class="kw">in</span> [<span class="st">&quot;C&quot;</span>, <span class="st">&quot;G&quot;</span>, <span class="st">&quot;P&quot;</span>], jvs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>22419×7 DataFrame
+   Row │ id        woj    public  size     nace     nace_division  vacancies
+       │ Float64   Int64  Int64   String7  String1  Int64          Int64
+───────┼─────────────────────────────────────────────────────────────────────
+     1 │  27353.0     14       1  Large    P                   85          0
+     2 │  21051.0     12       1  Large    P                   85          0
+     3 │  21052.0     12       1  Large    P                   85          5
+     4 │  16348.0     10       1  Large    P                   85          1
+     5 │  57948.0     30       1  Large    P                   85          0
+     6 │   3809.0      2       1  Large    P                   85         19
+     7 │   7097.0      4       1  Large    P                   85          1
+     8 │   6178.0      4       1  Large    P                   85         18
+   ⋮   │    ⋮        ⋮      ⋮        ⋮        ⋮           ⋮            ⋮
+ 22413 │ 244414.0      8       1  Medium   P                   85          0
+ 22414 │  12428.0      8       0  Large    C                   15          0
+ 22415 │ 250529.0      8       1  Medium   P                   85          0
+ 22416 │  11469.0      8       1  Medium   P                   85          0
+ 22417 │  11470.0      8       1  Large    P                   85          0
+ 22418 │ 244800.0      8       1  Medium   P                   85          0
+ 22419 │ 255865.0      8       0  Small    C                   23          0
+                                                           22404 rows omitted</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a><span class="co">## step 1: estimate per-entity lambdas, total rates (Lambda), and pi</span></span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>lambda_hat <span class="op">=</span> <span class="fu">combine</span>(<span class="fu">groupby</span>(jvs3, <span class="op">:</span>nace),</span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span>vacancies <span class="op">=&gt;</span> mean <span class="op">=&gt;</span> <span class="op">:</span>lambda,</span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span>vacancies <span class="op">=&gt;</span> length <span class="op">=&gt;</span> <span class="op">:</span>n_entities)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>3×3 DataFrame
+ Row │ nace     lambda    n_entities
+     │ String1  Float64   Int64
+─────┼───────────────────────────────
+   1 │ P        0.179227       10071
+   2 │ C        2.25289         7086
+   3 │ G        1.23603         5262</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sort!</span>(lambda_hat, <span class="op">:</span>nace)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>3×3 DataFrame
+ Row │ nace     lambda    n_entities
+     │ String1  Float64   Int64
+─────┼───────────────────────────────
+   1 │ C        2.25289         7086
+   2 │ G        1.23603         5262
+   3 │ P        0.179227       10071</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>lambda_hat.Lambda <span class="op">=</span> lambda_hat.n_entities <span class="op">.*</span> lambda_hat.lambda  <span class="co">## total Poisson rates</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>3-element Vector{Float64}:
+ 15963.999999999998
+  6504.0
+  1805.0</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>lambda_hat.<span class="cn">pi</span> <span class="op">=</span> lambda_hat.Lambda <span class="op">./</span> <span class="fu">sum</span>(lambda_hat.Lambda)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>3-element Vector{Float64}:
+ 0.6576854941704774
+ 0.267952045482635
+ 0.07436246034688748</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>lambda_hat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>3×5 DataFrame
+ Row │ nace     lambda    n_entities  Lambda   pi
+     │ String1  Float64   Int64       Float64  Float64
+─────┼───────────────────────────────────────────────────
+   1 │ C        2.25289         7086  15964.0  0.657685
+   2 │ G        1.23603         5262   6504.0  0.267952
+   3 │ P        0.179227       10071   1805.0  0.0743625</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="co">## step 2: simulate 1000 independent Poisson draws per section</span></span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Random</span>.<span class="fu">seed!</span>(<span class="fl">123</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>TaskLocalRNG()</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>n_sim <span class="op">=</span> <span class="fl">1000</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>1000</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a>sims <span class="op">=</span> <span class="fu">Dict</span>(r.nace <span class="op">=&gt;</span> <span class="fu">rand</span>(<span class="fu">Poisson</span>(r.Lambda), n_sim) <span class="cf">for</span> r <span class="kw">in</span> <span class="fu">eachrow</span>(lambda_hat))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Dict{String1, Vector{Int64}} with 3 entries:
+  &quot;C&quot; =&gt; [15882, 15758, 16026, 16087, 15974, 16159, 15794, 16038, 15866, 15881 …
+  &quot;P&quot; =&gt; [1810, 1847, 1790, 1801, 1761, 1785, 1831, 1776, 1848, 1863  …  1732, …
+  &quot;G&quot; =&gt; [6523, 6537, 6445, 6567, 6510, 6469, 6351, 6550, 6456, 6498  …  6550, …</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a>totals <span class="op">=</span> sims[<span class="st">&quot;C&quot;</span>] <span class="op">.+</span> sims[<span class="st">&quot;G&quot;</span>] <span class="op">.+</span> sims[<span class="st">&quot;P&quot;</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>1000-element Vector{Int64}:
+ 24215
+ 24142
+ 24261
+ 24455
+ 24245
+ 24413
+ 23976
+ 24364
+ 24170
+ 24242
+     ⋮
+ 23888
+ 24202
+ 24150
+ 24203
+ 24443
+ 24390
+ 24328
+ 24442
+ 24299</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb82"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a>valid <span class="op">=</span> totals <span class="op">.&gt;</span> <span class="fl">0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>1000-element BitVector:
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ ⋮
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb84"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb84-2"><a href="#cb84-2" aria-hidden="true" tabindex="-1"></a>cond_prop <span class="op">=</span> <span class="fu">Dict</span>(s <span class="op">=&gt;</span> <span class="fu">mean</span>(sims[s][valid] <span class="op">./</span> totals[valid]) <span class="cf">for</span> s <span class="kw">in</span> [<span class="st">&quot;C&quot;</span>, <span class="st">&quot;G&quot;</span>, <span class="st">&quot;P&quot;</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Dict{String, Float64} with 3 entries:
+  &quot;C&quot; =&gt; 0.657592
+  &quot;P&quot; =&gt; 0.0743238
+  &quot;G&quot; =&gt; 0.268084</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb86"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">&quot;Simulated: &quot;</span>, cond_prop)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Simulated: Dict(&quot;C&quot; =&gt; 0.657591661364059, &quot;P&quot; =&gt; 0.07432383896942883, &quot;G&quot; =&gt; 0.26808449966651204)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb88"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">&quot;Theoretical: &quot;</span>, <span class="fu">Dict</span>(r.nace <span class="op">=&gt;</span> <span class="fu">round</span>(r.<span class="cn">pi</span>, digits<span class="op">=</span><span class="fl">4</span>) <span class="cf">for</span> r <span class="kw">in</span> <span class="fu">eachrow</span>(lambda_hat)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Theoretical: Dict{String1, Float64}(&quot;C&quot; =&gt; 0.6577, &quot;P&quot; =&gt; 0.0744, &quot;G&quot; =&gt; 0.268)</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb90"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a><span class="co">## step 3: multinomial -- expected vs observed</span></span>
+<span id="cb90-2"><a href="#cb90-2" aria-hidden="true" tabindex="-1"></a>obs_totals <span class="op">=</span> <span class="fu">combine</span>(<span class="fu">groupby</span>(jvs3, <span class="op">:</span>nace), <span class="op">:</span>vacancies <span class="op">=&gt;</span> sum <span class="op">=&gt;</span> <span class="op">:</span>total)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>3×2 DataFrame
+ Row │ nace     total
+     │ String1  Int64
+─────┼────────────────
+   1 │ P         1805
+   2 │ C        15964
+   3 │ G         6504</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sort!</span>(obs_totals, <span class="op">:</span>nace)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>3×2 DataFrame
+ Row │ nace     total
+     │ String1  Int64
+─────┼────────────────
+   1 │ C        15964
+   2 │ G         6504
+   3 │ P         1805</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a>n_total <span class="op">=</span> <span class="fu">sum</span>(obs_totals.total)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>24273</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a>expected <span class="op">=</span> n_total <span class="op">.*</span> lambda_hat.<span class="cn">pi</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>3-element Vector{Float64}:
+ 15963.999999999998
+  6504.0
+  1804.9999999999998</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb98"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb98-2"><a href="#cb98-2" aria-hidden="true" tabindex="-1"></a><span class="fu">DataFrame</span>(nace <span class="op">=</span> lambda_hat.nace, observed <span class="op">=</span> obs_totals.total, expected <span class="op">=</span> <span class="fu">round</span>.(expected, digits<span class="op">=</span><span class="fl">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>3×3 DataFrame
+ Row │ nace     observed  expected
+     │ String1  Int64     Float64
+─────┼─────────────────────────────
+   1 │ C           15964   15964.0
+   2 │ G            6504    6504.0
+   3 │ P            1805    1805.0</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
 </section>
 
 </main>

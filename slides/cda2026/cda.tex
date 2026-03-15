@@ -971,8 +971,8 @@ We can denote this distribution as $X \sim \mathrm{B}(n,p)$.
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.8\textwidth]{figs/binomial_example.png}
-    \caption{Probability density function (PDF) of the binomial distribution}
+    \includegraphics[width=0.7\textwidth]{figs/binomial_example.png}
+    \caption{Probability mass function (PMF) of the binomial distribution}
 \end{figure}
 
 \end{frame}
@@ -994,7 +994,7 @@ We can denote this distribution as $X \sim \mathrm{B}(n,p)$.
 %%%%%%%%%%%% Geometric %%%%%%%%%%%%%%%%%%
 
 \begin{frame}{Geometric distribution}
-    A Geometric distribution characterizes the number of failures before the first success in a sequence of independent Bernoulli trials with success rate $p \in (0,1]$
+    A Geometric distribution characterizes the number of trials until the first success in a sequence of independent Bernoulli trials with success rate $p \in (0,1]$
     
     \begin{equation}
         P(X = k) = p (1 - p)^{k-1}, \quad \text{for } k = 1, 2, 3, \ldots.
@@ -1016,8 +1016,8 @@ We can denote this distribution as $X \sim \mathrm{G}(p)$.
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.8\textwidth]{figs/geometric_example.png}
-    \caption{Probability density function (PDF) of the geometric distribution}
+    \includegraphics[width=0.7\textwidth]{figs/geometric_example.png}
+    \caption{Probability mass function (PMF) of the geometric distribution}
 \end{figure}
 
 \end{frame}
@@ -1027,7 +1027,7 @@ We can denote this distribution as $X \sim \mathrm{G}(p)$.
 \begin{itemize}
     \item Expected value 
         \begin{equation}
-            E(X) = \frac{1-p}{p}
+            E(X) = \frac{1}{p}
         \end{equation}
     \item Variance
             \begin{equation}
@@ -1061,7 +1061,7 @@ We can denote this distribution as $X \sim \mathrm{NB}(r,p)$.
 \end{frame}
 
 \begin{frame}{Negative Binomial: Mean and Size Parameterization}
-    An alternative parameterization ses the mean $\mu$ and size $\theta$ (dispersion parameter):
+    An alternative parameterization uses the mean $\mu$ and size $\theta$ (dispersion parameter):
     \[
     p = \frac{\theta}{\theta + \mu}, \quad \text{where } r = \theta
     \]
@@ -1093,8 +1093,8 @@ We can denote this distribution as $X \sim \mathrm{NB}(r,p)$.
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.8\textwidth]{figs/nbinomial_example.png}
-    \caption{Probability density function (PDF) of the negative binomial distribution}
+    \includegraphics[width=0.7\textwidth]{figs/nbinomial_example.png}
+    \caption{Probability mass function (PMF) of the negative binomial distribution}
 \end{figure}
 
 \end{frame}
@@ -1105,11 +1105,11 @@ We can denote this distribution as $X \sim \mathrm{NB}(r,p)$.
 \begin{itemize}
     \item Expected value 
         \begin{equation}
-            E(X) = \frac{pr}{1-p}
+            E(X) = \frac{r(1-p)}{p}
         \end{equation}
     \item Variance
             \begin{equation}
-            V(X) = \frac{pr}{(1-p)^2}
+            V(X) = \frac{r(1-p)}{p^2}
         \end{equation}
 \end{itemize}
 \end{frame}
@@ -1137,8 +1137,8 @@ We can denote this distribution as $X \sim \mathrm{NB}(r,p)$.
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.8\textwidth]{figs/poisson_example.png}
-    \caption{Probability density function (PDF) of the poisson binomial distribution}
+    \includegraphics[width=0.7\textwidth]{figs/poisson_example.png}
+    \caption{Probability mass function (PMF) of the Poisson distribution}
 \end{figure}
 
 \end{frame}
@@ -1158,6 +1158,29 @@ We can denote this distribution as $X \sim \mathrm{NB}(r,p)$.
 \end{itemize}
 \end{frame}
 
+\begin{frame}{Overdispersion and underdispersion}
+
+The \textbf{dispersion index} is defined as
+\begin{equation}
+    D = \frac{\text{Var}(X)}{E(X)}
+\end{equation}
+
+\begin{itemize}
+    \item \textbf{Equidispersion} ($D = 1$): Poisson distribution assumes $\text{Var}(X) = E(X) = \lambda$
+    \item \textbf{Overdispersion} ($D > 1$): $\text{Var}(X) > E(X)$ -- very common in real count data (e.g.\ heterogeneity across units, clustering)
+    \item \textbf{Underdispersion} ($D < 1$): $\text{Var}(X) < E(X)$ -- less common
+\end{itemize}
+
+\vspace{0.3cm}
+
+The Negative Binomial distribution naturally handles overdispersion:
+\begin{equation}
+    \text{Var}(X) = \mu + \frac{\mu^2}{\theta} > \mu = E(X)
+\end{equation}
+
+As $\theta \to \infty$, $\text{Var}(X) \to \mu$ and $\text{NB} \to \text{Poisson}$.
+
+\end{frame}
 
 %%%%%%%%%%%% Multinomial %%%%%%%%%%%%%%%%%%
 
@@ -1224,6 +1247,16 @@ and
 
 \end{frame}
 
+\begin{frame}{Poisson-Multinomial connection -- advanced example}
+
+An advanced worked example demonstrating this relation using the Polish Job Vacancy Survey data (vacancies by NACE section) is available in the notebook.
+
+\vspace{0.5cm}
+
+\textbf{Idea}: If vacancies in each NACE section follow independent Poisson distributions, then conditional on the total number of vacancies, the allocation across sections follows a Multinomial distribution.
+
+\end{frame}
+
 %%%%%%%%%%%% relations %%%%%%%%%%%%%%%%%%
 
 \begin{frame}[fragile]{Relations between distributions}
@@ -1241,7 +1274,7 @@ and
 \begin{frame}[fragile]{Relations between distributions}
     \begin{figure}
         \centering
-        \includegraphics[width=\textwidth]{figs/probs-rel.png}
+        \includegraphics[width=0.7\textwidth]{figs/probs-rel.png}
         \caption{Relationships among some of univariate probability distributions. Source:  \href{https://en.wikipedia.org/wiki/Relationships_among_probability_distributions}{Wikipedia (2019)}}
     \end{figure}
     
@@ -1268,6 +1301,7 @@ and
             Random & r<name>() & <name>.rvs() & rand(<name>) \\
             \hline
         \end{tabular}
+\\
 where <name> denotes name of distribution. In R see also \texttt{distributions3} package which mimics \texttt{Distributions.jl} package.
     \end{table}
 \end{frame}
@@ -1289,10 +1323,19 @@ where <name> denotes name of distribution. In R see also \texttt{distributions3}
     Number of car accidents in one day in some city follows Poisson distribution with expected value $\lambda=2$. Find the probability that at most 4 car accidents happen.
 \end{frame}
 
+\begin{frame}{Exercise 3}
+    Read in \texttt{polish-jvs.csv} dataset (Polish Job Vacancy Survey) and do the following:
+\begin{enumerate}
+    \item Calculate $\hat{\lambda}$ (average number of vacancies). Using the Poisson distribution, calculate $P(X=0)$ and compare with the observed proportion of zeros.
+    \item Create a binary variable \texttt{has\_vacancy} ($1$ if vacancies $> 0$, $0$ otherwise). Estimate $\hat{p}$. Using $\mathrm{B}(10, \hat{p})$, calculate $P(Y \geq 3)$.
+    \item Generate 1000 random draws from $\mathrm{Pois}(\hat{\lambda})$. Compare with the observed distribution of vacancies.
+\end{enumerate}
+\end{frame}
+
 \begin{frame}{Interesting discrete distributions}
 \begin{itemize}
     \item Beta-Binomial
-    \item Zero-inflated Poisson/NB 
+    \item Zero-inflated Poisson/NB -- when data has more zeros than a standard count distribution predicts; models the data as a mixture of a point mass at zero and a count distribution (Poisson or NB)
     \item Tweedie
     \item Generalized Poisson
 \end{itemize}

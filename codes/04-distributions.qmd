@@ -281,7 +281,224 @@ at most 4 car accidents happen.
 
 ### Exercise 3
 
-Read in `data/polish-jvs.csv` and do the following exercise:
+Read in `data/polish-jvs.csv` dataset (Polish Job Vacancy Survey) and do the following:
 
+1. Calculate the average number of vacancies ($\hat{\lambda}$) from the data. Using the Poisson distribution with this $\hat{\lambda}$, calculate the probability that a randomly selected entity reports exactly 0 vacancies ($P(X=0)$). Compare with the observed proportion of zeros in the data.
+2. Create a binary variable `has_vacancy` equal to 1 if `vacancies > 0` and 0 otherwise. Calculate $\hat{p}$ as the proportion of entities with at least one vacancy. Using the Binomial distribution with $n=10$ and this $\hat{p}$, calculate the probability that out of 10 randomly selected entities, at least 3 report a vacancy ($P(Y \geq 3)$).
+3. Generate 1000 random draws from Poisson($\hat{\lambda}$) distribution (where $\hat{\lambda}$ is the mean from point 1). Compare the distribution of simulated values with the observed distribution of vacancies (e.g. using a table of frequencies or a bar plot).
 
+::: panel-tabset
+## R
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+## R (`distributions3`)
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+## Python
+
+```{python}
+
+```
+
+```{python}
+
+```
+
+```{python}
+
+```
+
+## Julia
+
+```{julia}
+
+```
+
+```{julia}
+
+```
+
+```{julia}
+
+```
+:::
+
+## Advanced example: Poisson-Multinomial connection
+
+Using the `polish-jvs.csv` dataset, consider 3 NACE sections: **C** (manufacturing), **G** (trade), **P** (education). If vacancies in each section follow independent Poisson distributions, then conditional on the total number of vacancies, the allocation across sections follows a Multinomial distribution.
+
+1. For each section, calculate the per-entity mean $\hat{\lambda}_j$ and the total Poisson rate $\hat{\Lambda}_j = n_j \cdot \hat{\lambda}_j$ (where $n_j$ is the number of entities in section $j$). Compute the theoretical proportions $\hat{\pi}_j = \hat{\Lambda}_j / \sum_k \hat{\Lambda}_k$.
+2. Simulate 1000 independent Poisson draws from $\mathrm{Pois}(\hat{\Lambda}_j)$ for each section. For each draw compute the total $N = X_C + X_G + X_P$ and conditional proportions $X_j / N$. Compare mean conditional proportions with $\hat{\pi}$.
+3. Draw from $\mathrm{Mult}(N_{\text{obs}}, \hat{\pi})$ where $N_{\text{obs}}$ is the observed total vacancies across the 3 sections. Compare the expected counts $N_{\text{obs}} \cdot \hat{\pi}_j$ with the observed totals.
+
+::: panel-tabset
+## R
+
+```{r}
+## read data and filter 3 sections
+jvs <- read.csv("../data/polish-jvs.csv")
+jvs3 <- jvs[jvs$nace %in% c("C", "G", "P"), ]
+
+## step 1: estimate per-entity lambdas, total rates (Lambda), and pi
+lambda_hat <- tapply(jvs3$vacancies, jvs3$nace, mean)
+n_entities <- tapply(jvs3$vacancies, jvs3$nace, length)
+Lambda_hat <- n_entities * lambda_hat  ## total Poisson rates
+pi_hat <- Lambda_hat / sum(Lambda_hat)
+lambda_hat
+Lambda_hat
+pi_hat
+```
+
+```{r}
+## step 2: simulate 1000 independent Poisson draws per section
+set.seed(123)
+n_sim <- 1000
+sim_C <- rpois(n_sim, Lambda_hat["C"])
+sim_G <- rpois(n_sim, Lambda_hat["G"])
+sim_P <- rpois(n_sim, Lambda_hat["P"])
+
+## conditional proportions (exclude cases where total = 0)
+totals <- sim_C + sim_G + sim_P
+valid <- totals > 0
+cond_prop <- data.frame(
+  C = mean(sim_C[valid] / totals[valid]),
+  G = mean(sim_G[valid] / totals[valid]),
+  P = mean(sim_P[valid] / totals[valid])
+)
+## compare with theoretical pi
+rbind(simulated = unlist(cond_prop), theoretical = pi_hat)
+```
+
+```{r}
+## step 3: multinomial -- expected vs observed
+obs_totals <- tapply(jvs3$vacancies, jvs3$nace, sum)
+n_total <- sum(obs_totals)
+expected <- n_total * pi_hat
+
+rbind(observed = obs_totals, expected = expected)
+
+## simulate from multinomial
+set.seed(123)
+mult_draws <- rmultinom(1000, size = n_total, prob = pi_hat)
+rownames(mult_draws) <- names(pi_hat)
+## compare means of multinomial draws with observed
+data.frame(
+  observed = obs_totals,
+  mult_mean = rowMeans(mult_draws)
+)
+```
+
+## Python
+
+```{python}
+import pandas as pd
+import numpy as np
+from scipy import stats
+
+## read data and filter 3 sections
+jvs = pd.read_csv("../data/polish-jvs.csv")
+jvs3 = jvs[jvs["nace"].isin(["C", "G", "P"])]
+
+## step 1: estimate per-entity lambdas, total rates (Lambda), and pi
+lambda_hat = jvs3.groupby("nace")["vacancies"].mean()
+n_entities = jvs3.groupby("nace")["vacancies"].count()
+Lambda_hat = n_entities * lambda_hat  ## total Poisson rates
+pi_hat = Lambda_hat / Lambda_hat.sum()
+print("Lambda (per-entity):", lambda_hat.to_dict())
+print("Lambda (total):", Lambda_hat.to_dict())
+print("Pi:", pi_hat.to_dict())
+```
+
+```{python}
+## step 2: simulate 1000 independent Poisson draws per section
+np.random.seed(123)
+n_sim = 1000
+sim = {s: stats.poisson(Lambda_hat[s]).rvs(n_sim) for s in ["C", "G", "P"]}
+totals = sim["C"] + sim["G"] + sim["P"]
+valid = totals > 0
+
+cond_prop = {s: np.mean(sim[s][valid] / totals[valid]) for s in ["C", "G", "P"]}
+print("Simulated proportions:", {k: round(v, 4) for k, v in cond_prop.items()})
+print("Theoretical pi:", {k: round(v, 4) for k, v in pi_hat.items()})
+```
+
+```{python}
+## step 3: multinomial -- expected vs observed
+obs_totals = jvs3.groupby("nace")["vacancies"].sum()
+n_total = obs_totals.sum()
+expected = n_total * pi_hat
+
+print("Observed:", obs_totals.to_dict())
+print("Expected:", {k: round(v, 1) for k, v in expected.items()})
+
+## simulate from multinomial
+np.random.seed(123)
+mult_draws = np.random.multinomial(n_total, pi_hat.values, size=1000)
+print("Multinomial means:", dict(zip(pi_hat.index, mult_draws.mean(axis=0).round(1))))
+```
+
+## Julia
+
+```{julia}
+using CSV, DataFrames, Distributions, Random, Statistics
+
+## read data and filter 3 sections
+jvs = CSV.read("../data/polish-jvs.csv", DataFrame)
+jvs3 = filter(r -> r.nace in ["C", "G", "P"], jvs)
+
+## step 1: estimate per-entity lambdas, total rates (Lambda), and pi
+lambda_hat = combine(groupby(jvs3, :nace),
+    :vacancies => mean => :lambda,
+    :vacancies => length => :n_entities)
+sort!(lambda_hat, :nace)
+lambda_hat.Lambda = lambda_hat.n_entities .* lambda_hat.lambda  ## total Poisson rates
+lambda_hat.pi = lambda_hat.Lambda ./ sum(lambda_hat.Lambda)
+lambda_hat
+```
+
+```{julia}
+## step 2: simulate 1000 independent Poisson draws per section
+Random.seed!(123)
+n_sim = 1000
+sims = Dict(r.nace => rand(Poisson(r.Lambda), n_sim) for r in eachrow(lambda_hat))
+totals = sims["C"] .+ sims["G"] .+ sims["P"]
+valid = totals .> 0
+
+cond_prop = Dict(s => mean(sims[s][valid] ./ totals[valid]) for s in ["C", "G", "P"])
+println("Simulated: ", cond_prop)
+println("Theoretical: ", Dict(r.nace => round(r.pi, digits=4) for r in eachrow(lambda_hat)))
+```
+
+```{julia}
+## step 3: multinomial -- expected vs observed
+obs_totals = combine(groupby(jvs3, :nace), :vacancies => sum => :total)
+sort!(obs_totals, :nace)
+n_total = sum(obs_totals.total)
+expected = n_total .* lambda_hat.pi
+
+DataFrame(nace = lambda_hat.nace, observed = obs_totals.total, expected = round.(expected, digits=1))
+```
+:::
 
