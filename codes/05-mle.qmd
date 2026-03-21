@@ -1,0 +1,590 @@
+---
+title: "Maximum likelihood estimation"
+author: "Maciej Beręsewicz"
+format: 
+  html:
+    embed-resources: true
+    table-of-contents: true
+    number-sections: true
+editor: source
+execute: 
+  eval: true
+  warning: false
+  message: false
+---
+
+```{r setup, echo = FALSE}
+JuliaCall::julia_setup(JULIA_HOME = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/")
+knitr::opts_chunk$set(engine.path = list(
+  python = "/opt/anaconda3/bin/python3.12",
+  julia = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/"
+))
+```
+
+## Setup
+
+::: panel-tabset
+## R
+
+There is no need to install or load packages. All functionalities are
+build in. One may consider installing `maxLik` package or `rootSolve`
+
+```{r, eval = FALSE}
+install.packages(c("maxLik", "rootSolve"))
+```
+
+```{r}
+library(maxLik)
+library(rootSolve)
+```
+
+## Python
+
+Load modules
+
+```{python}
+import scipy.stats as st
+import numpy as np
+import pandas as pd
+from scipy.optimize import minimize
+from scipy.optimize import fsolve ## finding root(s) of a function -- for scalar parameter
+```
+
+## Julia
+
+Install modules
+
+```{julia, eval = F}
+using Pkg
+Pkg.add(["Optim", "Roots"])
+```
+
+Load packages
+
+```{julia}
+using Distributions
+using DataFrames
+using Random
+using Optim
+using Roots
+```
+:::
+
+## Exercise -- zero-truncated Poisson distribution
+
+We start with likelihood function
+
+$$
+    L = \prod_i \frac{\lambda^x_i}{(e^\lambda-1)x_i!},
+$$
+
+then we compute log-likelihood
+
+$$
+   \log L = \sum_i x_i \log \lambda - \sum_i \log(e^\lambda-1) - \sum_i \log(x_i!) 
+$$
+
+In order to get estimate of $\lambda$ we need to calculate derivatives
+with respect to this parameter. Thus, gradient is given by
+
+$$
+    \frac{\partial \log L}{\partial \lambda} = \frac{\sum_i x_i}{\lambda} - \frac{n e^\lambda}{e^\lambda - 1} = 
+    \frac{\sum_i x_i}{\lambda} - n \frac{e^\lambda}{e^\lambda - 1}.    
+$$
+
+We can also calculate second derivative (hessian)
+
+$$
+    \frac{\partial^2 \log L}{\partial \lambda^2} =  - \frac{\sum_i x_i}{\lambda^2} + n \frac{e^\lambda}{(e^\lambda-1)^2}.
+$$
+
+:::::: panel-tabset
+## R
+
+### Functions and data
+
+Functions
+
+```{r}
+ll <- function(par, x) {
+  m <- sum(x)*log(par)-length(x)*log(exp(par)-1)
+  m
+}
+
+ll_min <- function(par, x) {
+  m <- sum(x)*log(par)-length(x)*log(exp(par)-1)
+  -m
+}
+
+## gradient
+grad <- function(par, x)  {
+  g <- sum(x) / par - length(x)*exp(par)/(exp(par)-1)
+  g
+}
+
+
+## hessian
+hess <- function(par, x) {
+  h <- -sum(x)/par^2 + length(x)*exp(par)/(exp(par)-1)^2 
+  h
+}
+
+## using pdf
+
+pdf_ztpois <- function(lambda, x) {
+    pdfztpoiss <- dpois(x, lambda)/(1-dpois(0, lambda))
+    return(-sum(log(pdfztpoiss)))
+}
+
+
+```
+
+Data
+
+```{r}
+d <-  c(1645,183,37, 13,1,1)
+x <- rep(1:6,d)
+```
+
+### Solutions based on log-likelihood function
+
+Solution using `stats::optim` -- minimization by default
+
+::: panel-tabset
+## Code and result
+
+```{r}
+optim(par = 1, fn = ll_min, x = x, method = "Brent", lower = 0, upper = 6, hessian = T)
+optim(par = 1, fn = ll_min, gr = grad, x = x, method = "Brent", lower = 0, upper = 6, hessian = T)
+optim(par = 1, fn = pdf_ztpois,  x = x, method = "Brent", lower = 0, upper = 6, hessian = T) 
+```
+
+## LLMs (Claude 3.7 Sonnet)
+
+**Prompt**
+
+```
+provide interpretation of the results
+```
+
+I'll provide an interpretation of the `stats::optim` optimization result you've shared.
+
+This result shows the output of an optimization procedure where you're minimizing a negative log-likelihood function (`ll_min`) for some statistical model:
+
+1. **Parameter Estimate (`$par`)**: The optimization found that `0.3086189` is the optimal value for the parameter you were estimating.
+
+2. **Minimum Value (`$value`)**: At this parameter value, the objective function (`ll_min`) equals `656.1294`. Since this appears to be a negative log-likelihood minimization, this represents the minimum negative log-likelihood.
+
+3. **Counts**: The `NA` values indicate that the function doesn't report how many function or gradient evaluations were used.
+
+4. **Convergence (`$convergence = 0`)**: A value of 0 means the optimization algorithm successfully converged to a solution.
+
+5. **Message**: The `NULL` message further confirms there were no issues with convergence.
+
+6. **Hessian (`$hessian`)**: The value `3358.237` is the second derivative of your objective function at the minimum. The large positive value indicates:
+   - The solution is a true minimum (not a maximum or saddle point)
+   - The curvature is steep, suggesting the parameter estimate is quite precise
+
+The method used was "Brent", which is appropriate for one-dimensional optimization problems with bounds. You constrained the parameter to be between 0 and 6.
+
+In summary, you've successfully estimated a parameter with value approximately 0.31, which minimizes your objective function. The optimization converged properly, and the large Hessian value suggests high confidence in this estimate.
+
+**Prompt**
+
+```
+How do you know if this was successful?
+```
+
+Based on the output you shared, there are several indicators that the optimization was successful:
+
+1. **Convergence code = 0**: The `$convergence` value of 0 is the primary signal of success. In `optim()`, a convergence value of 0 explicitly means the algorithm converged successfully. Any other value would indicate some type of failure or issue.
+
+2. **No error message**: The `$message` is NULL, meaning the optimizer didn't encounter any problems worth reporting. If there had been issues with convergence, boundary constraints, or other problems, there would typically be a message explaining the issue.
+
+3. **Positive definite Hessian**: The Hessian value (3358.237) is large and positive, indicating you've found a well-defined minimum. This suggests the parameter estimate is stable and the optimization surface has a clear "bowl" shape at that point.
+
+4. **Parameter within bounds**: Your optimal value (0.3086189) falls well within your specified bounds (0 to 6), meaning the solution wasn't artificially constrained by your boundary conditions.
+
+5. **Reasonable function value**: While this depends on your specific problem, the function value of 656.1294 appears to be a reasonable value for a negative log-likelihood in many statistical applications.
+
+If you want to further verify the success, you could:
+- Perform multiple optimizations from different starting points to confirm they converge to the same value
+- Plot the objective function around the minimum to visually confirm the convergence
+- Calculate the standard error from the Hessian ($SE = 1/\sqrt{Hessian}$) to assess parameter precision
+
+## LLMs (Grok)
+
+**Prompt**
+
+```
+provide interpretation of the results
+```
+
+The output you’ve provided appears to be from an optimization process in R, likely from a function like `optim()` or a similar statistical modeling routine. Let’s break it down step-by-step to interpret what it means:
+
+### Components of the Output
+1. **`$par`**: `[1] 0.3086189`
+   - This represents the parameter estimate(s) at which the optimization converged. In this case, it seems to be a single parameter with a value of approximately `0.309`. This could be a coefficient, rate, or some other optimized value depending on the model or function being used.
+
+2. **`$value`**: `[1] 656.1294`
+   - This is the value of the objective function (e.g., log-likelihood, sum of squares, or cost function) at the optimized parameter(s). For example, if this is from a maximum likelihood estimation, `656.1294` might be the maximized log-likelihood value. A lower or higher value doesn’t inherently mean "better" unless you know the context (e.g., minimizing vs. maximizing).
+
+3. **`$counts`**: 
+   ```
+   function gradient 
+         NA       NA 
+   ```
+   - This shows the number of times the objective function and its gradient were evaluated during the optimization process. Here, both are `NA`, which suggests that this information wasn’t tracked or returned by the optimization method used. Some methods (e.g., Nelder-Mead) don’t use gradients, so this could indicate such a method was applied.
+
+4. **`$convergence`**: `[1] 0`
+   - This is a convergence code. A value of `0` typically indicates successful convergence—meaning the optimization algorithm found a solution within its tolerance criteria. Non-zero values would indicate issues like failure to converge or reaching iteration limits.
+
+5. **`$message`**: `NULL`
+   - This field would contain a message if there were additional details or errors (e.g., "iteration limit reached"). Since it’s `NULL`, there’s no extra information, which aligns with successful convergence.
+
+6. **`$hessian`**: 
+   ```
+          [,1]
+   [1,] 3358.237
+   ```
+   - The Hessian matrix provides information about the curvature of the objective function at the solution. Here, it’s a 1x1 matrix with a value of `3358.237`. Since there’s only one parameter (based on `$par`), this is the second derivative of the objective function with respect to that parameter. A positive value suggests the solution is at a minimum (if minimizing) or a maximum (if maximizing), assuming the optimization goal aligns with standard conventions.
+
+### Interpretation
+- **What happened?** The optimization process successfully found a parameter value (`0.3086189`) that optimizes the objective function, resulting in a value of `656.1294`. The algorithm converged (`$convergence = 0`), and the Hessian indicates a well-defined solution with positive curvature (`3358.237`), suggesting stability at this point.
+- **Is it good?** Without context (e.g., what the parameter represents, whether the goal was to minimize or maximize, or what the objective function is), it’s hard to say definitively. However, the convergence code of `0` is a good sign that the process worked as intended.
+- **Hessian insight**: The large positive Hessian value (`3358.237`) implies the objective function is steeply curved at the solution, which often means the parameter estimate is precise (low variance), assuming this is part of a statistical estimation process like maximum likelihood.
+
+### Possible Context
+This could be from:
+- A simple statistical model (e.g., fitting a single parameter like a rate in a Poisson process).
+- An optimization task (e.g., minimizing a cost function or maximizing a likelihood).
+- The Hessian suggests it might be related to statistical inference, where the inverse of the Hessian approximates the variance of the parameter estimate (here, variance ≈ `1/3358.237 ≈ 0.000298`).
+
+**Prompt**
+
+```
+How do you know if this was successful?
+```
+
+To determine if the optimization process represented by your output was "successful," we need to evaluate the provided components against standard criteria for optimization success. Here's how we can assess this based on your output:
+
+### Key Indicators of Success
+1. **Convergence Code (`$convergence`)**: `[1] 0`
+   - **What it means**: In most optimization routines (e.g., R’s `optim()`), a convergence value of `0` indicates that the algorithm successfully converged to a solution within its specified tolerance. Non-zero values (e.g., 1, 10) typically signal failure, such as exceeding iteration limits or inability to find a stable solution.
+   - **Interpretation**: This is a strong sign of success. The algorithm stopped because it met its criteria for an acceptable solution, not because it ran into a problem.
+
+2. **Parameter Estimate (`$par`)**: `[1] 0.3086189`
+   - **What it means**: The optimization returned a finite, non-extreme value for the parameter. If the result were `NaN`, `Inf`, or something implausible (e.g., a probability > 1 in a probability model), it might suggest failure.
+   - **Interpretation**: The value looks reasonable and finite, supporting the idea that the optimization didn’t diverge or produce nonsense.
+
+3. **Objective Function Value (`$value`)**: `[1] 656.1294`
+   - **What it means**: This is the value of the objective function (e.g., cost, likelihood) at the solution. By itself, it doesn’t tell us success unless we know the goal (minimize or maximize) and have a baseline for comparison.
+   - **Interpretation**: Without context, we can’t judge if `656.1294` is "good," but the fact that it’s finite and the algorithm converged suggests it’s a valid outcome of the process.
+
+4. **Hessian (`$hessian`)**: 
+   ```
+          [,1]
+   [1,] 3358.237
+   ```
+   - **What it means**: The Hessian reflects the curvature of the objective function at the solution. A positive value (like `3358.237`) indicates a local minimum if minimizing, or a local maximum if maximizing, assuming the optimization aligns with these goals. A negative or near-zero Hessian might suggest a saddle point or flat region, which could indicate issues.
+   - **Interpretation**: The large positive value suggests the solution is stable and well-defined (not on a flat or ambiguous surface), which is consistent with a successful optimization. In statistical contexts, it also implies the parameter estimate is precise (low variance).
+
+5. **Counts (`$counts`)**: 
+   ```
+   function gradient 
+         NA       NA 
+   ```
+   - **What it means**: This shows how many times the function and gradient were evaluated. `NA` values suggest this info wasn’t tracked, possibly because the method (e.g., Nelder-Mead) doesn’t use gradients or the output suppressed this detail.
+   - **Interpretation**: This doesn’t directly indicate success or failure—it’s neutral. Success is still judged by convergence, not this field.
+
+6. **Message (`$message`)**: `NULL`
+   - **What it means**: A `NULL` message means no errors or warnings were flagged. If there were issues (e.g., "iteration limit reached"), they’d typically appear here.
+   - **Interpretation**: The absence of an error message reinforces that the process completed without obvious problems.
+
+### How Do We Know It’s Successful?
+The optimization is considered **successful** if the algorithm:
+- Converged to a solution (✔️ `$convergence = 0`).
+- Produced a plausible parameter estimate (✔️ `$par = 0.3086189` looks finite and reasonable).
+- Returned a stable solution, as indicated by the Hessian (✔️ positive and large `3358.237` suggests a well-defined optimum).
+- Didn’t encounter errors (✔️ `$message = NULL`).
+
+Based on these metrics, **this optimization appears successful**. The algorithm found a solution that satisfies its internal criteria, and the results are mathematically coherent.
+
+### Caveats
+- **Context Matters**: Success in a technical sense (convergence) doesn’t guarantee the result is meaningful for your specific problem. For example:
+  - If you were minimizing a cost function, is `656.1294` low enough?
+  - If maximizing a likelihood, is this value consistent with your expectations or data?
+  - Does `0.3086189` make sense for what the parameter represents (e.g., a rate, probability, slope)?
+- **Method-Specific Nuances**: Some optimization methods (e.g., Nelder-Mead) don’t use Hessians or gradients fully, so the large Hessian might reflect a post-hoc calculation rather than the method’s own assessment.
+
+### Final Verdict
+From the output alone, the optimization was **successful** because it converged (`0`), produced finite results, and shows a stable solution (positive Hessian). To confirm this aligns with your goals, you’d need to check if the parameter and objective function value match your expectations or problem requirements. If you can provide the context (e.g., what function was used, what the goal was), I can refine this further!
+
+:::
+
+Solution using `stats::optimize` -- maximization by default
+
+```{r}
+optimize(f = ll_min, lower = 0, upper = 6, x = x) ## minimization
+optimize(f = ll, lower = 0, upper = 6, x = x, maximum = T) ## maximization
+```
+
+Solution using `stats::nlm` -- minimization
+
+```{r}
+nlm(f = ll_min, p = 1, x = x, hessian = T)
+```
+
+::: panel-tabset
+
+## Code and result
+
+Solution using `maxLik::maxLik` -- maximization by default
+
+```{r}
+maxLik(logLik = ll, start = 1,  x = x) |> summary()
+maxLik(logLik = ll, start = 1, grad = grad, hess = hess,  x = x) |> summary()
+```
+
+## LLMs (Claude 3.7 Sonnet)
+
+**Prompt**
+
+```
+Provide interpretation of the results -------------------------------------------- Maximum Likelihood estimation Newton-Raphson maximisation, 6 iterations Return code 8: successive function values within relative tolerance limit (reltol) Log-Likelihood: -656.1294 1 free parameters Estimates: Estimate Std. error t value Pr(> t) [1,] 0.30862 0.01725 17.89 <2e-16 *** --- Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 --------------------------------------------
+```
+
+This output shows the results of a Maximum Likelihood estimation using the Newton-Raphson method. Here's my interpretation:
+
+1. **Convergence Information**:
+   - The algorithm converged after 6 iterations
+   - Return code 8 indicates successful convergence (specifically that successive function values fell within the relative tolerance limit)
+   - The log-likelihood value at the maximum is -656.1294 (matching the minimum value from your previous optimization result, as expected)
+
+2. **Parameter Estimate**:
+   - The estimated parameter value is 0.30862, which is essentially identical to the value (0.3086189) found in your previous optimization
+   - Standard error is 0.01725, indicating high precision in the estimate
+   - t-value of 17.89 is very large, suggesting the parameter is highly significant
+   - p-value < 2e-16 (extremely small) confirms that the parameter is statistically significant at any conventional significance level (hence the three asterisks ***)
+
+3. **Statistical Significance**:
+   - The three asterisks (***) indicate significance at the 0.001 level, which is the highest level of significance shown in the output
+   - This means there is very strong evidence that this parameter is non-zero and important to your model
+
+This output is consistent with and expands upon your previous optimization results. The high precision (low standard error) aligns with the large Hessian value seen earlier. The parameter estimate is highly significant, suggesting it plays an important role in your model.
+
+The matching log-likelihood values between the two outputs (-656.1294) confirms that both approaches found the same optimum, giving you additional confidence in the result.
+
+## LLMs (Grok)
+
+**Prompt**
+
+```
+Provide interpretation of the results -------------------------------------------- Maximum Likelihood estimation Newton-Raphson maximisation, 6 iterations Return code 8: successive function values within relative tolerance limit (reltol) Log-Likelihood: -656.1294 1 free parameters Estimates: Estimate Std. error t value Pr(> t) [1,] 0.30862 0.01725 17.89 <2e-16 *** --- Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 --------------------------------------------
+```
+
+This output comes from a **Maximum Likelihood Estimation (MLE)** process using the **Newton-Raphson method** to maximize a log-likelihood function. Let’s interpret the results step-by-step:
+
+---
+
+### Overview of the Process
+- **Method**: Newton-Raphson maximization
+  - This is an iterative optimization algorithm that uses the first (gradient) and second (Hessian) derivatives of the log-likelihood to find the maximum. It’s efficient for well-behaved functions but can be sensitive to starting values or poorly conditioned problems.
+- **Iterations**: 6
+  - The algorithm took 6 steps to converge, which is relatively quick and suggests the problem was well-specified.
+- **Return Code**: 8
+  - "Successive function values within relative tolerance limit (reltol)" means the algorithm stopped because the change in the log-likelihood between iterations became smaller than a predefined threshold (reltol). This indicates **successful convergence**, though it’s a technical rather than absolute guarantee of the global maximum.
+
+---
+
+### Key Results
+1. **Log-Likelihood**: `-656.1294`
+   - This is the value of the log-likelihood function at the maximum. Since MLE maximizes the likelihood, this is the "best" fit the model could achieve given the data and the parameter.
+   - **Interpretation**: The negative value is typical in log-likelihood outputs (logarithms of probabilities are often negative). It’s not inherently "good" or "bad" without context (e.g., comparing to other models or a baseline). A less negative value would indicate a better fit, but this depends on the model and data scale.
+
+2. **Number of Free Parameters**: 1
+   - The model has one parameter being estimated, which keeps things simple. This could be, for example, a rate (e.g., Poisson), a mean (e.g., normal distribution), or a slope in a regression model.
+
+3. **Parameter Estimates**:
+   ```
+   Estimate  Std. error  t value  Pr(> t)
+   [1,] 0.30862   0.01725    17.89   <2e-16 ***
+   ```
+   - **Estimate**: `0.30862`
+     - This is the maximum likelihood estimate (MLE) of the parameter. Its meaning depends on the model (e.g., a rate, probability, or coefficient).
+   - **Standard Error**: `0.01725`
+     - This measures the precision of the estimate. It’s derived from the inverse of the Hessian (in this case, √(1/3358.237) ≈ 0.01725, matching your earlier output). A small standard error indicates a precise estimate.
+   - **t value**: `17.89`
+     - Calculated as `Estimate / Std. error = 0.30862 / 0.01725 ≈ 17.89`. This is a test statistic for the null hypothesis that the parameter equals 0. A large absolute value suggests the parameter is significantly different from 0.
+   - **Pr(> t)**: `<2e-16 ***`
+     - The p-value is extremely small (< 0.0000000000000002), indicating strong evidence against the null hypothesis (parameter = 0). The `***` signifies high statistical significance (p < 0.001).
+   - **Interpretation**: The parameter is highly significant, and the estimate of `0.30862` is reliable and precise, with a tight confidence interval (e.g., roughly 0.30862 ± 1.96 * 0.01725 ≈ [0.2748, 0.3424] at 95% confidence).
+
+---
+
+### Connecting to Your Previous Output
+Your earlier output matches this:
+- `$par = 0.3086189` ≈ `Estimate = 0.30862` (minor rounding difference).
+- `$value = 656.1294` matches `Log-Likelihood = -656.1294` (positive in `optim()` since it minimizes by default, so `-value` is the log-likelihood).
+- `$convergence = 0` aligns with "successful convergence" (Return Code 8 is a specific success condition).
+- `$hessian = 3358.237` relates to the standard error: `Std. error = 1 / √Hessian = 1 / √3358.237 ≈ 0.01725`.
+- `$counts` and `$message` being `NA`/`NULL` are typical for some R outputs where extra details aren’t shown.
+
+---
+
+### Was It Successful?
+Yes, the estimation was **successful**:
+1. **Convergence**: The Newton-Raphson method stopped after 6 iterations with Return Code 8, indicating the log-likelihood stabilized within the tolerance limit.
+2. **Finite Results**: The estimate (`0.30862`) and log-likelihood (`-656.1294`) are reasonable and finite.
+3. **Precision**: The small standard error (`0.01725`) and large Hessian (`3358.237`) confirm a well-defined maximum.
+4. **Statistical Significance**: The t-value (`17.89`) and tiny p-value (`<2e-16`) show the parameter is meaningfully different from 0.
+
+---
+
+### Interpretation in Context
+- **Model Fit**: The log-likelihood of `-656.1294` suggests how well the model fits the data. To judge if it’s "good," you’d need:
+  - A baseline model (e.g., null model log-likelihood) to compute a likelihood ratio test.
+  - Comparison to alternative models (e.g., via AIC or BIC).
+- **Parameter Meaning**: Without knowing the model (e.g., Poisson, logistic regression), `0.30862` could be a rate, odds ratio, or slope. Its positive value and significance suggest it’s an important factor in the data.
+- **Practical Success**: The technical success (convergence, precision) is clear, but practical success depends on whether this fit meets your research or application goals.
+
+---
+
+### Summary
+The MLE process successfully estimated a single parameter at `0.30862` with high precision (standard error `0.01725`) and strong statistical significance (p < 0.0001). The log-likelihood reached `-656.1294` after 6 iterations, and the Newton-Raphson method converged within tolerance. This is a technically successful optimization, and the result is reliable. If you provide the model or data context, I can refine what `0.30862` and `-656.1294` imply for your specific problem!
+
+
+:::
+
+
+### Solutions based on gradient function
+
+Solutions using `stats::uniroot`
+
+```{r}
+uniroot(grad, lower = 0.1, upper = 0.9, x = x) 
+```
+
+Solutions using `rootSolve::multiroot`
+
+```{r}
+multiroot(grad, start = 0.1, x = x) 
+```
+
+## Python
+
+### Functions and data
+
+Functions
+
+```{python}
+def ll(par,x):
+  m = np.sum(x)*np.log(par)-len(x)*np.log(np.exp(par)-1)
+  return -m
+
+## gradient
+def grad(par,x):
+  g = np.sum(x) / par - len(x)*np.exp(par)/(np.exp(par)-1)
+  return -g
+
+## hessian
+def hess(par,x):
+  h = -np.sum(x)/par**2 + len(x)*np.exp(par)/(np.exp(par)-1)**2 
+  return h
+
+## pdf
+def pdf_ztpois(lam, x):
+  pdfztpoiss = st.poisson(lam).pmf(x) / (1 - st.poisson(lam).pmf(0))
+  return -np.sum(np.log(pdfztpoiss))
+```
+
+Data
+
+```{python}
+d = np.array([1645,183,37, 13,1,1])
+x = np.repeat(np.arange(1,7), d)
+```
+
+### Solutions
+
+```{python}
+res = minimize(fun=ll, x0=[0.5], method = "Newton-CG", jac = grad, hess = hess, args = (x))
+res
+```
+
+```{python}
+res = minimize(fun=pdf_ztpois, x0=[0.5], args = (x), method = "Nelder-Mead")
+res
+```
+
+```{python}
+res = fsolve(func = grad, x0 = 1, fprime = hess, args = (x,), full_output = True)
+res
+```
+
+```{python}
+np.sqrt(1/np.abs(hess(res[0], x)))
+```
+
+## Julia
+
+### Functions and data
+
+```{julia}
+## logL - minimization
+function ll(par, x)
+  par = par[1]
+  m = sum(x)*log(par)-length(x)*log(exp(par)-1)
+  return -m
+end
+
+
+## gradient
+function grad!(G,par,x) 
+  par = par[1]
+  G[1] = -(sum(x) / par - length(x)*exp(par)/(exp(par)-1))
+  return G
+end 
+
+## hessian
+function hess!(H,par, x)
+  par = par[1]
+  H[1] = -sum(x)/par^2 + length(x)*exp(par)/(exp(par)-1)^2 
+  return H
+end
+
+fun_opt = TwiceDifferentiable(par -> ll(par, x), 
+                              (G, par) -> grad!(G, par, x), 
+                              (H, par) -> hess!(H, par, x), 
+                              [0.5])
+
+function grad(par,x) 
+  par = par[1]
+  g = -(sum(x) / par - length(x)*exp(par)/(exp(par)-1))
+  return g
+end 
+
+
+```
+
+Data
+
+```{julia}
+d = [1645,183,37, 13,1,1]
+x = vcat(fill.(1:6, d)...)
+```
+
+### Solutions
+
+```{julia}
+res = optimize(fun_opt, [0.5])
+```
+
+```{julia}
+Optim.minimizer(res)
+```
+
+```{julia}
+find_zero(z -> grad(z, x), 0.2)
+```
+::::::

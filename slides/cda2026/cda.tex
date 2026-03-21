@@ -1341,7 +1341,746 @@ where <name> denotes name of distribution. In R see also \texttt{distributions3}
 \end{itemize}
 \end{frame}
 
+\section{Fitting distributions}
 
+\begin{frame}{}
+\begin{center}
+    \Large{Fitting distributions}
+\end{center}    
+\end{frame}
+
+\subsection{Maximum likelihood}
+
+\begin{frame}{Maximum likelihood -- theory}
+    \begin{itemize}
+        \item Maximum likelihood estimation (MLE) is a method of estimating the parameters of a statistical model, given observations.
+        \item The method obtains the parameter estimates by finding the parameter values that maximize the likelihood function. 
+        \item The estimates are called maximum likelihood estimates, which is also abbreviated as MLE.
+        
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Maximum likelihood -- theory}
+\begin{itemize}
+    \item If $f_{i}\left(x_{i} ; \boldsymbol{\theta}\right)$ is the PMF/PDF of a random variable where  $\boldsymbol{\theta}$ is a vector of parameters (e.g. $\lambda$ in Poisson distribution), then for a collection of $N$ independent samples from this distribution, the joint distribution of the random vector $x_i$ is
+    \begin{equation}
+        L(\boldsymbol{\theta}; \mathbf{x})=\prod_{i=1}^{N} f_{i}\left(x_{i}; \boldsymbol{\theta} \right)
+    \end{equation}
+\item The maximum likelihood estimate of the parameters  $\boldsymbol{\theta}$ are the parameters which maximize this function with $\boldsymbol{x}$ fixed and given by the data:
+
+\begin{equation}
+    \hat{\boldsymbol{\theta}} =\arg \max _{\boldsymbol{\theta}} L(\boldsymbol{\theta}; \mathbf{x} ) =\arg \max _{\boldsymbol{\theta}} l(\boldsymbol{\theta}; \mathbf{x}),
+\end{equation}
+where the log-likelihood is
+\begin{equation}
+    l(\boldsymbol{\theta}; \mathbf{x}) = \sum_{i=1}^{N} \log f\left(x_{i}; \boldsymbol{\theta} \right)
+\end{equation}
+Note: in practice, many optimizers minimize, so we minimize $-l(\boldsymbol{\theta}; \mathbf{x})$.
+\end{itemize}
+    
+\end{frame}
+
+\begin{frame}{Maximum likelihood -- example (Poisson distribution)}
+
+\begin{itemize}
+    \item Likelihood function for Poisson distribution is
+    \begin{equation}
+        L\left(\lambda ; x_{1}, \ldots, x_{n}\right)=\prod_{j=1}^{n} \exp (-\lambda) \frac{1}{x_{j} !} \lambda^{x_{j}}
+    \end{equation}
+    \item The log-likelihood function is
+    \begin{equation}
+        l\left(\lambda ; x_{1}, \ldots, x_{n}\right)=-n \lambda-\sum_{j=1}^{n} \ln \left(x_{j} !\right)+\ln (\lambda) \sum_{j=1}^{n} x_{j}
+        \end{equation}
+    \item The maximum likelihood estimator of $\lambda$
+    \begin{equation}
+        \hat{\lambda}=\frac{1}{n} \sum_{j=1}^{n} x_{j}
+    \end{equation}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Score function and Fisher information}
+\begin{itemize}
+    \item The \textbf{score function} is the gradient of the log-likelihood with respect to $\boldsymbol{\theta}$:
+    \begin{equation}
+        S(\boldsymbol{\theta}) = \frac{\partial l(\boldsymbol{\theta}; \mathbf{x})}{\partial \boldsymbol{\theta}}
+    \end{equation}
+    At the MLE, $S(\hat{\boldsymbol{\theta}}) = \boldsymbol{0}$ (first-order condition).
+    \item The \textbf{Fisher information} measures the curvature of the log-likelihood:
+    \begin{equation}
+        I(\boldsymbol{\theta}) = -E\left[\frac{\partial^2 l(\boldsymbol{\theta}; \mathbf{x})}{\partial \boldsymbol{\theta} \partial \boldsymbol{\theta}^T}\right]
+    \end{equation}
+    \item The observed Fisher information is $\hat{I}(\hat{\boldsymbol{\theta}}) = -H(\hat{\boldsymbol{\theta}})$, where $H$ is the Hessian.
+    \item The standard error of the MLE is obtained from:
+    \begin{equation}
+        \text{SE}(\hat{\theta}_j) = \sqrt{\left[I(\hat{\boldsymbol{\theta}})^{-1}\right]_{jj}} \approx \sqrt{\left[-H(\hat{\boldsymbol{\theta}})^{-1}\right]_{jj}}
+    \end{equation}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Maximum likelihood -- practice}
+\begin{itemize}
+    \item Depending on the distribution it is possible to derive closed form for the parameters $\boldsymbol{\theta}$.
+    \item In other cases, numerical methods that require gradient (first derivatives) and hessian (second derivatives) are used, for example Newton-Raphson's method:
+    \item Statistical packages also implement derivative-free optimization methods that do not require to calculate gradient and hessian.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Maximum likelihood -- practice}
+    \begin{table}[]
+        \centering
+        \caption{Overview of functions for ML}
+        %\label{tab:my_label}
+        \begin{tabular}{cp{3cm}cp{3cm}}
+        \hline
+          \textbf{Language}   & \textbf{R} &  \textbf{Python} & \textbf{Julia} \\
+        \hline
+         Packages  & stats, maxLik, optimParallel& scipy.optimize &  Optim, JuMP \\
+        Functions & optim(), maxLik(), optimParallel() & minimize() & Optim::optimize(), JuMP::optimize()\\
+        \hline
+        \end{tabular}
+ 
+    \end{table}
+\end{frame}
+
+\begin{frame}{Newton's method -- single parameter function}
+    Let $f$: $\mathbb{R}^1 \to \mathbb{R}^1 $ be a differentiable function. We seek a solution of $f'(\theta)=0$, starting from an initial estimate $\theta_0=\theta_1$. 
+    
+    \vspace{0.5cm}
+    
+    At the $n$'s step, given $\theta_n$,  compute the next approximation $\theta_{n+1}$ by
+    
+    \begin{equation}
+        \theta_{n+1} = \theta_{n} - \frac{f'(\theta_n)}{f''(\theta_n)}
+    \end{equation} 
+    
+    and repeat until converge (i.e. $|\theta_{n+1}-\theta_n| < \epsilon$).
+    
+    \vspace{0.5cm}
+    
+    For step by step examples see: \url{http://amsi.org.au/ESA_Senior_Years/SeniorTopic3/3j/3j_2content_2.html}.
+\end{frame}
+
+\begin{frame}{Newton-Raphson algorithm -- multivariate case}
+    Newton's method for optimization consists of applying Newton's method for solving systems of equations, where the equations are the first order conditions, saying that the gradient should equal the zero vector.
+    
+    \begin{equation}
+        \nabla \boldsymbol{f}(\boldsymbol{\theta}) = \boldsymbol{0}
+    \end{equation}
+    
+    A second order Taylor expansion of the left-hand side leads to the iterative scheme
+
+\begin{equation}
+    \boldsymbol{\theta}_{n+1} = \boldsymbol{\theta}_{n} - \boldsymbol{H}(\boldsymbol{\theta}_n)^{-1}\nabla \boldsymbol{f}(\boldsymbol{\theta}_n),
+\end{equation}
+
+where $\nabla \boldsymbol{f}$ is a gradient and $\boldsymbol{H}$ is a hessian of $\boldsymbol{f}$ (second order derivatives). 
+
+\end{frame}
+
+\begin{frame}{Optimization procedures}
+    There are plenty of different optimisation procedures that may be used for estimating parameters:
+    
+    \begin{enumerate}
+        \item Gradient free
+        \begin{itemize}
+            \item Nelder-Mead
+            \item Simulated Annealing
+            \item Particle Swarm
+        \end{itemize}
+        \item Gradient required
+        \begin{itemize}
+            \item Conjugate Gradient Descent
+            \item Gradient Descent
+            \item (L-)BFGS
+        \end{itemize}
+        \item Hessian required
+            \begin{itemize}
+                \item Newton's Method
+                \item Newton's Method With a Trust Region
+            \end{itemize}
+    \end{enumerate}
+    
+    For more, see \textbf{Optim.jl} documentation \url{https://julianlsolvers.github.io/Optim.jl} or \textbf{scipy.optimize} \url{https://docs.scipy.org/doc/scipy/reference/tutorial/optimize.html}.
+\end{frame}
+
+\begin{frame}{Procedures -- fitting specific distributions}
+    \begin{table}[]
+        \centering
+        \caption{Overview of functions}
+        %\label{tab:my_label}
+        \begin{tabular}{cp{3cm}p{2cm}p{2cm}}
+        \hline
+          \textbf{Language}   & \textbf{R} &  \textbf{Python} & \textbf{Julia} \\
+        \hline
+         Packages  & 
+         MASS, fitdistrplus, vcd & scipy.stats&  Distributions.jl\\
+        Functions &
+          MASS::fitdistr(), vcd::goodfit(), fitdistrplus::fitdist() & only continuous distributions & fit(), fit\_mle()\\
+        \hline
+        \end{tabular}
+ 
+    \end{table}
+\end{frame}
+
+
+\begin{frame}{Practice -- zero-truncated distribution}
+
+\begin{itemize}
+    \item Assume that $X$ follows zero-truncated Poisson distribution given by 
+    
+    \begin{equation}
+        P(X=x, X>0; \lambda) = \frac{f(x; \lambda)}{1 - f(0;\lambda)} = \frac{\lambda^x e^{-\lambda}}{x!(1-e^{-\lambda})} =  \frac{\lambda^x}{(e^\lambda-1)x!},
+        \label{eq-ztpoisson}
+    \end{equation}
+    complete the following task:
+    
+    \item estimate $\lambda$ based on the maximum likelihood estimation method.
+    \item Note that, obtaining $\lambda$ requires deriving log-likelihood function (also gradient with respect to $\lambda$) and applying optimization procedure (e.g. \texttt{optim} function).
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Zero-truncated distributions -- capture-recapture}
+\begin{itemize}
+    \justifying
+    \item Zero-truncated distributions are used to model the size of hard-to-reach populations, for instance: homeless, civilian casualties in wars, irregular population or drunk drivers.
+    \item Methods to estimate the size of the population are called \textbf{capture-recapture methods}. We will discuss them further in the lecture.
+    \item The main assumption is as follows: the true generating process is following Poisson distribution but data was truncated i.e. we observe only positive counts (1, 2, 3, 4...). Note that this is for a simple, naive model without covariates.
+    \item These counts refer to number of re-capures: 1 - captured only once, 2 - captured twice, 3 - capture three times etc. Example, following van der Heijden et al. (2003):
+    \begin{table}
+        \centering
+        \caption{Dutch irregular immigrants in 1995 (not effectively expelled)}
+        \begin{tabular}{r|rrrrrrr|r}
+        \hline
+        N    &  $0$ & $1$ & $2$ & $3$ & $4$  & $5$ & $6$ & $n$\\
+        \hline
+        unknown    &  unknown  & 1645 & 183 & 37 & 13 & 1 & 1 & 1880\\
+         \hline     
+        \end{tabular}
+    \end{table}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Zero-truncated distributions -- capture-recapture}
+To estimate the size of the population of irregular immigrants assuming the Poisson distribution we need to follow the steps:
+\begin{enumerate}
+    \item estimate unknown $\lambda$ parameter assuming zero-truncated Poisson distribution given \eqref{eq-ztpoisson}
+    \item estimate the population size using the following estimator
+    \begin{equation}
+        \hat{N} = \frac{n}{1 - f(x = 0; \hat{\lambda})},
+    \end{equation}
+    where $n$ is the observed number of counts and $f$ is the pdf of Poisson.
+    \item estimate the variance of this estimator (omitted here).
+\end{enumerate}
+\end{frame}
+
+\begin{frame}[allowframebreaks, fragile]{Practice -- exercise \#1 -- solution}
+We start with likelihood function
+
+\begin{equation}
+    L = \prod_i \frac{\lambda^x_i}{(e^\lambda-1)x_i!},
+\end{equation}
+
+then we compute log-likelihood
+
+\begin{equation}
+    l(\lambda; \mathbf{x}) = \log
+    \left(
+    \prod_i \frac{\lambda^x_i}{(e^\lambda-1)x_i!}
+    \right) = 
+    \sum_i \log 
+    \left( 
+    \frac{\lambda^x_i}{(e^\lambda-1)x_i!}
+    \right)
+\end{equation}
+after simplification we get
+
+\begin{equation}
+   l(\lambda; \mathbf{x}) = \sum_i x_i \log \lambda - \sum_i \log(e^\lambda-1) - \sum_i \log(x_i!) 
+\end{equation}
+
+\newpage
+
+In order to get estimate of $\lambda$ we need to calculate derivatives with respect to this parameter. Thus, gradient is given by 
+
+\begin{equation}
+    \frac{\partial l}{\partial \lambda} = \frac{\sum_i x_i}{\lambda} - \frac{n e^\lambda}{e^\lambda - 1} = 
+    \frac{\sum_i x_i}{\lambda} - n \frac{e^\lambda}{e^\lambda - 1}.    
+\end{equation}
+
+We can also calculate second derivative (hessian)
+
+\begin{equation}
+    \frac{\partial^2 l}{\partial \lambda^2} =  - \frac{\sum_i x_i}{\lambda^2} + n \frac{e^\lambda}{(e^\lambda-1)^2}.
+\end{equation}
+
+Based on that we can apply Newton-Raphson method. Here's possible solution using R, \texttt{maxLik} and  \texttt{extraDistr}.
+
+\begin{verbatim}
+library(maxLik)
+library(extraDistr) ## rtpois
+
+## log-likelihood function
+ll <- function(par, x) {
+  m <- sum(x)*log(par)-length(x)*log(exp(par)-1)
+  m
+}
+
+## gradient
+grad <- function(par, x)  {
+  g <- sum(x) / par - length(x)*exp(par)/(exp(par)-1)
+  g
+}
+
+
+## hessian
+hess <- function(par, x) {
+  h <- -sum(x)/par^2 + length(x)*exp(par)/(exp(par)-1)^2 
+  h
+}
+
+d <-  c(1645,183,37, 13,1,1)
+x <- rep(1:6,d)
+## without gradient and hessian
+res <- maxLik(logLik = ll, start = 1, x = x, method = "NR")
+
+## with gradient and hessian
+res2 <- maxLik(logLik = ll,  grad = grad, 
+            hess = hess, start = 1, x = x, method = "NR")
+\end{verbatim}
+
+\newpage
+
+Results for the approach without specifying gradient and hessian (they are calcuated using numerical methods, see \texttt{numDeriv} package).
+\begin{verbatim}
+--------------------------------------------
+Maximum Likelihood estimation
+Newton-Raphson maximisation, 6 iterations
+Return code 8: successive function values within 
+relative tolerance limit (reltol)
+Log-Likelihood: -656.1294
+1  free parameters
+Estimates:
+     Estimate Std. error t value Pr(> t)
+[1,]  0.30862    0.01725   17.89  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+--------------------------------------------
+\end{verbatim}
+
+\newpage
+
+Results for approach with specifying gradient and hessian.
+\begin{verbatim}
+--------------------------------------------
+Maximum Likelihood estimation
+Newton-Raphson maximisation, 6 iterations
+Return code 8: successive function values within 
+relative tolerance limit (reltol)
+Log-Likelihood: -656.1294
+1  free parameters
+Estimates:
+     Estimate Std. error t value Pr(> t)
+[1,]  0.30862    0.01726   17.88  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+--------------------------------------------
+\end{verbatim}
+\end{frame}
+
+
+
+\begin{frame}[fragile]{Practice - exercise \#1 -- by hand}
+    \begin{verbatim}
+x_0 <- 0.5 ## starting point
+
+for (i in 1:10) { 
+  
+  x_1 <- x_0 - grad(x_0, x)/hess(x_0, x)
+  
+  if ( abs(x_0 - x_1) < 0.001) {
+    cat("Result:", x_1, "\n")
+    cat("Algorithm converged after: ", i, " iterations.")
+    break()
+    
+  }
+  x_0 <- x_1
+
+}
+\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Practice - exercise \#1 -- using pdf}
+    \begin{verbatim}
+ll <- function(x, par) {
+  m <- dtpois(x, lambda = par, a = 0, log = TRUE)
+  sum(m)
+}
+
+d <-  c(1645,183,37, 13,1,1)
+x <- rep(1:6,d)
+res <- maxLik(logLik = ll, start = 1, x = x, method = "NR")
+summary(res)
+    \end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Practice - exercise \#1 -- optim}
+
+Optim is a MINIMIZATION procedure and for scalars Brent's method is used. 
+
+    \begin{verbatim}
+
+ll <- function(par, x) {
+  m <- sum(x)*log(par)-length(x)*log(exp(par)-1)
+  -sum(m)
+}
+
+## gradient
+grad <- function(par, x)  {
+  g <- sum(x) / par - length(x)*exp(par)/(exp(par)-1)
+  -sum(g)
+}
+
+optim(par = 0.5, fn = ll, gr = grad, 
+      method = "Brent", lower = 0, upper = 10, x = x, 
+      hessian = TRUE)
+\end{verbatim}
+\end{frame}
+
+
+
+
+\begin{frame}[fragile]{Practice - exercise \#1 -- numDeriv}
+Numerical Differentiation (see \url{https://github.com/bob-carpenter/ad-handbook/blob/master/ad-handbook-draft.pdf})
+
+\begin{verbatim}
+library(numDeriv)
+ll_func <- function(y, par) {
+     m <- sum(y)*log(par)-length(y)*log(exp(par)-1)
+     -sum(m)
+}
+grad_func <- function(y, par)  {
+     g <- sum(y) / par - length(y)*exp(par)/(exp(par)-1)
+     -sum(g)
+}
+numDeriv::grad(ll, x = 0.3086189, y = x)
+[1] -0.0001720925
+grad_func(y = x, par = 0.3086189)
+[1] -1.147304e-05
+\end{verbatim}
+\end{frame}
+
+
+\subsection{Assessment of the fit}
+
+\begin{frame}{Fitting discrete distributions}
+
+Fitting a discrete distribution involves three basic steps:
+
+    \begin{enumerate}
+    \justifying
+        \item Estimating the parameter(s) of the distribution from the data -- typically using maximum likelihood;
+        \item From this, we can calculate the fitted probabilities ($\hat{p}_k$) or equivalently, the model expected frequencies ($\hat{p}_kN$) [based on the CDF];
+        \item Finally, we can calculate goodness-of-fit test measuring the departure between the observed and fitted frequencies;
+    \end{enumerate}
+
+ \begin{itemize}
+    \item If we would like to compare two different distributions on a given data we may use information criteria (e.g. AIC or BIC);
+    \item Moreover, the selection of a distribution should also be driven by knowledge of underlying processes when available.
+ \end{itemize}
+\end{frame}
+
+\begin{frame}{Assessment of the fit -- tests}
+
+Often goodness-of-fit is examined with a classical (Pearson) goodness-of-fit (GOF) chisquare test
+    
+    \begin{equation}
+        \chi^2 = \sum_{k=1}^{K} \frac{\left(n_{k}-n \hat{p}_{k}\right)^{2}}{n \hat{p}_{k}} \sim \chi^{2}(K-s-1),
+    \end{equation}
+    
+    where $K$ is number of levels and $s$ is number of parameters. An alternative test statistic is the likelihood-ratio $G^2$ statistic
+    
+    \begin{equation}
+        G^{2}=\sum_{k=1}^{K} n_{k} \log \left(n_{k} / n \hat{p}_{k}\right) \sim \chi^2(K-s-1).
+    \end{equation}
+\end{frame}
+
+\begin{frame}{Information Criteria}
+    \begin{itemize}
+        \item AIC
+        $$
+        \text{AIC} = 2s - 2\log(\hat{L}),
+        $$
+        \item BIC
+        $$
+        \text{BIC} = \log(n) s - 2\log(\hat{L}),
+        $$
+         where $s$ is the number of parameters, $n$ is the number observations and $\log(\hat{L})$ is the value log-likelihood function estimated for a given distribution.
+         \item To compare two distributions on the same data we may use a likelihood ratio test given by:
+         $$
+         \text{LR} = -2\log\left(\frac{\hat{L}_1}{\hat{L}_2}\right) = 2\log(\hat{L}_2) - 2\log(\hat{L}_1) \sim \chi^2(k_2-k_1), 
+         $$
+         where $L_1$ is the log-lik of the first (reference) distribution and $L_2$ of the second, $k_1$ and $k_2$ denotes number of parameters of the first and second distribution.
+    \end{itemize}
+    
+   
+\end{frame}
+
+\begin{frame}{Visual inspection}
+\begin{itemize}
+    \item A fitted distribution should be evaluated using graphical methods.
+    \item There are plenty of ways to verify whether the distribution fits given data. One way to assess it is to use \textbf{rootogram}.
+    \item John Tukey introduced the Hanging Rootogram in 1971, for more details see Kleiber \& Zeileis (2016). Visualizing count data regressions using rootograms. The American Statistician, 70(3), 296-303.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Exploratory Data Analysis}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\textwidth]{figs/tukey.jpg}
+    \end{figure}
+\end{frame}
+
+
+\begin{frame}{Rootogram}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\textwidth]{figs/rootogram0.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Rootogram}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\textwidth]{figs/rootogram1.png}
+        \caption{Source: Kleiber \& Zeileis (2016)}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Rootogram}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\textwidth]{figs/rootogram2.png}
+        \caption{Source: Kleiber \& Zeileis (2016)}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Procedures -- fitting specific distributions}
+    \begin{table}[]
+        \centering
+        \caption{Overview of functions}
+        %\label{tab:my_label}
+        \begin{tabular}{cp{3cm}p{2cm}p{2cm}}
+        \hline
+          \textbf{Language}   & \textbf{R} &  \textbf{Python} & \textbf{Julia} \\
+        \hline
+         Packages  & 
+         base, vcd, countreg & scipy.stats, pingouin &  Distributions.jl, HypothesisTests.jl\\
+        Functions &
+          chisq.test(), vcd::goodfit() &  chisquare() & ChisqTest()\\
+        \hline
+        \end{tabular}
+    \end{table}
+\end{frame}
+
+\begin{frame}[fragile]{Example} 
+Install required packages
+\begin{verbatim}
+install.packages("vcd")
+install.packages("fitdistrplus")
+install.packages("countreg", 
+                 repos="http://R-Forge.R-project.org")
+\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Example}
+Generate two vectors $x \sim NB(3,2)$ and $y \sim Po(3)$
+
+\begin{verbatim}
+set.seed(1)
+n <- 500
+y <- rnbinom(n, mu = 3, size = 2)
+x <- rpois(n, lambda = 3)
+\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Example (MASS and fitdistrplus)}
+\small
+\begin{itemize}
+    \item Using \texttt{MASS} package 
+    \begin{verbatim}
+> fitdistr(x = y, densfun = "negative binomial")
+
+     size         mu    
+  2.0890650   2.7621469 
+ (0.2513296) (0.1132676)
+    \end{verbatim}
+    \item Using \texttt{fitdistrplus} package
+    \begin{verbatim}
+> summary(fitdist(data = y, method = "mle", distr = "nbinom"))
+Fitting of the distribution ' nbinom ' by maximum likelihood 
+Parameters : 
+     estimate Std. Error
+size 2.089736  0.2514846
+mu   2.761956  0.1132449
+
+Loglikelihood:  -1066.958   AIC:  2137.916   BIC:  2146.345 
+      
+    \end{verbatim}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Example (vcd)}
+\small
+\begin{verbatim}
+> goodfit(y, "nbinomial")
+
+Observed and fitted values for nbinomial distribution
+with parameters estimated by `ML' 
+
+ count observed      fitted pearson residual
+     0       86  86.0170786     -0.001841454
+     1      100 102.3135531     -0.228724611
+     2       91  89.9760131      0.107952084
+     3       77  69.8274259      0.858345287
+     4       46  50.5825323     -0.644325401
+     5       36  35.0733866      0.156462307
+     6       22  23.5945631     -0.328273428
+     7       11  15.5241830     -1.148248236
+     8       13  10.0423304      0.933323943
+     9        6   6.4097257     -0.161835389
+    10        4   4.0469786     -0.023352549
+    11        5   2.5323718      1.550657921
+    12        1   1.5727199     -0.456684796
+    13        1   0.9704803      0.029965307
+    14        0   0.5955491     -0.771718251
+    15        0   0.3637086     -0.603082616
+    16        0   0.2211813     -0.470299194
+    17        1   0.1340023      1.144759231
+\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Example (vcd)}
+    \begin{itemize}
+        \item Goodness of fit statistic
+\begin{verbatim}
+> summary(goodfit(y, "nbinomial"))
+
+Goodness-of-fit test for nbinomial distribution
+
+                      X^2 df  P(> X^2)
+Likelihood Ratio 10.79421 12 0.5466328
+\end{verbatim}
+        \item Rootogram
+\begin{verbatim}
+plot(goodfit(y, "nbinomial"))    
+\end{verbatim}       
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Example (countreg)}
+\begin{verbatim}
+countreg::rootogram(y, "poisson")
+countreg::rootogram(y, "negbin")
+\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile, allowframebreaks]{Example -- GoF step by step}
+\begin{enumerate}
+    \item Fit selected distribution to data
+    \begin{verbatim}
+est_params <- fitdistr(x = y, densfun = "negative binomial")        
+    \end{verbatim}
+    \item Calculate cumulative distribution function (CDF)
+    \begin{verbatim}
+range <- min(y):max(y)
+n <- length(range)
+est_cdf <- c(0, 
+             pnbinom(q = range[-n], 
+                     size = est_params$estimate["size"], 
+                     mu = est_params$estimate["mu"]),
+             1)
+    \end{verbatim}
+    \item Calculate probabilities (PMF)
+    \begin{verbatim}
+est_pdf <- diff(est_cdf) 
+    \end{verbatim}
+\item Calculate $\chi^2$ goodness of fit using \texttt{chisq.test} function
+\begin{verbatim}
+df <- data.frame(y_vals = range)
+df_freq <- as.data.frame(table(y))
+names(df_freq) <- c("y_vals", "n_obs")
+df <- merge(x = df, y = df_freq, by = "y_vals", all.x = T)
+df$n_obs[is.na(df$n_obs)] <- 0
+df$p_hat <- est_pdf
+
+chisq.test(x = df$n_obs, p = df$p_hat)
+
+	Chi-squared test for given probabilities
+
+data:  df$n_obs
+X-squared = 8.6693, df = 17, p-value = 0.9501
+\end{verbatim}
+
+\alert{WARNING!} p-value calculated according to this method is incorrect! Why? See the degrees of freedom. It should be be 15 instead of 17 (NB has two parameters).
+
+\item Correct p-value 
+
+\begin{verbatim}
+> pchisq(8.6693, df = 15, lower.tail = FALSE)
+
+0.8941643
+
+\end{verbatim}
+\end{enumerate}
+\end{frame}
+
+\begin{frame}[fragile]{Example (vcd) -- warning}
+    Note that we may specify $\chi^2$ GoF test in \texttt{vcd} package but it gives a different value of $\chi^2$ statistic as parameters are not estimated using ML method.
+
+\begin{verbatim}
+> object <- goodfit(y, type = "nbinomial", method = "MinChisq")
+> summary(object)
+
+	 Goodness-of-fit test for nbinomial distribution
+
+             X^2 df  P(> X^2)
+Pearson 8.082266 15 0.9204422
+Warning message:
+In summary.goodfit(object) : Chi-squared approximation may be incorrect
+\end{verbatim}
+\end{frame}
+
+\subsection{Further reading}
+
+\begin{frame}{Further reading -- MLE extensions}
+\begin{itemize}
+    \item \textbf{Expectation-Maximization (EM) algorithm} -- iterative method for MLE when data has latent/missing structure (e.g., zero-inflated models, mixture models). Relevant for capture-recapture and incomplete data problems.
+    \item \textbf{Profile likelihood} -- useful when dealing with nuisance parameters. Instead of jointly optimizing all parameters, we maximize over nuisance parameters for each fixed value of the parameter of interest.
+    \item \textbf{Quasi-likelihood / pseudo-likelihood} -- relaxes full distributional assumptions; requires only specification of the mean-variance relationship. Important bridge to GLMs, especially for overdispersed count data.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Further reading -- GoF extensions}
+\begin{itemize}
+    \item \textbf{Vuong test} -- for comparing non-nested models (e.g., ZIP vs ZINB, Poisson vs Hurdle). Complements the LR test which requires model nesting.
+    \item \textbf{Dispersion test} -- formal test for overdispersion (Cameron-Trivedi test). Tests $H_0: \text{Var}(X) = E(X)$ against $H_1: \text{Var}(X) = E(X) + \alpha \cdot g(E(X))$. In R: \texttt{AER::dispersiontest()}.
+    \item \textbf{Randomized quantile residuals (PIT)} -- modern alternative to rootograms for assessing distributional fit. Transforms discrete data to continuous uniform under the fitted model. In R: \texttt{DHARMa} package.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Further reading -- additional topics}
+\begin{itemize}
+    \item \textbf{Bootstrap for GoF} -- when asymptotic $\chi^2$ approximation is unreliable (small expected counts, sparse contingency tables). Parametric bootstrap simulates data from the fitted model and computes the GoF statistic distribution empirically.
+    \item \textbf{Key references}:
+    \begin{itemize}
+        \item Agresti, A. (2013). \textit{Categorical Data Analysis}. Wiley.
+        \item Kleiber, C. \& Zeileis, A. (2016). Visualizing count data regressions using rootograms. \textit{The American Statistician}, 70(3), 296--303.
+        \item Cameron, A.C. \& Trivedi, P.K. (2013). \textit{Regression Analysis of Count Data}. Cambridge University Press.
+    \end{itemize}
+\end{itemize}
+\end{frame}
 
 
 \end{document}
