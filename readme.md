@@ -73,15 +73,15 @@ Sample rows from the dataset
 
 ## Software versions
 
-``` r
+```r
 R version 4.4.2 (2024-10-31)
 ```
 
-``` python
+```python
 Python 3.12.7 | packaged by Anaconda, Inc. | (main, Oct  4 2024, 08:22:19) [Clang 14.0.6 ]
 ```
 
-``` julia
+```julia
 Julia Version 1.11.3
 Commit d63adeda50d (2025-01-21 19:42 UTC)
 ```
