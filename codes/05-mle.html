@@ -4068,10 +4068,11 @@ E(X) = \frac{\lambda}{1 - e^{-\lambda}}, \quad V(X) = \frac{\lambda(1 + \lambda)
 <span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>ll <span class="ot">&lt;-</span> <span class="cf">function</span>(par, x) {</span>
 <span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>(x) <span class="sc">*</span> <span class="fu">log</span>(par) <span class="sc">-</span> <span class="fu">length</span>(x) <span class="sc">*</span> <span class="fu">log</span>(<span class="fu">exp</span>(par) <span class="sc">-</span> <span class="dv">1</span>)</span>
 <span id="cb69-5"><a href="#cb69-5" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb69-6"><a href="#cb69-6" aria-hidden="true" tabindex="-1"></a>res_mle <span class="ot">&lt;-</span> <span class="fu">maxLik</span>(<span class="at">logLik =</span> ll, <span class="at">start =</span> <span class="dv">1</span>, <span class="at">x =</span> x)</span>
-<span id="cb69-7"><a href="#cb69-7" aria-hidden="true" tabindex="-1"></a>coef_mle <span class="ot">&lt;-</span> <span class="fu">coef</span>(res_mle)</span>
-<span id="cb69-8"><a href="#cb69-8" aria-hidden="true" tabindex="-1"></a>se_mle <span class="ot">&lt;-</span> <span class="fu">stdEr</span>(res_mle)</span>
-<span id="cb69-9"><a href="#cb69-9" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;MLE: lambda =&quot;</span>, coef_mle, <span class="st">&quot;, SE =&quot;</span>, se_mle, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb69-6"><a href="#cb69-6" aria-hidden="true" tabindex="-1"></a><span class="do">## maxLik uses Newton-Raphson by default (gradient-based, uses Hessian)</span></span>
+<span id="cb69-7"><a href="#cb69-7" aria-hidden="true" tabindex="-1"></a>res_mle <span class="ot">&lt;-</span> <span class="fu">maxLik</span>(<span class="at">logLik =</span> ll, <span class="at">start =</span> <span class="dv">1</span>, <span class="at">x =</span> x)</span>
+<span id="cb69-8"><a href="#cb69-8" aria-hidden="true" tabindex="-1"></a>coef_mle <span class="ot">&lt;-</span> <span class="fu">coef</span>(res_mle)</span>
+<span id="cb69-9"><a href="#cb69-9" aria-hidden="true" tabindex="-1"></a>se_mle <span class="ot">&lt;-</span> <span class="fu">stdEr</span>(res_mle)</span>
+<span id="cb69-10"><a href="#cb69-10" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;MLE: lambda =&quot;</span>, coef_mle, <span class="st">&quot;, SE =&quot;</span>, se_mle, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>MLE: lambda = 0.308619 , SE = 0.01725073 </code></pre>
 </div>
@@ -4088,10 +4089,11 @@ E(X) = \frac{\lambda}{1 - e^{-\lambda}}, \quad V(X) = \frac{\lambda(1 + \lambda)
 <span id="cb71-7"><a href="#cb71-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> hess_ztpois(par, x):</span>
 <span id="cb71-8"><a href="#cb71-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">-</span>np.<span class="bu">sum</span>(x) <span class="op">/</span> par<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> <span class="bu">len</span>(x) <span class="op">*</span> np.exp(par) <span class="op">/</span> (np.exp(par) <span class="op">-</span> <span class="dv">1</span>)<span class="op">**</span><span class="dv">2</span></span>
 <span id="cb71-9"><a href="#cb71-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb71-10"><a href="#cb71-10" aria-hidden="true" tabindex="-1"></a>res_mle <span class="op">=</span> minimize(fun<span class="op">=</span>ll_ztpois, x0<span class="op">=</span>[<span class="fl">0.5</span>], args<span class="op">=</span>(x,), method<span class="op">=</span><span class="st">&quot;Nelder-Mead&quot;</span>)</span>
-<span id="cb71-11"><a href="#cb71-11" aria-hidden="true" tabindex="-1"></a>lambda_mle <span class="op">=</span> res_mle.x[<span class="dv">0</span>]</span>
-<span id="cb71-12"><a href="#cb71-12" aria-hidden="true" tabindex="-1"></a>se_mle <span class="op">=</span> np.sqrt(<span class="dv">1</span> <span class="op">/</span> np.<span class="bu">abs</span>(hess_ztpois(lambda_mle, x)))</span>
-<span id="cb71-13"><a href="#cb71-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;MLE: lambda = </span><span class="sc">{</span>lambda_mle<span class="sc">:.6f}</span><span class="ss">, SE = </span><span class="sc">{</span>se_mle<span class="sc">:.5f}</span><span class="ss">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb71-10"><a href="#cb71-10" aria-hidden="true" tabindex="-1"></a><span class="co">## Nelder-Mead: gradient-free simplex method; robust but slower convergence</span></span>
+<span id="cb71-11"><a href="#cb71-11" aria-hidden="true" tabindex="-1"></a>res_mle <span class="op">=</span> minimize(fun<span class="op">=</span>ll_ztpois, x0<span class="op">=</span>[<span class="fl">0.5</span>], args<span class="op">=</span>(x,), method<span class="op">=</span><span class="st">&quot;Nelder-Mead&quot;</span>)</span>
+<span id="cb71-12"><a href="#cb71-12" aria-hidden="true" tabindex="-1"></a>lambda_mle <span class="op">=</span> res_mle.x[<span class="dv">0</span>]</span>
+<span id="cb71-13"><a href="#cb71-13" aria-hidden="true" tabindex="-1"></a>se_mle <span class="op">=</span> np.sqrt(<span class="dv">1</span> <span class="op">/</span> np.<span class="bu">abs</span>(hess_ztpois(lambda_mle, x)))</span>
+<span id="cb71-14"><a href="#cb71-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;MLE: lambda = </span><span class="sc">{</span>lambda_mle<span class="sc">:.6f}</span><span class="ss">, SE = </span><span class="sc">{</span>se_mle<span class="sc">:.5f}</span><span class="ss">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>MLE: lambda = 0.308594, SE = 0.01725</code></pre>
 </div>
@@ -4141,7 +4143,8 @@ E(X) = \frac{\lambda}{1 - e^{-\lambda}}, \quad V(X) = \frac{\lambda(1 + \lambda)
 <pre><code>ll_zt (generic function with 1 method)</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb79"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb79-2"><a href="#cb79-2" aria-hidden="true" tabindex="-1"></a>res_mle <span class="op">=</span> <span class="fu">optimize</span>(par <span class="op">-&gt;</span> <span class="fu">ll_zt</span>(par, x), <span class="fl">0.01</span>, <span class="fl">10.0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb79-2"><a href="#cb79-2" aria-hidden="true" tabindex="-1"></a><span class="co">## Brent&#39;s method: bounded scalar optimizer; avoids invalid log(λ&lt;0)</span></span>
+<span id="cb79-3"><a href="#cb79-3" aria-hidden="true" tabindex="-1"></a>res_mle <span class="op">=</span> <span class="fu">optimize</span>(par <span class="op">-&gt;</span> <span class="fu">ll_zt</span>(par, x), <span class="fl">0.01</span>, <span class="fl">10.0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Results of Optimization Algorithm
  * Status: success
@@ -4179,8 +4182,9 @@ E(X) = \frac{\lambda}{1 - e^{-\lambda}}, \quad V(X) = \frac{\lambda(1 + \lambda)
 <span id="cb85-3"><a href="#cb85-3" aria-hidden="true" tabindex="-1"></a>moment_eq <span class="ot">&lt;-</span> <span class="cf">function</span>(lambda) {</span>
 <span id="cb85-4"><a href="#cb85-4" aria-hidden="true" tabindex="-1"></a>  xbar <span class="sc">-</span> lambda <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">exp</span>(<span class="sc">-</span>lambda))</span>
 <span id="cb85-5"><a href="#cb85-5" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb85-6"><a href="#cb85-6" aria-hidden="true" tabindex="-1"></a>res_gmm <span class="ot">&lt;-</span> <span class="fu">uniroot</span>(moment_eq, <span class="at">lower =</span> <span class="fl">0.01</span>, <span class="at">upper =</span> <span class="dv">5</span>)</span>
-<span id="cb85-7"><a href="#cb85-7" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;GMM (1 moment): lambda =&quot;</span>, res_gmm<span class="sc">$</span>root, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb85-6"><a href="#cb85-6" aria-hidden="true" tabindex="-1"></a><span class="do">## uniroot: Brent&#39;s bracketing method for 1D root-finding</span></span>
+<span id="cb85-7"><a href="#cb85-7" aria-hidden="true" tabindex="-1"></a>res_gmm <span class="ot">&lt;-</span> <span class="fu">uniroot</span>(moment_eq, <span class="at">lower =</span> <span class="fl">0.01</span>, <span class="at">upper =</span> <span class="dv">5</span>)</span>
+<span id="cb85-8"><a href="#cb85-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;GMM (1 moment): lambda =&quot;</span>, res_gmm<span class="sc">$</span>root, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>GMM (1 moment): lambda = 0.3086183 </code></pre>
 </div>
@@ -4193,9 +4197,10 @@ E(X) = \frac{\lambda}{1 - e^{-\lambda}}, \quad V(X) = \frac{\lambda(1 + \lambda)
 <span id="cb87-3"><a href="#cb87-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> moment_eq(lam):</span>
 <span id="cb87-4"><a href="#cb87-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> xbar <span class="op">-</span> lam <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> np.exp(<span class="op">-</span>lam))</span>
 <span id="cb87-5"><a href="#cb87-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb87-6"><a href="#cb87-6" aria-hidden="true" tabindex="-1"></a>res_gmm <span class="op">=</span> fsolve(moment_eq, x0<span class="op">=</span><span class="fl">0.5</span>, full_output<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb87-7"><a href="#cb87-7" aria-hidden="true" tabindex="-1"></a>lambda_gmm <span class="op">=</span> res_gmm[<span class="dv">0</span>][<span class="dv">0</span>]</span>
-<span id="cb87-8"><a href="#cb87-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;GMM (1 moment): lambda = </span><span class="sc">{</span>lambda_gmm<span class="sc">:.6f}</span><span class="ss">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb87-6"><a href="#cb87-6" aria-hidden="true" tabindex="-1"></a><span class="co">## fsolve: hybrid Powell method (modified Newton with line search)</span></span>
+<span id="cb87-7"><a href="#cb87-7" aria-hidden="true" tabindex="-1"></a>res_gmm <span class="op">=</span> fsolve(moment_eq, x0<span class="op">=</span><span class="fl">0.5</span>, full_output<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb87-8"><a href="#cb87-8" aria-hidden="true" tabindex="-1"></a>lambda_gmm <span class="op">=</span> res_gmm[<span class="dv">0</span>][<span class="dv">0</span>]</span>
+<span id="cb87-9"><a href="#cb87-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;GMM (1 moment): lambda = </span><span class="sc">{</span>lambda_gmm<span class="sc">:.6f}</span><span class="ss">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>GMM (1 moment): lambda = 0.308619</code></pre>
 </div>
@@ -4215,7 +4220,8 @@ E(X) = \frac{\lambda}{1 - e^{-\lambda}}, \quad V(X) = \frac{\lambda(1 + \lambda)
 <pre><code>moment_eq (generic function with 1 method)</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb93"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb93-1"><a href="#cb93-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb93-2"><a href="#cb93-2" aria-hidden="true" tabindex="-1"></a>lambda_gmm <span class="op">=</span> <span class="fu">find_zero</span>(moment_eq, <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb93-2"><a href="#cb93-2" aria-hidden="true" tabindex="-1"></a><span class="co">## find_zero: secant method by default for scalar root-finding</span></span>
+<span id="cb93-3"><a href="#cb93-3" aria-hidden="true" tabindex="-1"></a>lambda_gmm <span class="op">=</span> <span class="fu">find_zero</span>(moment_eq, <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>0.30861895118866856</code></pre>
 </div>
@@ -4517,19 +4523,20 @@ E(X) = \frac{\lambda}{1 - e^{-\lambda}}, \quad V(X) = \frac{\lambda(1 + \lambda)
 <span id="cb131-11"><a href="#cb131-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>((x <span class="sc">-</span> mu) <span class="sc">/</span> mu <span class="sc">*</span> dmu)</span>
 <span id="cb131-12"><a href="#cb131-12" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb131-13"><a href="#cb131-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb131-14"><a href="#cb131-14" aria-hidden="true" tabindex="-1"></a>res_qmle <span class="ot">&lt;-</span> <span class="fu">uniroot</span>(quasi_score, <span class="at">lower =</span> <span class="fl">0.01</span>, <span class="at">upper =</span> <span class="dv">5</span>)</span>
-<span id="cb131-15"><a href="#cb131-15" aria-hidden="true" tabindex="-1"></a>lambda_qmle <span class="ot">&lt;-</span> res_qmle<span class="sc">$</span>root</span>
-<span id="cb131-16"><a href="#cb131-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb131-17"><a href="#cb131-17" aria-hidden="true" tabindex="-1"></a><span class="do">## Sandwich SE</span></span>
-<span id="cb131-18"><a href="#cb131-18" aria-hidden="true" tabindex="-1"></a>mu_hat <span class="ot">&lt;-</span> <span class="fu">mu_zt</span>(lambda_qmle)</span>
-<span id="cb131-19"><a href="#cb131-19" aria-hidden="true" tabindex="-1"></a>dmu_hat <span class="ot">&lt;-</span> <span class="fu">mu_zt_deriv</span>(lambda_qmle)</span>
-<span id="cb131-20"><a href="#cb131-20" aria-hidden="true" tabindex="-1"></a><span class="do">## bread: -sum(dmu^2 / V(mu))</span></span>
-<span id="cb131-21"><a href="#cb131-21" aria-hidden="true" tabindex="-1"></a>bread <span class="ot">&lt;-</span> <span class="fu">sum</span>(dmu_hat<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> mu_hat)</span>
-<span id="cb131-22"><a href="#cb131-22" aria-hidden="true" tabindex="-1"></a><span class="do">## meat: sum((x - mu)^2 / V(mu)^2 * dmu^2)</span></span>
-<span id="cb131-23"><a href="#cb131-23" aria-hidden="true" tabindex="-1"></a>meat <span class="ot">&lt;-</span> <span class="fu">sum</span>((x <span class="sc">-</span> mu_hat)<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> mu_hat<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> dmu_hat<span class="sc">^</span><span class="dv">2</span>)</span>
-<span id="cb131-24"><a href="#cb131-24" aria-hidden="true" tabindex="-1"></a>se_qmle <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(meat <span class="sc">/</span> bread<span class="sc">^</span><span class="dv">2</span>)</span>
-<span id="cb131-25"><a href="#cb131-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb131-26"><a href="#cb131-26" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;QMLE: lambda =&quot;</span>, lambda_qmle, <span class="st">&quot;, Sandwich SE =&quot;</span>, se_qmle, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb131-14"><a href="#cb131-14" aria-hidden="true" tabindex="-1"></a><span class="do">## uniroot: Brent&#39;s method to solve quasi-score equation</span></span>
+<span id="cb131-15"><a href="#cb131-15" aria-hidden="true" tabindex="-1"></a>res_qmle <span class="ot">&lt;-</span> <span class="fu">uniroot</span>(quasi_score, <span class="at">lower =</span> <span class="fl">0.01</span>, <span class="at">upper =</span> <span class="dv">5</span>)</span>
+<span id="cb131-16"><a href="#cb131-16" aria-hidden="true" tabindex="-1"></a>lambda_qmle <span class="ot">&lt;-</span> res_qmle<span class="sc">$</span>root</span>
+<span id="cb131-17"><a href="#cb131-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb131-18"><a href="#cb131-18" aria-hidden="true" tabindex="-1"></a><span class="do">## Sandwich SE</span></span>
+<span id="cb131-19"><a href="#cb131-19" aria-hidden="true" tabindex="-1"></a>mu_hat <span class="ot">&lt;-</span> <span class="fu">mu_zt</span>(lambda_qmle)</span>
+<span id="cb131-20"><a href="#cb131-20" aria-hidden="true" tabindex="-1"></a>dmu_hat <span class="ot">&lt;-</span> <span class="fu">mu_zt_deriv</span>(lambda_qmle)</span>
+<span id="cb131-21"><a href="#cb131-21" aria-hidden="true" tabindex="-1"></a><span class="do">## bread: -sum(dmu^2 / V(mu))</span></span>
+<span id="cb131-22"><a href="#cb131-22" aria-hidden="true" tabindex="-1"></a>bread <span class="ot">&lt;-</span> <span class="fu">sum</span>(dmu_hat<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> mu_hat)</span>
+<span id="cb131-23"><a href="#cb131-23" aria-hidden="true" tabindex="-1"></a><span class="do">## meat: sum((x - mu)^2 / V(mu)^2 * dmu^2)</span></span>
+<span id="cb131-24"><a href="#cb131-24" aria-hidden="true" tabindex="-1"></a>meat <span class="ot">&lt;-</span> <span class="fu">sum</span>((x <span class="sc">-</span> mu_hat)<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> mu_hat<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> dmu_hat<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb131-25"><a href="#cb131-25" aria-hidden="true" tabindex="-1"></a>se_qmle <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(meat <span class="sc">/</span> bread<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb131-26"><a href="#cb131-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb131-27"><a href="#cb131-27" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;QMLE: lambda =&quot;</span>, lambda_qmle, <span class="st">&quot;, Sandwich SE =&quot;</span>, se_qmle, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>QMLE: lambda = 0.3086173 , Sandwich SE = 38.02958 </code></pre>
 </div>
@@ -4549,17 +4556,18 @@ E(X) = \frac{\lambda}{1 - e^{-\lambda}}, \quad V(X) = \frac{\lambda(1 + \lambda)
 <span id="cb133-10"><a href="#cb133-10" aria-hidden="true" tabindex="-1"></a>    dmu <span class="op">=</span> mu_zt_deriv(lam)</span>
 <span id="cb133-11"><a href="#cb133-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.<span class="bu">sum</span>((x <span class="op">-</span> mu) <span class="op">/</span> mu <span class="op">*</span> dmu)</span>
 <span id="cb133-12"><a href="#cb133-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-13"><a href="#cb133-13" aria-hidden="true" tabindex="-1"></a>res_qmle <span class="op">=</span> fsolve(quasi_score, x0<span class="op">=</span><span class="fl">0.5</span>, full_output<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb133-14"><a href="#cb133-14" aria-hidden="true" tabindex="-1"></a>lambda_qmle <span class="op">=</span> res_qmle[<span class="dv">0</span>][<span class="dv">0</span>]</span>
-<span id="cb133-15"><a href="#cb133-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-16"><a href="#cb133-16" aria-hidden="true" tabindex="-1"></a><span class="co">## Sandwich SE</span></span>
-<span id="cb133-17"><a href="#cb133-17" aria-hidden="true" tabindex="-1"></a>mu_hat <span class="op">=</span> mu_zt(lambda_qmle)</span>
-<span id="cb133-18"><a href="#cb133-18" aria-hidden="true" tabindex="-1"></a>dmu_hat <span class="op">=</span> mu_zt_deriv(lambda_qmle)</span>
-<span id="cb133-19"><a href="#cb133-19" aria-hidden="true" tabindex="-1"></a>bread <span class="op">=</span> np.<span class="bu">sum</span>(dmu_hat<span class="op">**</span><span class="dv">2</span> <span class="op">/</span> mu_hat)</span>
-<span id="cb133-20"><a href="#cb133-20" aria-hidden="true" tabindex="-1"></a>meat <span class="op">=</span> np.<span class="bu">sum</span>((x <span class="op">-</span> mu_hat)<span class="op">**</span><span class="dv">2</span> <span class="op">/</span> mu_hat<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> dmu_hat<span class="op">**</span><span class="dv">2</span>)</span>
-<span id="cb133-21"><a href="#cb133-21" aria-hidden="true" tabindex="-1"></a>se_qmle <span class="op">=</span> np.sqrt(meat <span class="op">/</span> bread<span class="op">**</span><span class="dv">2</span>)</span>
-<span id="cb133-22"><a href="#cb133-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-23"><a href="#cb133-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;QMLE: lambda = </span><span class="sc">{</span>lambda_qmle<span class="sc">:.6f}</span><span class="ss">, Sandwich SE = </span><span class="sc">{</span>se_qmle<span class="sc">:.5f}</span><span class="ss">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb133-13"><a href="#cb133-13" aria-hidden="true" tabindex="-1"></a><span class="co">## fsolve: hybrid Powell method to solve quasi-score equation</span></span>
+<span id="cb133-14"><a href="#cb133-14" aria-hidden="true" tabindex="-1"></a>res_qmle <span class="op">=</span> fsolve(quasi_score, x0<span class="op">=</span><span class="fl">0.5</span>, full_output<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb133-15"><a href="#cb133-15" aria-hidden="true" tabindex="-1"></a>lambda_qmle <span class="op">=</span> res_qmle[<span class="dv">0</span>][<span class="dv">0</span>]</span>
+<span id="cb133-16"><a href="#cb133-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb133-17"><a href="#cb133-17" aria-hidden="true" tabindex="-1"></a><span class="co">## Sandwich SE</span></span>
+<span id="cb133-18"><a href="#cb133-18" aria-hidden="true" tabindex="-1"></a>mu_hat <span class="op">=</span> mu_zt(lambda_qmle)</span>
+<span id="cb133-19"><a href="#cb133-19" aria-hidden="true" tabindex="-1"></a>dmu_hat <span class="op">=</span> mu_zt_deriv(lambda_qmle)</span>
+<span id="cb133-20"><a href="#cb133-20" aria-hidden="true" tabindex="-1"></a>bread <span class="op">=</span> np.<span class="bu">sum</span>(dmu_hat<span class="op">**</span><span class="dv">2</span> <span class="op">/</span> mu_hat)</span>
+<span id="cb133-21"><a href="#cb133-21" aria-hidden="true" tabindex="-1"></a>meat <span class="op">=</span> np.<span class="bu">sum</span>((x <span class="op">-</span> mu_hat)<span class="op">**</span><span class="dv">2</span> <span class="op">/</span> mu_hat<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> dmu_hat<span class="op">**</span><span class="dv">2</span>)</span>
+<span id="cb133-22"><a href="#cb133-22" aria-hidden="true" tabindex="-1"></a>se_qmle <span class="op">=</span> np.sqrt(meat <span class="op">/</span> bread<span class="op">**</span><span class="dv">2</span>)</span>
+<span id="cb133-23"><a href="#cb133-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb133-24"><a href="#cb133-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;QMLE: lambda = </span><span class="sc">{</span>lambda_qmle<span class="sc">:.6f}</span><span class="ss">, Sandwich SE = </span><span class="sc">{</span>se_qmle<span class="sc">:.5f}</span><span class="ss">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>QMLE: lambda = 0.308619, Sandwich SE = 38.02956</code></pre>
 </div>
@@ -4591,7 +4599,8 @@ E(X) = \frac{\lambda}{1 - e^{-\lambda}}, \quad V(X) = \frac{\lambda(1 + \lambda)
 <pre><code>quasi_score (generic function with 1 method)</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb141"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb141-1"><a href="#cb141-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb141-2"><a href="#cb141-2" aria-hidden="true" tabindex="-1"></a>lambda_qmle <span class="op">=</span> <span class="fu">find_zero</span>(quasi_score, <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb141-2"><a href="#cb141-2" aria-hidden="true" tabindex="-1"></a><span class="co">## find_zero: secant method to solve quasi-score equation</span></span>
+<span id="cb141-3"><a href="#cb141-3" aria-hidden="true" tabindex="-1"></a>lambda_qmle <span class="op">=</span> <span class="fu">find_zero</span>(quasi_score, <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>0.30861895118866944</code></pre>
 </div>

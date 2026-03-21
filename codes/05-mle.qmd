@@ -608,6 +608,7 @@ x <- rep(1:6, d)
 ll <- function(par, x) {
   sum(x) * log(par) - length(x) * log(exp(par) - 1)
 }
+## maxLik uses Newton-Raphson by default (gradient-based, uses Hessian)
 res_mle <- maxLik(logLik = ll, start = 1, x = x)
 coef_mle <- coef(res_mle)
 se_mle <- stdEr(res_mle)
@@ -626,6 +627,7 @@ def ll_ztpois(par, x):
 def hess_ztpois(par, x):
     return -np.sum(x) / par**2 + len(x) * np.exp(par) / (np.exp(par) - 1)**2
 
+## Nelder-Mead: gradient-free simplex method; robust but slower convergence
 res_mle = minimize(fun=ll_ztpois, x0=[0.5], args=(x,), method="Nelder-Mead")
 lambda_mle = res_mle.x[0]
 se_mle = np.sqrt(1 / np.abs(hess_ztpois(lambda_mle, x)))
@@ -642,6 +644,7 @@ function ll_zt(par, x)
     return -(sum(x) * log(par) - length(x) * log(exp(par) - 1))
 end
 
+## Brent's method: bounded scalar optimizer; avoids invalid log(λ<0)
 res_mle = optimize(par -> ll_zt(par, x), 0.01, 10.0)
 lambda_mle = Optim.minimizer(res_mle)
 println("MLE: lambda = ", round(lambda_mle, digits=6))
@@ -661,6 +664,7 @@ xbar <- mean(x)
 moment_eq <- function(lambda) {
   xbar - lambda / (1 - exp(-lambda))
 }
+## uniroot: Brent's bracketing method for 1D root-finding
 res_gmm <- uniroot(moment_eq, lower = 0.01, upper = 5)
 cat("GMM (1 moment): lambda =", res_gmm$root, "\n")
 ```
@@ -673,6 +677,7 @@ xbar = np.mean(x)
 def moment_eq(lam):
     return xbar - lam / (1 - np.exp(-lam))
 
+## fsolve: hybrid Powell method (modified Newton with line search)
 res_gmm = fsolve(moment_eq, x0=0.5, full_output=True)
 lambda_gmm = res_gmm[0][0]
 print(f"GMM (1 moment): lambda = {lambda_gmm:.6f}")
@@ -687,6 +692,7 @@ function moment_eq(lam)
     return xbar - lam / (1 - exp(-lam))
 end
 
+## find_zero: secant method by default for scalar root-finding
 lambda_gmm = find_zero(moment_eq, 0.5)
 println("GMM (1 moment): lambda = ", round(lambda_gmm, digits=6))
 ```
@@ -880,6 +886,7 @@ quasi_score <- function(lambda) {
   sum((x - mu) / mu * dmu)
 }
 
+## uniroot: Brent's method to solve quasi-score equation
 res_qmle <- uniroot(quasi_score, lower = 0.01, upper = 5)
 lambda_qmle <- res_qmle$root
 
@@ -910,6 +917,7 @@ def quasi_score(lam):
     dmu = mu_zt_deriv(lam)
     return np.sum((x - mu) / mu * dmu)
 
+## fsolve: hybrid Powell method to solve quasi-score equation
 res_qmle = fsolve(quasi_score, x0=0.5, full_output=True)
 lambda_qmle = res_qmle[0][0]
 
@@ -941,6 +949,7 @@ function quasi_score(lam)
     return sum((x .- mu) ./ mu .* dmu)
 end
 
+## find_zero: secant method to solve quasi-score equation
 lambda_qmle = find_zero(quasi_score, 0.5)
 
 ## Sandwich SE
