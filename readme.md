@@ -3,10 +3,11 @@
 ## Outline of lecture
 
 1. Categorical data - [notebook](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes/01-categorical-data.html)
-2. Contingency tables - [notebook](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes/03-ctables.html)
-3. Discrete distributions - [notebook](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes/04-distributions.html)
-4. Maximum likelihood estimation - [notebook](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes/05-mle.html)
-5. Goodness of fit - [notebook](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes/06-gof.html)
+2. Simpson's paradox - [notebook](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes/02-simpson-paradox.html)
+3. Contingency tables - [notebook](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes/03-ctables.html)
+4. Discrete distributions - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/04-distributions.html)
+5. Maximum likelihood estimation - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/05-mle.html)
+6. Goodness of fit - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/06-gof.html)
 
 
 ## Case study
