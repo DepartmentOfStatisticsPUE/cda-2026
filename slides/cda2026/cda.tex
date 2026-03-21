@@ -2052,6 +2052,26 @@ In summary.goodfit(object) : Chi-squared approximation may be incorrect
 \end{verbatim}
 \end{frame}
 
+\subsection{Comparison of estimation methods}
+
+\begin{frame}{Comparison of estimation methods}
+\small
+    \begin{table}[]
+        \centering
+        \begin{tabular}{p{1.5cm}p{2.5cm}p{2.5cm}p{3.5cm}}
+        \hline
+        \textbf{Method} & \textbf{Objective} & \textbf{Requirements} & \textbf{When to use} \\
+        \hline
+        MLE & Maximize $l(\boldsymbol{\theta}; \mathbf{x})$ & Full distributional assumption & Default choice; efficient when model is correctly specified \\[0.3cm]
+        GMM & Match sample \& theoretical moments & Only moment conditions $E[g(X;\boldsymbol{\theta})]=0$ & When distribution is unknown but moments are known \\[0.3cm]
+        EM & Maximize $l(\boldsymbol{\theta})$ iteratively via $Q(\boldsymbol{\theta}|\boldsymbol{\theta}^{(t)})$ & Complete-data likelihood + latent structure & Missing data, mixtures, zero-truncated/ inflated models \\[0.3cm]
+        Profile L. & Maximize $l_P(\psi) = \max_{\boldsymbol{\nu}} l(\psi, \boldsymbol{\nu})$ & Full distributional assumption & Inference on a subset of parameters; CI via LR \\[0.3cm]
+        QMLE & Maximize quasi-log-likelihood & Only mean-variance relationship & Overdispersion; robust to misspecification of higher moments \\
+        \hline
+        \end{tabular}
+    \end{table}
+\end{frame}
+
 \subsection{Further reading}
 
 \begin{frame}{Further reading -- MLE extensions}

@@ -588,3 +588,413 @@ Optim.minimizer(res)
 find_zero(z -> grad(z, x), 0.2)
 ```
 ::::::
+
+## Comparison of estimation methods
+
+We use the same zero-truncated Poisson data to compare five estimation methods: MLE, GMM, EM, Profile Likelihood, and QMLE. For the zero-truncated Poisson, the theoretical mean and variance are:
+
+$$
+E(X) = \frac{\lambda}{1 - e^{-\lambda}}, \quad V(X) = \frac{\lambda(1 + \lambda)}{1 - e^{-\lambda}} - \frac{\lambda^2}{(1 - e^{-\lambda})^2}.
+$$
+
+### MLE (recap)
+
+::: panel-tabset
+## R
+
+```{r}
+d <- c(1645, 183, 37, 13, 1, 1)
+x <- rep(1:6, d)
+ll <- function(par, x) {
+  sum(x) * log(par) - length(x) * log(exp(par) - 1)
+}
+res_mle <- maxLik(logLik = ll, start = 1, x = x)
+coef_mle <- coef(res_mle)
+se_mle <- stdEr(res_mle)
+cat("MLE: lambda =", coef_mle, ", SE =", se_mle, "\n")
+```
+
+## Python
+
+```{python}
+d = np.array([1645, 183, 37, 13, 1, 1])
+x = np.repeat(np.arange(1, 7), d)
+
+def ll_ztpois(par, x):
+    return -(np.sum(x) * np.log(par) - len(x) * np.log(np.exp(par) - 1))
+
+def hess_ztpois(par, x):
+    return -np.sum(x) / par**2 + len(x) * np.exp(par) / (np.exp(par) - 1)**2
+
+res_mle = minimize(fun=ll_ztpois, x0=[0.5], args=(x,), method="Nelder-Mead")
+lambda_mle = res_mle.x[0]
+se_mle = np.sqrt(1 / np.abs(hess_ztpois(lambda_mle, x)))
+print(f"MLE: lambda = {lambda_mle:.6f}, SE = {se_mle:.5f}")
+```
+
+## Julia
+
+```{julia}
+d = [1645, 183, 37, 13, 1, 1]
+x = vcat(fill.(1:6, d)...)
+
+function ll_zt(par, x)
+    return -(sum(x) * log(par) - length(x) * log(exp(par) - 1))
+end
+
+res_mle = optimize(par -> ll_zt(par, x), 0.01, 10.0)
+lambda_mle = Optim.minimizer(res_mle)
+println("MLE: lambda = ", round(lambda_mle, digits=6))
+```
+:::
+
+### GMM (Generalized Method of Moments)
+
+The method of moments matches the sample mean to the theoretical mean of the zero-truncated Poisson: $E(X) = \lambda / (1 - e^{-\lambda})$.
+
+::: panel-tabset
+## R
+
+```{r}
+## moment condition: E[X] - lambda/(1-exp(-lambda)) = 0
+xbar <- mean(x)
+moment_eq <- function(lambda) {
+  xbar - lambda / (1 - exp(-lambda))
+}
+res_gmm <- uniroot(moment_eq, lower = 0.01, upper = 5)
+cat("GMM (1 moment): lambda =", res_gmm$root, "\n")
+```
+
+## Python
+
+```{python}
+xbar = np.mean(x)
+
+def moment_eq(lam):
+    return xbar - lam / (1 - np.exp(-lam))
+
+res_gmm = fsolve(moment_eq, x0=0.5, full_output=True)
+lambda_gmm = res_gmm[0][0]
+print(f"GMM (1 moment): lambda = {lambda_gmm:.6f}")
+```
+
+## Julia
+
+```{julia}
+xbar = mean(x)
+
+function moment_eq(lam)
+    return xbar - lam / (1 - exp(-lam))
+end
+
+lambda_gmm = find_zero(moment_eq, 0.5)
+println("GMM (1 moment): lambda = ", round(lambda_gmm, digits=6))
+```
+:::
+
+### EM algorithm
+
+We treat zero-truncated Poisson as a complete-data Poisson with unobserved zeros. The EM algorithm iterates:
+
+- **E-step**: estimate the expected number of missing zeros: $\hat{n}_0 = n \cdot e^{-\lambda} / (1 - e^{-\lambda})$
+- **M-step**: update $\lambda = \sum x_i / (n + \hat{n}_0)$
+
+::: panel-tabset
+## R
+
+```{r}
+em_ztpois <- function(x, lambda0 = 1, tol = 1e-8, maxiter = 100) {
+  n <- length(x)
+  sx <- sum(x)
+  lambda <- lambda0
+  for (i in 1:maxiter) {
+    ## E-step
+    n0 <- n * exp(-lambda) / (1 - exp(-lambda))
+    ## M-step
+    lambda_new <- sx / (n + n0)
+    if (abs(lambda_new - lambda) < tol) {
+      return(list(lambda = lambda_new, iterations = i, n0 = n0))
+    }
+    lambda <- lambda_new
+  }
+  list(lambda = lambda, iterations = maxiter, n0 = n0)
+}
+
+res_em <- em_ztpois(x)
+cat("EM: lambda =", res_em$lambda, ", iterations =", res_em$iterations,
+    ", estimated n0 =", round(res_em$n0), "\n")
+```
+
+## Python
+
+```{python}
+def em_ztpois(x, lambda0=1.0, tol=1e-8, maxiter=100):
+    n = len(x)
+    sx = np.sum(x)
+    lam = lambda0
+    for i in range(1, maxiter + 1):
+        ## E-step
+        n0 = n * np.exp(-lam) / (1 - np.exp(-lam))
+        ## M-step
+        lam_new = sx / (n + n0)
+        if abs(lam_new - lam) < tol:
+            return {"lambda": lam_new, "iterations": i, "n0": n0}
+        lam = lam_new
+    return {"lambda": lam, "iterations": maxiter, "n0": n0}
+
+res_em = em_ztpois(x)
+print(f"EM: lambda = {res_em['lambda']:.6f}, iterations = {res_em['iterations']}, "
+      f"estimated n0 = {res_em['n0']:.0f}")
+```
+
+## Julia
+
+```{julia}
+function em_ztpois(x; lambda0=1.0, tol=1e-8, maxiter=100)
+    n = length(x)
+    sx = sum(x)
+    lam = lambda0
+    for i in 1:maxiter
+        ## E-step
+        n0 = n * exp(-lam) / (1 - exp(-lam))
+        ## M-step
+        lam_new = sx / (n + n0)
+        if abs(lam_new - lam) < tol
+            return (lambda=lam_new, iterations=i, n0=n0)
+        end
+        lam = lam_new
+    end
+    return (lambda=lam, iterations=maxiter, n0=n0)
+end
+
+res_em = em_ztpois(x)
+println("EM: lambda = ", round(res_em.lambda, digits=6),
+        ", iterations = ", res_em.iterations,
+        ", estimated n0 = ", round(Int, res_em.n0))
+```
+:::
+
+### Profile likelihood
+
+For a single-parameter model, the profile likelihood is simply the log-likelihood evaluated over a grid of $\lambda$ values. We can use it to construct a confidence interval via the likelihood ratio: $\{  \lambda : 2[l(\hat{\lambda}) - l(\lambda)] \leq \chi^2_1(0.95) \}$.
+
+::: panel-tabset
+## R
+
+```{r}
+lambda_grid <- seq(0.20, 0.45, length.out = 200)
+ll_vals <- sapply(lambda_grid, function(l) ll(l, x))
+ll_max <- ll(coef_mle, x)
+
+## 95% CI via likelihood ratio
+cutoff <- ll_max - qchisq(0.95, 1) / 2
+ci_idx <- which(ll_vals >= cutoff)
+ci_lower <- lambda_grid[min(ci_idx)]
+ci_upper <- lambda_grid[max(ci_idx)]
+
+plot(lambda_grid, ll_vals, type = "l", lwd = 2,
+     xlab = expression(lambda), ylab = "log-likelihood",
+     main = "Profile log-likelihood for ZT-Poisson")
+abline(h = cutoff, col = "red", lty = 2)
+abline(v = c(ci_lower, ci_upper), col = "blue", lty = 2)
+abline(v = coef_mle, col = "darkgreen", lty = 1)
+legend("topright",
+       legend = c("Profile LL", "95% CI cutoff", "CI bounds", "MLE"),
+       col = c("black", "red", "blue", "darkgreen"),
+       lty = c(1, 2, 2, 1), lwd = c(2, 1, 1, 1), cex = 0.8)
+
+cat("Profile likelihood 95% CI: [", ci_lower, ",", ci_upper, "]\n")
+```
+
+## Python
+
+```{python}
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+lambda_grid = np.linspace(0.20, 0.45, 200)
+ll_func = lambda l: np.sum(x) * np.log(l) - len(x) * np.log(np.exp(l) - 1)
+ll_vals = np.array([ll_func(l) for l in lambda_grid])
+ll_max = ll_func(lambda_mle)
+
+## 95% CI via likelihood ratio
+cutoff = ll_max - st.chi2.ppf(0.95, 1) / 2
+ci_idx = np.where(ll_vals >= cutoff)[0]
+ci_lower = lambda_grid[ci_idx[0]]
+ci_upper = lambda_grid[ci_idx[-1]]
+
+plt.figure(figsize=(8, 5))
+plt.plot(lambda_grid, ll_vals, 'k-', lw=2, label='Profile LL')
+plt.axhline(y=cutoff, color='r', linestyle='--', label='95% CI cutoff')
+plt.axvline(x=ci_lower, color='b', linestyle='--', label='CI bounds')
+plt.axvline(x=ci_upper, color='b', linestyle='--')
+plt.axvline(x=lambda_mle, color='green', linestyle='-', label='MLE')
+plt.xlabel(r'$\lambda$')
+plt.ylabel('log-likelihood')
+plt.title('Profile log-likelihood for ZT-Poisson')
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+print(f"Profile likelihood 95% CI: [{ci_lower:.4f}, {ci_upper:.4f}]")
+```
+
+## Julia
+
+```{julia}
+lambda_grid = range(0.20, 0.45, length=200)
+ll_func(l) = sum(x) * log(l) - length(x) * log(exp(l) - 1)
+ll_vals = [ll_func(l) for l in lambda_grid]
+ll_max_val = ll_func(lambda_mle)
+
+## 95% CI via likelihood ratio
+cutoff = ll_max_val - quantile(Chisq(1), 0.95) / 2
+ci_idx = findall(ll_vals .>= cutoff)
+ci_lower = lambda_grid[first(ci_idx)]
+ci_upper = lambda_grid[last(ci_idx)]
+
+println("Profile likelihood 95% CI: [", round(ci_lower, digits=4),
+        ", ", round(ci_upper, digits=4), "]")
+```
+:::
+
+### QMLE (Quasi-MLE)
+
+Quasi-maximum likelihood only requires specifying the mean-variance relationship rather than the full distribution. For the zero-truncated Poisson, we solve the quasi-score equation using the mean function $\mu(\lambda) = \lambda / (1 - e^{-\lambda})$ and variance function $V(\mu) = \mu$ (Poisson-like).
+
+::: panel-tabset
+## R
+
+```{r}
+## Quasi-score: sum of (x_i - mu(lambda)) / V(mu(lambda)) * mu'(lambda) = 0
+mu_zt <- function(lambda) lambda / (1 - exp(-lambda))
+mu_zt_deriv <- function(lambda) {
+  e <- exp(-lambda)
+  (1 - e - lambda * e) / (1 - e)^2
+}
+
+quasi_score <- function(lambda) {
+  mu <- mu_zt(lambda)
+  dmu <- mu_zt_deriv(lambda)
+  sum((x - mu) / mu * dmu)
+}
+
+res_qmle <- uniroot(quasi_score, lower = 0.01, upper = 5)
+lambda_qmle <- res_qmle$root
+
+## Sandwich SE
+mu_hat <- mu_zt(lambda_qmle)
+dmu_hat <- mu_zt_deriv(lambda_qmle)
+## bread: -sum(dmu^2 / V(mu))
+bread <- sum(dmu_hat^2 / mu_hat)
+## meat: sum((x - mu)^2 / V(mu)^2 * dmu^2)
+meat <- sum((x - mu_hat)^2 / mu_hat^2 * dmu_hat^2)
+se_qmle <- sqrt(meat / bread^2)
+
+cat("QMLE: lambda =", lambda_qmle, ", Sandwich SE =", se_qmle, "\n")
+```
+
+## Python
+
+```{python}
+def mu_zt(lam):
+    return lam / (1 - np.exp(-lam))
+
+def mu_zt_deriv(lam):
+    e = np.exp(-lam)
+    return (1 - e - lam * e) / (1 - e)**2
+
+def quasi_score(lam):
+    mu = mu_zt(lam)
+    dmu = mu_zt_deriv(lam)
+    return np.sum((x - mu) / mu * dmu)
+
+res_qmle = fsolve(quasi_score, x0=0.5, full_output=True)
+lambda_qmle = res_qmle[0][0]
+
+## Sandwich SE
+mu_hat = mu_zt(lambda_qmle)
+dmu_hat = mu_zt_deriv(lambda_qmle)
+bread = np.sum(dmu_hat**2 / mu_hat)
+meat = np.sum((x - mu_hat)**2 / mu_hat**2 * dmu_hat**2)
+se_qmle = np.sqrt(meat / bread**2)
+
+print(f"QMLE: lambda = {lambda_qmle:.6f}, Sandwich SE = {se_qmle:.5f}")
+```
+
+## Julia
+
+```{julia}
+function mu_zt(lam)
+    return lam / (1 - exp(-lam))
+end
+
+function mu_zt_deriv(lam)
+    e = exp(-lam)
+    return (1 - e - lam * e) / (1 - e)^2
+end
+
+function quasi_score(lam)
+    mu = mu_zt(lam)
+    dmu = mu_zt_deriv(lam)
+    return sum((x .- mu) ./ mu .* dmu)
+end
+
+lambda_qmle = find_zero(quasi_score, 0.5)
+
+## Sandwich SE
+mu_hat = mu_zt(lambda_qmle)
+dmu_hat = mu_zt_deriv(lambda_qmle)
+bread = sum(dmu_hat^2 / mu_hat)
+meat = sum((x .- mu_hat).^2 ./ mu_hat^2 .* dmu_hat^2)
+se_qmle = sqrt(meat / bread^2)
+
+println("QMLE: lambda = ", round(lambda_qmle, digits=6),
+        ", Sandwich SE = ", round(se_qmle, digits=5))
+```
+:::
+
+### Summary
+
+::: panel-tabset
+## R
+
+```{r}
+results <- data.frame(
+  Method = c("MLE", "GMM", "EM", "Profile LR", "QMLE"),
+  Lambda = c(coef_mle, res_gmm$root, res_em$lambda, coef_mle, lambda_qmle),
+  SE = c(se_mle, NA, NA, NA, se_qmle),
+  CI_lower = c(coef_mle - 1.96 * se_mle, NA, NA, ci_lower,
+               lambda_qmle - 1.96 * se_qmle),
+  CI_upper = c(coef_mle + 1.96 * se_mle, NA, NA, ci_upper,
+               lambda_qmle + 1.96 * se_qmle)
+)
+results
+```
+
+## Python
+
+```{python}
+results = pd.DataFrame({
+    "Method": ["MLE", "GMM", "EM", "Profile LR", "QMLE"],
+    "Lambda": [lambda_mle, lambda_gmm, res_em["lambda"], lambda_mle, lambda_qmle],
+    "SE": [se_mle, np.nan, np.nan, np.nan, se_qmle],
+    "CI_lower": [lambda_mle - 1.96 * se_mle, np.nan, np.nan, ci_lower,
+                 lambda_qmle - 1.96 * se_qmle],
+    "CI_upper": [lambda_mle + 1.96 * se_mle, np.nan, np.nan, ci_upper,
+                 lambda_qmle + 1.96 * se_qmle]
+})
+results.round(6)
+```
+
+## Julia
+
+```{julia}
+DataFrame(
+    Method = ["MLE", "GMM", "EM", "Profile LR", "QMLE"],
+    Lambda = round.([lambda_mle, lambda_gmm, res_em.lambda, lambda_mle, lambda_qmle], digits=6),
+    Note = ["Full distribution", "1 moment condition", "Latent zeros", "LR-based CI", "Sandwich SE"]
+)
+```
+:::
