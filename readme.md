@@ -2,17 +2,28 @@
 
 ## Outline of lecture
 
-1. Categorical data - [notebook](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes/01-categorical-data.html)
-2. Simpson's paradox - [notebook](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes/02-simpson-paradox.html)
-3. Contingency tables - [notebook](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes/03-ctables.html)
-4. Discrete distributions - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/04-distributions.html)
-5. Maximum likelihood estimation - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/05-mle.html)
-6. Goodness of fit - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/06-gof.html)
+1. Categorical data - [notebook](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes/qmd/01-categorical-data.html)
+2. Simpson's paradox - [notebook](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes/qmd/02-simpson-paradox.html)
+3. Contingency tables - [notebook](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes/qmd/03-ctables.html)
+4. Discrete distributions - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/04-distributions.html)
+5. Maximum likelihood estimation - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/05-mle.html)
+6. Goodness of fit - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/06-gof.html)
 
 
 ## Case study
 
 [TBA]
+
+## Code files for download
+
+| # | Topic | R | Python | Julia | Jupyter |
+|---|-------|---|--------|-------|---------|
+| 1 | Categorical data | [.R](codes/R/01-categorical-data.R) | [.py](codes/python/01-categorical-data.py) | [.jl](codes/julia/01-categorical-data.jl) | [.ipynb](codes/notebooks/01-categorical-data.ipynb) |
+| 2 | Simpson's paradox | [.R](codes/R/02-simpson-paradox.R) | -- | -- | -- |
+| 3 | Contingency tables | [.R](codes/R/03-ctables.R) | [.py](codes/python/03-ctables.py) | [.jl](codes/julia/03-ctables.jl) | [.ipynb](codes/notebooks/03-ctables.ipynb) |
+| 4 | Discrete distributions | [.R](codes/R/04-distributions.R) | [.py](codes/python/04-distributions.py) | [.jl](codes/julia/04-distributions.jl) | [.ipynb](codes/notebooks/04-distributions.ipynb) |
+| 5 | Maximum likelihood estimation | [.R](codes/R/05-mle.R) | [.py](codes/python/05-mle.py) | [.jl](codes/julia/05-mle.jl) | [.ipynb](codes/notebooks/05-mle.ipynb) |
+| 6 | Goodness of fit | [.R](codes/R/06-gof.R) | [.py](codes/python/06-gof.py) | [.jl](codes/julia/06-gof.jl) | [.ipynb](codes/notebooks/06-gof.ipynb) |
 
 ## Example final test
 

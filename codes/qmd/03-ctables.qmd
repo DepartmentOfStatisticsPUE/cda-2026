@@ -12,6 +12,12 @@ execute:
   eval: true
   warning: false
   message: false
+filters:
+  - ripper
+ripper:
+  output-dir: "extracted"
+  script-links-position: "none"
+  include-yaml: true
 ---
 
 ```{r setup, echo = FALSE}
@@ -40,7 +46,7 @@ library(vcd)
 Read in the dataset for the lecture.
 
 ```{r}
-df <- read.csv("../data/polish-jvs.csv", colClasses = c(rep("character", 6), "numeric"))
+df <- read.csv("../../data/polish-jvs.csv", colClasses = c(rep("character", 6), "numeric"))
 head(df)
 ```
 
@@ -63,7 +69,7 @@ from scipy.stats import chi2_contingency, fisher_exact, chi2
 ```
 
 ```{python}
-df = pd.read_csv("../data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
+df = pd.read_csv("../../data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
 df.head()
 ```
 
@@ -89,7 +95,7 @@ using FreqTables
 ```
 
 ```{julia}
-df=CSV.read("../data/polish-jvs.csv", DataFrame, 
+df=CSV.read("../../data/polish-jvs.csv", DataFrame, 
             types = Dict(:id => Int64, :woj=> String, :public=> String, 
                          :size => String, :nace_division => String, :nace => String));
 first(df, 5)

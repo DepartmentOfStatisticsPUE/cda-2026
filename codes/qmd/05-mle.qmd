@@ -11,6 +11,12 @@ execute:
   eval: true
   warning: false
   message: false
+filters:
+  - ripper
+ripper:
+  output-dir: "extracted"
+  script-links-position: "none"
+  include-yaml: true
 ---
 
 ```{r setup, echo = FALSE}

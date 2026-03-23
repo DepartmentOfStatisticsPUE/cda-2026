@@ -11,6 +11,12 @@ execute:
   eval: true
   warning: false
   message: false
+filters:
+  - ripper
+ripper:
+  output-dir: "extracted"
+  script-links-position: "none"
+  include-yaml: true
 ---
 
 ```{r setup, echo = FALSE}
@@ -102,7 +108,7 @@ fitdist(x, "nbinom") |> plot()
 save data for other languages
 
 ```{r}
-cat(x, sep = "\n", file = "nb_sim.txt")
+cat(x, sep = "\n", file = "../../data/nb_sim.txt")
 ```
 
 Small note regarding the `vcd` package. It gives correct answers but in
@@ -163,7 +169,7 @@ make our example comparable with R, we read data generated from R that
 was saved to text file.
 
 ```{python}
-x = np.loadtxt("nb_sim.txt", dtype = np.int64)
+x = np.loadtxt("../../data/nb_sim.txt", dtype = np.int64)
 np.mean(x)
 ```
 
@@ -226,7 +232,7 @@ make our example comparable with R, we read data generated from R that
 was saved to text file.
 
 ```{julia}
-x = readdlm("nb_sim.txt", Int);
+x = readdlm("../../data/nb_sim.txt", Int);
 x = vec(x);
 mean(x)
 ```
