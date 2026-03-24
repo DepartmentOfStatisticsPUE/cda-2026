@@ -9,3 +9,9 @@ codes/extracted/
 
 # Generated Moodle HTML (local convenience file)
 moodle-table.html
+
+# Homework grading keys and solutions (not shared with students)
+homeworks/*-grading-key*
+homeworks/*-answer-key*
+homeworks/*-solution-*
+homeworks/generate-all-keys*

@@ -1,0 +1,272 @@
+---
+title: "Problem Set 1: Vacancy Analysis"
+author: "Categorical Data Analysis 2025/26"
+format:
+  html:
+    embed-resources: true
+    number-sections: true
+    df-print: kable
+---
+
+## Instructions
+
+- Use your **student ID number** (nr albumu) as the seed — every student works with a **unique dataset**.
+- You may use **R, Python, or Julia** (pick one and use it consistently).
+- **Total: 10 points. Deadline: one week from assignment date.**
+
+::: {.callout-warning}
+## Submission requirements
+
+1. Submit a **single self-contained HTML file** via **Moodle**.
+2. The file name must follow the pattern: `hw01-<student_id>.html` (e.g., `hw01-130149.html`).
+3. The file **must contain**:
+   - Your **student ID** and **NACE section letter** clearly stated at the top.
+   - All **code** used to produce the answers (visible in the document).
+   - All **outputs** (numbers, tables, plots) rendered inline.
+   - Written answers to interpretation questions.
+4. **How to produce the HTML file:**
+   - **R users**: Write your solution in a `.qmd` or `.Rmd` file, then render with `quarto render` or `knit`.
+   - **Python users**: Write in a Jupyter notebook (`.ipynb`), then export: *File → Download as → HTML*.
+   - **Julia users**: Write in a `.qmd` file with Julia engine, then render with `quarto render`.
+5. **Before submitting**, verify that the HTML file opens in a browser and shows all outputs correctly.
+6. Submissions that do not contain visible code and outputs will **not be graded**.
+
+**How to use this file:**
+
+- **R users**: Save this file as `hw01-<student_id>.qmd`. Delete the Python code blocks, keep the R blocks. Fill in the R code and render with `quarto render hw01-<student_id>.qmd`.
+- **Python users**: Use the `.ipynb` version provided. Delete the R code cells, keep the Python cells. Fill in the code and export as HTML: *File → Download as → HTML*.
+:::
+
+## Step 0: Set your seed and prepare data
+
+Replace `XXXXX` with your student ID number. Use **one** of the following (R or Python) and keep using the same language throughout.
+
+::: panel-tabset
+### R
+
+```{r, eval = F}
+## Replace XXXXX with your student ID
+set.seed(XXXXX)
+jvs <- read.csv("polish-jvs.csv")
+my_data <- jvs[sample(nrow(jvs), 3000), ]
+top3 <- names(sort(table(my_data$nace), decreasing = TRUE))[1:3]
+my_section <- sample(top3, 1)
+cat("My NACE section:", my_section, "\n")
+section_data <- my_data[my_data$nace == my_section, ]
+cat("Number of rows:", nrow(section_data), "\n")
+```
+
+### Python
+
+```{python, eval = F}
+## Replace XXXXX with your student ID
+import numpy as np
+import pandas as pd
+import scipy.stats as st
+from scipy.optimize import minimize
+
+STUDENT_ID = XXXXX
+
+np.random.seed(STUDENT_ID)
+jvs = pd.read_csv("polish-jvs.csv")
+my_data = jvs.sample(3000)
+top3 = my_data['nace'].value_counts().head(3).index.tolist()
+my_section = np.random.choice(top3, 1)[0]
+print("My NACE section:", my_section)
+section_data = my_data[my_data['nace'] == my_section]
+print("Number of rows:", len(section_data))
+```
+:::
+
+**My student ID:** *XXXXX*
+
+**My NACE section:** *...*
+
+**Number of rows in section_data:** *...*
+
+
+## Part A: Categorical data (2 points)
+
+### a) Frequency table of `size` (1 pt)
+
+Create a frequency table of the `size` variable. Which size category is the most common?
+
+```{r}
+## Your code here (R)
+
+```
+
+```{python}
+## Your code here (Python)
+
+```
+
+**Answer:** The most common size is *...* with *...* observations.
+
+
+### b) Two-way table `size` x `public` (1 pt)
+
+Create a two-way table of `size` x `public`. What proportion of companies in your section are both **Small** and **private** (`public == 0`)? Report as a percentage with 2 decimal places.
+
+```{r}
+## Your code here (R)
+
+```
+
+```{python}
+## Your code here (Python)
+
+```
+
+**Answer:** The proportion of Small and private companies is *...* %.
+
+
+## Part B: Distribution of vacancies (3 points)
+
+### a) Sample statistics (1 pt)
+
+Compute the sample mean ($\bar{x}$), sample variance ($s^2$), and dispersion index ($D = s^2 / \bar{x}$) for the `vacancies` variable.
+
+```{r}
+## Your code here (R)
+
+```
+
+```{python}
+## Your code here (Python)
+
+```
+
+**Answer:**
+
+- Sample mean: *...*
+- Sample variance: *...*
+- Dispersion index: *...*
+
+
+### b) Zero proportion comparison (1 pt)
+
+Compute the observed proportion of zeros and compare with the theoretical Poisson probability $P(X = 0) = e^{-\bar{x}}$.
+
+```{r}
+## Your code here (R)
+
+```
+
+```{python}
+## Your code here (Python)
+
+```
+
+**Answer:**
+
+- Observed P(X=0): *...*
+- Theoretical Poisson P(X=0): *...*
+
+
+### c) Observed vs. expected frequency table (1 pt)
+
+Create a comparison table for values 0, 1, 2, 3, 4, 5+. Compute expected frequencies under $\text{Poisson}(\hat{\lambda} = \bar{x})$.
+
+```{r}
+## Your code here (R)
+
+```
+
+```{python}
+## Your code here (Python)
+
+```
+
+| Vacancies | Observed | Expected (Poisson) |
+|-----------|----------|-------------------|
+| 0         | *...*    | *...*             |
+| 1         | *...*    | *...*             |
+| 2         | *...*    | *...*             |
+| 3         | *...*    | *...*             |
+| 4         | *...*    | *...*             |
+| 5+        | *...*    | *...*             |
+
+
+## Part C: Maximum likelihood estimation (3 points)
+
+### a) Closed-form MLE (1 pt)
+
+Write the Poisson log-likelihood function and compute the MLE using the closed-form formula. Report $\hat{\lambda}$ and its standard error $\text{SE} = \sqrt{\hat{\lambda}/n}$.
+
+```{r}
+## Your code here (R)
+
+```
+
+```{python}
+## Your code here (Python)
+
+```
+
+**Answer:**
+
+- $\hat{\lambda}$ (closed form) = *...*
+- SE = *...*
+
+
+### b) Numerical optimization (1 pt)
+
+Implement the log-likelihood in code and find $\hat{\lambda}$ by numerical optimization. Verify it matches part (a).
+
+```r
+## Define the negative log-likelihood function (R)
+## Your code here
+
+## Minimize it (e.g., optim with method="Brent")
+## Your code here
+
+```
+
+```{python}
+## Define the negative log-likelihood function (Python)
+## Your code here
+
+## Minimize it (e.g., scipy.optimize.minimize)
+## Your code here
+
+```
+
+**Answer:** $\hat{\lambda}$ (numerical) = *...*
+
+
+### c) Score function verification (1 pt)
+
+Compute the score function (gradient) at $\hat{\lambda}$. Verify it is approximately zero.
+
+The score function for the Poisson is:
+
+$$S(\lambda) = \frac{\partial l}{\partial \lambda} = \frac{\sum_i x_i}{\lambda} - n$$
+
+```{r}
+## Your code here (R)
+
+```
+
+```{python}
+## Your code here (Python)
+
+```
+
+**Answer:** Score at MLE = *...* (should be ≈ 0)
+
+
+## Part D: Interpretation (2 points)
+
+### a) Is the Poisson model adequate? (1 pt)
+
+Is the Poisson distribution a good model for the vacancies in your NACE section? In your answer, consider: (1) what value of the dispersion index would you expect if Poisson were correct, and what did you observe? (2) Do the observed and expected frequencies from Part B(c) agree — where are the largest discrepancies? Justify in 2-3 sentences.
+
+**Answer:** *Write your interpretation here...*
+
+
+### b) Alternative distribution (1 pt)
+
+If the Poisson model is not adequate, what alternative distribution would you suggest and why? What property of this alternative addresses the problem you identified?
+
+**Answer:** *Write your interpretation here...*

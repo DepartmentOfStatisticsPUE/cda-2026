@@ -25,6 +25,14 @@
 | 5 | Maximum likelihood estimation | [.R](codes/R/05-mle.R) | [.py](codes/python/05-mle.py) | [.jl](codes/julia/05-mle.jl) | [.ipynb](codes/notebooks/05-mle.ipynb) |
 | 6 | Goodness of fit | [.R](codes/R/06-gof.R) | [.py](codes/python/06-gof.py) | [.jl](codes/julia/06-gof.jl) | [.ipynb](codes/notebooks/06-gof.ipynb) |
 
+## Problem sets
+
+| # | Topic | HTML | QMD | Jupyter |
+|---|-------|------|-----|---------|
+| 1 | Vacancy analysis (categorical data, distributions, MLE) | [html](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/homeworks/hw01-problem-set.html) | [qmd](homeworks/hw01-problem-set.qmd) | [ipynb](homeworks/hw01-problem-set.ipynb) |
+| 2 | TBA | -- | -- | -- |
+| 3 | TBA | -- | -- | -- |
+
 ## Example final test
 
 Example test -- [qmd](example-test/example-test.qmd), [html](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/example-test/example-test.html)
