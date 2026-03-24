@@ -101,10 +101,50 @@ def update_readme(table_text):
     print(f"Updated {README.relative_to(REPO_ROOT)}")
 
 
+def generate_html_table(files):
+    """Generate HTML table with full GitHub URLs for Moodle."""
+    lines = []
+    lines.append('<table border="1" cellpadding="6" cellspacing="0">')
+    lines.append("<thead>")
+    lines.append("<tr>")
+    for h in ["#", "Topic", "R", "Python", "Julia", "Jupyter"]:
+        lines.append(f"  <th>{h}</th>")
+    lines.append("</tr>")
+    lines.append("</thead>")
+    lines.append("<tbody>")
+
+    for i, stem in enumerate(TOPIC_ORDER, 1):
+        name = TOPIC_NAMES.get(stem, stem)
+        lines.append("<tr>")
+        lines.append(f"  <td>{i}</td>")
+        lines.append(f"  <td>{name}</td>")
+        for lang in ["R", "Python", "Julia", "Jupyter"]:
+            if lang in files[stem]:
+                ext_map = {"R": ".R", "Python": ".py", "Julia": ".jl", "Jupyter": ".ipynb"}
+                url = f"{GITHUB_BASE}/{files[stem][lang].removeprefix('codes/')}"
+                lines.append(f'  <td><a href="{url}">{ext_map[lang]}</a></td>')
+            else:
+                lines.append("  <td>--</td>")
+        lines.append("</tr>")
+
+    lines.append("</tbody>")
+    lines.append("</table>")
+    return "\n".join(lines)
+
+
+def write_moodle_html(html_text):
+    """Write HTML table to moodle-table.html for easy copy-paste."""
+    out = REPO_ROOT / "moodle-table.html"
+    out.write_text(html_text, encoding="utf-8")
+    print(f"Generated {out.relative_to(REPO_ROOT)} (copy-paste into Moodle)")
+
+
 def main():
     files = find_files()
     table = generate_table(files)
     update_readme(table)
+    html = generate_html_table(files)
+    write_moodle_html(html)
 
 
 if __name__ == "__main__":

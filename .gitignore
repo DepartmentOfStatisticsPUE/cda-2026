@@ -6,3 +6,6 @@ zaliczenie
 
 # Ripper extracted files (intermediate, sorted into R/python/julia by Makefile)
 codes/extracted/
+
+# Generated Moodle HTML (local convenience file)
+moodle-table.html
