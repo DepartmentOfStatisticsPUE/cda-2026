@@ -27,7 +27,7 @@
 
 ## Example final test
 
-Example test -- [qmd](codes/example-test.qmd), [html](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/example-test/example-test.html)
+Example test -- [qmd](example-test/example-test.qmd), [html](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/example-test/example-test.html)
 
 ## Required packages / modules
 

@@ -1,6 +1,7 @@
 ---
 title: "Example test"
-format: 
+author: "Maciej Beręsewicz"
+format:
   html:
     echo: false
     embed-resources: true
@@ -53,7 +54,7 @@ Given the following outputs please answer the following questions:
 3. Provide interpretation of parameter `school` for the count model and `school` for the zero-inflated model.
 
 
-Model 1
+Model 1 (ZIP)
 
 ```r
 Call:
@@ -84,6 +85,8 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 Number of iterations in BFGS optimization: 13 
 Log-likelihood: -1269 on 10 Df
 ```
+
+Model 2 (ZINB)
 
 ```r
 Call:
@@ -117,7 +120,7 @@ Number of iterations in BFGS optimization: 29
 Log-likelihood: -864.3 on 11 Df
 ```
 
-Model 2 
+Model comparison
 
 ```r
 > BIC(m1, m2)
@@ -134,11 +137,11 @@ We fitted negative binomial and zero-inflated negative binomial regression. Answ
 2. Based on this model can we say that males and females differ in terms of Y variable (`daysabs` days of absenteeism)? 
 
 
-Model 1
+Model 1 (NB)
 
 ```r
 Call:
-MASS::glm.nb(formula = daysabs ~ gender + school + mathnce + 
+MASS::glm.nb(formula = daysabs ~ gender + school + mathnce +
     langnce, data = df, init.theta = 0.8687425507, link = log)
 
 Coefficients:
@@ -163,14 +166,14 @@ Number of Fisher Scoring iterations: 1
               Theta:  0.8687 
           Std. Err.:  0.0860 
 
- 2 x log-likelihood:  -1734.3020 
+ 2 x log-likelihood:  -1734.3020
 ```
 
-Model 2
+Model 2 (ZINB)
 
 ```r
 Call:
-zeroinfl(formula = daysabs ~ gender + school + mathnce + langnce, 
+zeroinfl(formula = daysabs ~ gender + school + mathnce + langnce,
     data = df, dist = "negbin")
 
 Pearson residuals:
