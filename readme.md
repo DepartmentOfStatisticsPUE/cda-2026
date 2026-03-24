@@ -27,11 +27,13 @@
 
 ## Problem sets
 
-| # | Topic | HTML | QMD | Jupyter |
-|---|-------|------|-----|---------|
-| 1 | Vacancy analysis (categorical data, distributions, MLE) | [html](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/homeworks/hw01-problem-set.html) | [qmd](homeworks/hw01-problem-set.qmd) | [ipynb](homeworks/hw01-problem-set.ipynb) |
-| 2 | TBA | -- | -- | -- |
-| 3 | TBA | -- | -- | -- |
+Submit solutions as a **single HTML file** via **Moodle**.
+
+| # | Topic | HTML | QMD | Jupyter | Deadline |
+|---|-------|------|-----|---------|----------|
+| 1 | Vacancy analysis (categorical data, distributions, MLE) | [html](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/homeworks/hw01-problem-set.html) | [qmd](homeworks/hw01-problem-set.qmd) | [ipynb](homeworks/hw01-problem-set.ipynb) | 2026-03-31 23:59 |
+| 2 | TBA | -- | -- | -- | TBA |
+| 3 | TBA | -- | -- | -- | TBA |
 
 ## Example final test
 
