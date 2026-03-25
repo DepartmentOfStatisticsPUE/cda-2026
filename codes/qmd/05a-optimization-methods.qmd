@@ -27,7 +27,7 @@ $$
 ::: panel-tabset
 ### R
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 library(maxLik)
 d <- c(1645, 183, 37, 13, 1, 1)
 x <- rep(1:6, d)
@@ -45,7 +45,7 @@ x = np.repeat(np.arange(1, 7), d)
 ```
 :::
 
-## Log-likelihood without safeguard
+## Log-likelihood functions
 
 ::: panel-tabset
 ### R
@@ -88,11 +88,10 @@ The log-likelihood contains `log(par)` and `log(exp(par) - 1)`. Both fail when `
 
 ```{r}
 ## Evaluating at invalid parameter values
-cat("log(-0.3) =", log(-0.3), "\n")
-cat("log(exp(-0.3) - 1) = log(", exp(-0.3) - 1, ") =", log(exp(-0.3) - 1), "\n")
-cat("\n")
-cat("log(0.35) =", round(log(0.35), 4), " -- valid\n")
-cat("log(exp(0.35) - 1) =", round(log(exp(0.35) - 1), 4), " -- valid\n")
+log(-0.3)
+log(exp(-0.3) - 1)
+round(log(0.35), 4)
+round(log(exp(0.35) - 1), 4)
 ```
 
 ### Python
@@ -124,11 +123,11 @@ Starting from $\lambda^{(0)} = 1$:
 ::: panel-tabset
 ### R
 
-```{r}
+```{r, echo=FALSE}
 ## Manual Newton-Raphson step from lambda=1
 lam0 <- 1.0
-g <- grad(lam0, x)
-h <- hess(lam0, x)
+g <- grad(lam0, x) # numDeriv::grad
+h <- hess(lam0, x) # numDeriv::hessian
 cat("At lambda = 1.0:\n")
 cat("  Gradient =", round(g, 2), "(strongly negative: optimum is to the LEFT)\n")
 cat("  Hessian  =", round(h, 2), "\n")
@@ -146,7 +145,7 @@ cat("  -> If candidate < 0, log() produces NaN, line search backtracks\n")
 
 ### Python
 
-```{python}
+```{python, echo=FALSE}
 ## Manual Newton-Raphson step from lambda=1
 lam0 = 1.0
 g = -(neg_grad([lam0], x)[0])  # positive gradient (for maximization)
@@ -157,7 +156,6 @@ print(f"At lambda = 1.0:")
 print(f"  Gradient = {g:.2f} (strongly negative: optimum is to the LEFT)")
 print(f"  Hessian  = {h:.2f}")
 print(f"  Full Newton step: lambda_new = {lam0} - ({g:.2f} / {h:.2f}) = {lam0 - g/h:.4f}")
-print()
 
 ## Line search overshoot example
 print("If line search tries step size 1.5:")
@@ -184,7 +182,7 @@ When $\lambda$ is small, $\lambda - \varepsilon < 0$, producing NaN at **every i
 ::: panel-tabset
 ### R
 
-```{r}
+```{r, echo = FALSE}
 ## Simulate what BFGS does near lambda = 0.01
 eps <- 1e-4
 lam_small <- 0.01
@@ -200,7 +198,7 @@ cat("  ll(lam - eps) = ll(", lam_tiny - eps, ") =", ll(lam_tiny - eps, x), "-- N
 
 ### Python
 
-```{python}
+```{python, echo = FALSE}
 ## Simulate what BFGS does near lambda = 0.01
 eps = 1e-4
 lam_small = 0.01
@@ -223,47 +221,32 @@ with warnings.catch_warnings():
 ::: panel-tabset
 ### R
 
-```{r}
-cat("=== Newton-Raphson (default) ===\n")
-res_nr <- maxLik(logLik = ll, start = 1, x = x)
-cat("Iterations:", res_nr$iterations, "\n")
-cat("Estimate:", round(coef(res_nr), 6), "\n")
-cat("SE:", round(stdEr(res_nr), 5), "\n\n")
+Warnings were suppressed.
 
-cat("=== BFGS ===\n")
+```{r, warning=FALSE}
+res_nr <- maxLik(logLik = ll, start = 1, x = x)
+res_nr
 res_bfgs <- maxLik(logLik = ll, start = 1, x = x, method = "BFGS")
-cat("Iterations:", res_bfgs$iterations, "\n")
-cat("Estimate:", round(coef(res_bfgs), 6), "\n")
-cat("SE:", round(stdEr(res_bfgs), 5), "\n")
+res_bfgs
 ```
 
 ### Python
 
 ```{python}
-print("=== Nelder-Mead (gradient-free) ===")
 res_nm = minimize(neg_ll, x0=[0.5], args=(x,), method="Nelder-Mead")
-print(f"Iterations: {res_nm.nit}")
-print(f"Estimate: {res_nm.x[0]:.6f}")
-print()
+res_nm
 
-print("=== BFGS ===")
 res_bfgs = minimize(neg_ll, x0=[0.5], args=(x,), method="BFGS", jac=lambda p, x: neg_grad(p, x), options={"disp": False})
-print(f"Iterations: {res_bfgs.nit}")
-print(f"Estimate: {res_bfgs.x[0]:.6f}")
-print()
 
-print("=== L-BFGS-B (bounded BFGS) ===")
 res_lbfgsb = minimize(neg_ll, x0=[0.5], args=(x,), method="L-BFGS-B",
                        jac=lambda p, x: neg_grad(p, x), bounds=[(1e-8, None)])
-print(f"Iterations: {res_lbfgsb.nit}")
-print(f"Estimate: {res_lbfgsb.x[0]:.6f}")
-print("No warnings -- bounds prevent lambda < 0")
+res_lbfgsb
 ```
 :::
 
 ## Fix 1: safeguard in the log-likelihood
 
-Return `NA` (R) or `np.inf` (Python) for invalid parameters. The optimizer treats this as "bad region, backtrack".
+Return `NA` (R) or `np.inf` (Python) for invalid parameters. When `maxLik` receives `NA`, it does **not** skip the iteration — it treats the candidate value as invalid and **backtracks** by reducing the step size. The optimizer keeps halving the step until it lands in the valid region where the log-likelihood returns a finite number. This is the same mechanism that happens with raw NaN warnings, but the `NA` guard makes it **silent and intentional** rather than relying on R's NaN propagation.
 
 ::: panel-tabset
 ### R
@@ -273,12 +256,12 @@ ll_safe <- function(par, x) {
   if (par <= 0) return(NA)
   sum(x) * log(par) - length(x) * log(exp(par) - 1)
 }
-
-cat("=== Newton-Raphson with safeguard ===\n")
 res_safe <- maxLik(logLik = ll_safe, start = 1, x = x)
-cat("Estimate:", round(coef(res_safe), 6), "\n")
-cat("No NaN warnings!\n")
+res_safe
+
 ```
+
+No NaN warnings!
 
 ### Python
 
@@ -289,28 +272,46 @@ def neg_ll_safe(par, x):
         return np.inf
     return -(np.sum(x) * np.log(lam) - len(x) * np.log(np.exp(lam) - 1))
 
-print("=== Nelder-Mead with safeguard ===")
 res_safe = minimize(neg_ll_safe, x0=[0.5], args=(x,), method="Nelder-Mead")
-print(f"Estimate: {res_safe.x[0]:.6f}")
-print("No NaN warnings!")
+res_safe
 ```
+
+No NaN warnings!
+
 :::
 
 ## Fix 2: supply analytical gradient and Hessian
 
-When the optimizer has exact derivatives, it takes precise steps and avoids invalid regions entirely.
+Supplying exact derivatives improves convergence (fewer iterations, better SE). However, this alone does **not** eliminate NaN warnings — the gradient and Hessian contain terms like `1/λ` and `1/λ²` that are also undefined for λ ≤ 0, and the line search can still probe invalid regions.
+
+To truly eliminate warnings, **combine** safeguards (Fix 1) with analytical derivatives.
 
 ::: panel-tabset
 ### R
 
 ```{r}
-cat("=== Newton-Raphson with analytical gradient + Hessian ===\n")
+## Without safeguards: still produces NaN warnings during line search
 res_exact <- maxLik(logLik = ll, start = 1, grad = grad, hess = hess, x = x)
-cat("Iterations:", res_exact$iterations, "\n")
-cat("Estimate:", round(coef(res_exact), 6), "\n")
-cat("SE:", round(stdEr(res_exact), 5), "\n")
-cat("No NaN warnings!\n")
+res_exact
 ```
+
+Combine safeguards with analytical derivatives for clean output **and** fast convergence:
+
+```{r}
+grad_safe <- function(par, x) {
+  if (par <= 0) return(NA)
+  grad(par, x)
+}
+hess_safe <- function(par, x) {
+  if (par <= 0) return(NA)
+  hess(par, x)
+}
+res_exact_safe <- maxLik(logLik = ll_safe, start = 1,
+                         grad = grad_safe, hess = hess_safe, x = x)
+res_exact_safe
+```
+
+No NaN warnings — and only 6 iterations (vs 39 for BFGS without derivatives).
 
 ### Python
 
@@ -319,14 +320,13 @@ def neg_hess(par, x):
     lam = par[0]
     return np.array([[np.sum(x) / lam**2 - len(x) * np.exp(lam) / (np.exp(lam) - 1)**2]])
 
-print("=== Newton-CG with analytical gradient + Hessian ===")
-res_exact = minimize(neg_ll, x0=[0.5], args=(x,), method="Newton-CG",
+## Safeguarded + exact derivatives
+res_exact = minimize(neg_ll_safe, x0=[0.5], args=(x,), method="Newton-CG",
                      jac=lambda p, x: neg_grad(p, x),
                      hessp=lambda p, v, x: neg_hess(p, x) @ v)
-print(f"Iterations: {res_exact.nit}")
-print(f"Estimate: {res_exact.x[0]:.6f}")
-print("No NaN warnings!")
+res_exact
 ```
+
 :::
 
 ## Fix 3: use bounded optimization
@@ -337,32 +337,32 @@ Constrain $\lambda > 0$ directly.
 ### R
 
 ```{r}
-cat("=== L-BFGS-B (bounded) via optim ===\n")
-## maxLik does not support L-BFGS-B; use optim directly
 res_b2 <- optim(1, function(p) -ll(p, x), method = "L-BFGS-B",
                 lower = 1e-8, upper = 50)
-cat("Estimate:", round(res_b2$par, 6), "\n")
-cat("No NaN warnings -- lambda constrained to [1e-8, 50]\n")
+res_b2
 ```
+
+No NaN warnings!
+
 
 ### Python
 
 ```{python}
-print("=== L-BFGS-B (bounded) ===")
 res_bounded = minimize(neg_ll, x0=[0.5], args=(x,), method="L-BFGS-B",
                        bounds=[(1e-8, None)])
-print(f"Estimate: {res_bounded.x[0]:.6f}")
-print("No NaN warnings -- lambda constrained to (0, inf)")
+
+res_bounded
 ```
 :::
 
 ## Summary
 
-| Approach | Warnings? | When to use |
-|----------|-----------|-------------|
+| Approach | Warnings? | Benefit |
+|----------|-----------|---------|
 | No safeguard | Yes (harmless) | Quick prototyping; warnings don't affect the result |
 | `if (par <= 0) return(NA/Inf)` | No | Simple fix; works with any optimizer |
-| Analytical gradient + Hessian | No | Best convergence; recommended for production code |
-| Bounded optimization (L-BFGS-B) | No | When parameter has known bounds |
+| Analytical gradient + Hessian only | Yes (still probes invalid λ) | Fewer iterations, better SE estimates |
+| Safeguard + analytical derivatives | No | Best of both: clean output + fast convergence |
+| Bounded optimization (L-BFGS-B) | No | When parameter has known bounds; enforced by optimizer |
 
-All approaches converge to the same $\hat{\lambda} = 0.3086$. The choice depends on whether you want clean output and faster convergence (analytical derivatives) or just a quick result (safeguard).
+All approaches converge to the same $\hat{\lambda} = 0.3086$. For production code, combining safeguards with analytical derivatives is recommended.
