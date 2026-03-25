@@ -10,7 +10,7 @@ format:
 
 ## Instructions
 
-- Use your **student ID number** (nr albumu) as the seed — every student works with a **unique dataset**.
+- Use your **student ID number** (nr albumu — the number from your university email, e.g., `130149` from `130149@student.ue.poznan.pl`) as the seed — every student works with a **unique dataset**.
 - You may use **R, Python, or Julia** (pick one and use it consistently).
 - **Total: 10 points. Deadline: one week from assignment date.**
 
@@ -39,7 +39,7 @@ format:
 
 ## Step 0: Set your seed and prepare data
 
-Replace `XXXXX` with your student ID number. Use **one** of the following (R or Python) and keep using the same language throughout.
+Replace `XXXXX` with your student ID number (nr albumu from your email). Use **one** of the following (R or Python) and keep using the same language throughout.
 
 ::: panel-tabset
 ### R
