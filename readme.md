@@ -10,6 +10,10 @@
 6. Goodness of fit - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/06-gof.html)
 
 
+## Extra materials
+
+- Optimization methods for MLE - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/05a-optimization-methods.html)
+
 ## Case study
 
 [TBA]
