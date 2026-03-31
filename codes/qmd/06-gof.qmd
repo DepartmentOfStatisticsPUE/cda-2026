@@ -27,7 +27,7 @@ knitr::opts_chunk$set(engine.path = list(
 ))
 ```
 
-## Setup
+# Setup
 
 ::: panel-tabset
 ## R
@@ -76,7 +76,7 @@ using DataFrames
 ```
 :::
 
-## Exercise for the lecture
+# Exercise for the lecture #1
 
 ::: panel-tabset
 ## R
@@ -99,7 +99,7 @@ The same using `fitdistrplus` package
 fitdist(x, "nbinom")
 ```
 
-`fitdistrplus` package have PDF and CDF plots for assessing the fit.
+`fitdistrplus` package have PMF and CDF plots for assessing the fit.
 
 ```{r}
 fitdist(x, "nbinom") |> plot()
@@ -115,7 +115,7 @@ Small note regarding the `vcd` package. It gives correct answers but in
 a slightly different way.
 
 1.  `goodfit` function returns a list with `fitted` (expected)
-    frequencies under a given distribution using `pdf` of this
+    frequencies under a given distribution using `pmf` of this
     distribution
 2.  `summary(goodfit object)` returns a $\chi^2$ and $G^2$ tests using
     `cdf` of a given distribution. 3. Pearson residuals are calculated
@@ -159,7 +159,7 @@ $$
 
 ```{python}
 np.random.seed(1)
-N = 1000
+N = 10000
 x = st.nbinom(n = 2, p = 2/(2+3)).rvs(N)
 np.mean(x)
 ```
@@ -176,11 +176,11 @@ np.mean(x)
 Optimization using pmf function
 
 ```{python}
-def pdf_nbinom(par, x):
+def ll_nbinom(par, x):
   pdfnbinom = st.nbinom(par[0],par[1]).logpmf(x)
   return -np.sum(pdfnbinom)
 
-res = minimize(fun=pdf_nbinom, x0=[2, 0.5], args = (x), method = "Nelder-Mead")
+res = minimize(fun=ll_nbinom, x0=[2, 0.5], args = (x), method = "Nelder-Mead")
 res
 res.x
 ```
@@ -193,16 +193,16 @@ $G^2$ and $\chi^2$ GoF can be calculated using
 ```{python}
 x_uniq_vals, x_uniq_counts = np.unique(x, return_counts=True)
 ## we simply use pdf(NB(2.01357331, 0.40157875), x) 
-est_pdf = st.nbinom(res.x[0],res.x[1]).pmf(x_uniq_vals) 
-est_pdf = est_pdf/np.sum(est_pdf)
-np.round(est_pdf*100,)
+est_pmf = st.nbinom(res.x[0],res.x[1]).pmf(x_uniq_vals) 
+est_pmf = est_pmf/np.sum(est_pmf)
+np.round(est_pmf*100,)
 ```
 
 $G^2$ test
 
 ```{python}
 st.power_divergence(x_uniq_counts, 
-                    sum(x_uniq_counts)*est_pdf, 
+                    sum(x_uniq_counts)*est_pmf, 
                     lambda_ = 0, ddof = 2)
 ```
 
@@ -210,7 +210,7 @@ $\chi^2$ test
 
 ```{python}
 st.power_divergence(x_uniq_counts, 
-                    sum(x_uniq_counts)*est_pdf, 
+                    sum(x_uniq_counts)*est_pmf, 
                     lambda_ = 1, ddof = 2)
 ```
 
@@ -222,7 +222,7 @@ https://stackoverflow.com/questions/38252879/how-to-plot-a-hanging-rootogram-in-
 
 ```{julia}
 Random.seed!(123);
-n = 1000;
+n = 10000;
 x = rand(NegativeBinomial(2, 2/(2+3)), n);
 mean(x)
 ```
@@ -243,7 +243,7 @@ function llnb(par, data)
   return -sum(ll)
 end
 
-res = optimize(par -> llnb(par, x), [2, 0.5])
+res = optimize(par -> llnb(par, x), [0.01, 0.01], [100.0, 0.99], [2.0, 0.5])
 res.minimizer
 ```
 
@@ -254,14 +254,14 @@ x_uniq_dict = sort(countmap(x));
 x_uniq_vals = Int.(keys(x_uniq_dict));
 x_uniq_counts = Int.(values(x_uniq_dict));
 x_params = res.minimizer;
-est_pdf = pdf.(NegativeBinomial(x_params[1], x_params[2]), x_uniq_vals);
-est_pdf = est_pdf ./ sum(est_pdf);
+est_pmf = pdf.(NegativeBinomial(x_params[1], x_params[2]), x_uniq_vals);
+est_pmf = est_pmf ./ sum(est_pmf);
 ```
 
 $G^2$ test
 
 ```{julia, eval = F}
-PowerDivergenceTest(x_uniq_counts, lambda = 0.0, theta0 = est_pdf) 
+PowerDivergenceTest(x_uniq_counts, lambda = 0.0, theta0 = est_pmf) 
 ```
 
 ``` julia
@@ -285,7 +285,7 @@ Details:
     std. residuals:     [-0.236076, 0.223635, -0.151902, -0.0121131, 1.15647, -0.75304, -0.02151, -0.496206, -1.10169, 0.91225, -1.48139, 2.56985, 0.147502, -0.600848, -0.693853, -0.242248, 0.201113, 1.15028, 5.21153]
 ```
 
-Correct p-value for the correct number of dof.
+Corrected p-value (df = 18 - 2 = 16):
 
 ```{julia}
 1-cdf(Chisq(16), 18.591632916708782)
@@ -294,7 +294,7 @@ Correct p-value for the correct number of dof.
 $\chi^2$ test
 
 ```{julia, eval = F}
-PowerDivergenceTest(x_uniq_counts, lambda = 1.0, theta0 = est_pdf)
+PowerDivergenceTest(x_uniq_counts, lambda = 1.0, theta0 = est_pmf)
 ```
 
 ``` julia
@@ -318,15 +318,14 @@ Details:
     std. residuals:     [-0.236076, 0.223635, -0.151902, -0.0121131, 1.15647, -0.75304, -0.02151, -0.496206, -1.10169, 0.91225, -1.48139, 2.56985, 0.147502, -0.600848, -0.693853, -0.242248, 0.201113, 1.15028, 5.21153]
 ```
 
-Note that p-value is calculated wrongly as correct df is 18 not 20. So
-correct p-value is:
+Note that p-value is calculated incorrectly because `PowerDivergenceTest` does not account for estimated parameters. The correct df is 16, not 18 (18 categories minus $s=2$ estimated NB parameters). Corrected p-value:
 
 ```{julia}
 1-cdf(Chisq(16), 42.242072813765624)
 ```
 :::
 
-## Example from the lecture
+# Example from the lecture #2
 
 ::: panel-tabset
 ## R
@@ -447,11 +446,11 @@ X_dt
 
 ```{python}
 ## loglik for n
-def pdf_nbinom(par, x):
+def ll_nbinom(par, x):
   pdfnbinom = st.nbinom(par[0],par[1]).logpmf(x)
   return -np.sum(pdfnbinom)
 
-res_nb = minimize(fun=pdf_nbinom, x0=[2, 0.5], args = (X), method = "Nelder-Mead")
+res_nb = minimize(fun=ll_nbinom, x0=[2, 0.5], args = (X), method = "Nelder-Mead")
 ll_po = sum(st.poisson(np.mean(X)).logpmf(X))
 ll_nb = -res_nb.fun
 LR_test =  2*ll_nb - 2*ll_po
@@ -476,5 +475,37 @@ lambda_hat = mean(X);
 n_hat = length(X) * pdf.(Poisson(lambda_hat), 0:4);
 r_hat = (values(X_tab) .- n_hat) ./ sqrt.(n_hat);
 X_dt = DataFrame(X = 0:4, n = values(X_tab).*1, n_hat = n_hat, r_hat = r_hat)
+```
+
+GoF, AIC, BIC and LR test
+
+```{julia}
+## fit NB
+function llnb_jl(par, data)
+  ll = logpdf.(NegativeBinomial(par[1], par[2]), data)
+  return -sum(ll)
+end
+
+res_nb = optimize(par -> llnb_jl(par, X), [0.01, 0.01], [100.0, 0.99], [2.0, 0.5])
+nb_params = Optim.minimizer(res_nb)
+
+## log-likelihoods
+ll_po = sum(logpdf.(Poisson(lambda_hat), X))
+ll_nb = -Optim.minimum(res_nb)
+
+## AIC and BIC
+n_obs = length(X)
+AIC_po = 2*1 - 2*ll_po
+AIC_nb = 2*2 - 2*ll_nb
+BIC_po = log(n_obs)*1 - 2*ll_po
+BIC_nb = log(n_obs)*2 - 2*ll_nb
+
+println("AIC: Poisson = ", round(AIC_po, digits=4), ", NB = ", round(AIC_nb, digits=4))
+println("BIC: Poisson = ", round(BIC_po, digits=4), ", NB = ", round(BIC_nb, digits=4))
+
+## LR test (Poisson nested in NB)
+LR_test = 2*ll_nb - 2*ll_po
+LR_pval = 1 - cdf(Chisq(1), LR_test)
+println("LR test: ", round(LR_test, digits=4), ", p-value: ", round(LR_pval, digits=4))
 ```
 :::

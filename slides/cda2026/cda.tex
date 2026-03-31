@@ -1781,7 +1781,7 @@ Fitting a discrete distribution involves three basic steps:
     \begin{enumerate}
     \justifying
         \item Estimating the parameter(s) of the distribution from the data -- typically using maximum likelihood;
-        \item From this, we can calculate the fitted probabilities ($\hat{p}_k$) or equivalently, the model expected frequencies ($\hat{p}_kN$) [based on the CDF];
+        \item From this, we can calculate the fitted probabilities ($\hat{p}_k$) or equivalently, the model expected frequencies ($\hat{p}_k n$) [based on the CDF];
         \item Finally, we can calculate goodness-of-fit test measuring the departure between the observed and fitted frequencies;
     \end{enumerate}
 
@@ -1799,11 +1799,28 @@ Often goodness-of-fit is examined with a classical (Pearson) goodness-of-fit (GO
         \chi^2 = \sum_{k=1}^{K} \frac{\left(n_{k}-n \hat{p}_{k}\right)^{2}}{n \hat{p}_{k}} \sim \chi^{2}(K-s-1),
     \end{equation}
     
-    where $K$ is number of levels and $s$ is number of parameters. An alternative test statistic is the likelihood-ratio $G^2$ statistic
+    where $n_k$ is the observed frequency for category $k$, $\hat{p}_k$ is the fitted probability, $K$ is the number of categories, and $s$ is the number of estimated parameters. An alternative test statistic is the likelihood-ratio $G^2$ statistic
     
     \begin{equation}
-        G^{2}=\sum_{k=1}^{K} n_{k} \log \left(n_{k} / n \hat{p}_{k}\right) \sim \chi^2(K-s-1).
+        G^{2}=2\sum_{k=1}^{K} n_{k} \log \left(\frac{n_{k}}{n \hat{p}_{k}}\right) \sim \chi^2(K-s-1).
     \end{equation}
+\end{frame}
+
+\begin{frame}{Assessment of the fit -- assumptions}
+    The $\chi^2$ and $G^2$ tests rely on a large-sample approximation. The approximation is reliable when:
+    \begin{itemize}
+        \item Most expected frequencies satisfy $n\hat{p}_k \geq 5$;
+        \item No expected frequency is below 1;
+        \item The total sample size $n$ is sufficiently large.
+    \end{itemize}
+
+    \vspace{0.3cm}
+    When these conditions are violated (sparse data, many categories with low counts):
+    \begin{itemize}
+        \item Merge adjacent low-frequency categories until the condition is met;
+        \item Use a parametric bootstrap to obtain the p-value empirically;
+        \item The \texttt{vcd::goodfit()} warning \textit{``Chi-squared approximation may be incorrect''} is triggered when any $n\hat{p}_k < 5$.
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{Information Criteria}
@@ -1814,17 +1831,50 @@ Often goodness-of-fit is examined with a classical (Pearson) goodness-of-fit (GO
         $$
         \item BIC
         $$
-        \text{BIC} = \log(n) s - 2\log(\hat{L}),
+        \text{BIC} = \log(n) \cdot s - 2\log(\hat{L}),
         $$
          where $s$ is the number of parameters, $n$ is the number observations and $\log(\hat{L})$ is the value log-likelihood function estimated for a given distribution.
          \item To compare two distributions on the same data we may use a likelihood ratio test given by:
          $$
-         \text{LR} = -2\log\left(\frac{\hat{L}_1}{\hat{L}_2}\right) = 2\log(\hat{L}_2) - 2\log(\hat{L}_1) \sim \chi^2(k_2-k_1), 
+         \text{LR} = -2\log\left(\frac{\hat{L}_1}{\hat{L}_2}\right) = 2\log(\hat{L}_2) - 2\log(\hat{L}_1) \sim \chi^2(s_2-s_1),
          $$
-         where $L_1$ is the log-lik of the first (reference) distribution and $L_2$ of the second, $k_1$ and $k_2$ denotes number of parameters of the first and second distribution.
+         where $\hat{L}_1$ is the likelihood of the first (simpler) distribution and $\hat{L}_2$ of the second, $s_1$ and $s_2$ denote the number of parameters of the first and second distribution.
     \end{itemize}
-    
-   
+
+
+\end{frame}
+
+\begin{frame}{Nested vs non-nested models}
+    The LR test requires \textbf{nested models}: model $M_1$ is nested in $M_2$ if $M_1$ is a special case of $M_2$ obtained by fixing some parameters.
+
+    \vspace{0.3cm}
+    \textbf{Examples of nested pairs:}
+    \begin{itemize}
+        \item Poisson ($s=1$) $\subset$ Negative Binomial ($s=2$): set $\theta \to \infty$ in NB $\Rightarrow$ Poisson;
+        \item Binomial ($s=1$, fixed $n$) $\subset$ Beta-Binomial ($s=2$, fixed $n$).
+    \end{itemize}
+
+    \vspace{0.3cm}
+    \textbf{Non-nested examples} (LR test does not apply):
+    \begin{itemize}
+        \item Poisson vs Geometric -- neither is a special case of the other;
+        \item ZIP vs Hurdle -- different structural assumptions about zeros.
+    \end{itemize}
+
+    \vspace{0.3cm}
+    \begin{table}[]
+        \centering
+        \small
+        \begin{tabular}{lll}
+        \hline
+        \textbf{Tool} & \textbf{Purpose} & \textbf{Requirement} \\
+        \hline
+        $\chi^2$ / $G^2$ & Does \textit{one} model fit the data? & Single model \\
+        AIC / BIC & Which model fits \textit{better}? & $\geq 2$ models (any) \\
+        LR test & Is the improvement \textit{significant}? & Nested models \\
+        \hline
+        \end{tabular}
+    \end{table}
 \end{frame}
 
 \begin{frame}{Visual inspection}
@@ -1866,19 +1916,34 @@ Often goodness-of-fit is examined with a classical (Pearson) goodness-of-fit (GO
     \end{figure}
 \end{frame}
 
+\begin{frame}{Rootogram -- interpretation}
+    In a \textbf{hanging rootogram} (Tukey, 1971; Kleiber \& Zeileis, 2016):
+    \begin{itemize}
+        \item The \textbf{red curve} shows fitted (expected) frequencies on the square-root scale: $\sqrt{n\hat{p}_k}$;
+        \item The \textbf{bars hang down} from the curve so their bottom edges indicate the deviation;
+        \item The \textbf{reference line is at 0} -- bars ending \textit{below} 0 indicate the model \textit{overpredicts} that count; bars ending \textit{above} 0 indicate the model \textit{underpredicts};
+        \item A good fit: all bar bottoms are close to the zero line.
+    \end{itemize}
+
+    \vspace{0.3cm}
+    Why square root? It stabilizes the variance of Poisson-like counts, making deviations visually comparable across different frequency levels.
+\end{frame}
+
 \begin{frame}{Procedures -- fitting specific distributions}
     \begin{table}[]
         \centering
         \caption{Overview of functions}
         %\label{tab:my_label}
-        \begin{tabular}{cp{3cm}p{2cm}p{2cm}}
+        \begin{tabular}{cp{3.5cm}p{2.5cm}p{2.5cm}}
         \hline
-          \textbf{Language}   & \textbf{R} &  \textbf{Python} & \textbf{Julia} \\
+          \textbf{Task}   & \textbf{R} &  \textbf{Python} & \textbf{Julia} \\
         \hline
-         Packages  & 
-         base, vcd, countreg & scipy.stats, pingouin &  Distributions.jl, HypothesisTests.jl\\
-        Functions &
-          chisq.test(), vcd::goodfit() &  chisquare() & ChisqTest()\\
+         Fitting  &
+         MASS::fitdistr(), fitdistrplus::fitdist() & scipy.stats.fit() &  Distributions.jl, fit() \\
+         GoF test &
+          chisq.test(), vcd::goodfit() & scipy.stats.chisquare(ddof=s) & HypothesisTests.jl, ChisqTest()\\
+         Rootogram &
+          vcd::rootogram(), countreg::rootogram() & -- & -- \\
         \hline
         \end{tabular}
     \end{table}
@@ -1895,7 +1960,7 @@ install.packages("countreg",
 \end{frame}
 
 \begin{frame}[fragile]{Example}
-Generate two vectors $x \sim NB(3,2)$ and $y \sim Po(3)$
+Generate two vectors $y \sim NB(\mu=3,\theta=2)$ and $x \sim Po(3)$
 
 \begin{verbatim}
 set.seed(1)
@@ -1974,9 +2039,12 @@ Likelihood Ratio 10.79421 12 0.5466328
 \end{verbatim}
         \item Rootogram
 \begin{verbatim}
-plot(goodfit(y, "nbinomial"))    
-\end{verbatim}       
+plot(goodfit(y, "nbinomial"))
+\end{verbatim}
     \end{itemize}
+
+\vspace{0.2cm}
+\alert{Note:} \texttt{goodfit()} with \texttt{method="ML"} uses $\text{df} = K^{*} - 1 - s$ where $K^{*}$ is the number of categories with \textit{non-zero} observed counts (here $K^{*} = 15$), giving $\text{df} = 15 - 1 - 2 = 12$. This differs from \texttt{chisq.test()} which uses all $K$ categories.
 \end{frame}
 
 \begin{frame}[fragile]{Example (countreg)}
@@ -2004,7 +2072,7 @@ est_cdf <- c(0,
     \end{verbatim}
     \item Calculate probabilities (PMF)
     \begin{verbatim}
-est_pdf <- diff(est_cdf) 
+est_pmf <- diff(est_cdf)
     \end{verbatim}
 \item Calculate $\chi^2$ goodness of fit using \texttt{chisq.test} function
 \begin{verbatim}
@@ -2013,7 +2081,7 @@ df_freq <- as.data.frame(table(y))
 names(df_freq) <- c("y_vals", "n_obs")
 df <- merge(x = df, y = df_freq, by = "y_vals", all.x = T)
 df$n_obs[is.na(df$n_obs)] <- 0
-df$p_hat <- est_pdf
+df$p_hat <- est_pmf
 
 chisq.test(x = df$n_obs, p = df$p_hat)
 
@@ -2023,7 +2091,7 @@ data:  df$n_obs
 X-squared = 8.6693, df = 17, p-value = 0.9501
 \end{verbatim}
 
-\alert{WARNING!} p-value calculated according to this method is incorrect! Why? See the degrees of freedom. It should be be 15 instead of 17 (NB has two parameters).
+\alert{WARNING!} p-value calculated according to this method is incorrect! Why? The \texttt{chisq.test} function does not account for estimated parameters. It uses $\text{df} = K - 1 = 17$, but the correct degrees of freedom are $\text{df} = K - 1 - s = 18 - 1 - 2 = 15$ (NB has $s=2$ parameters).
 
 \item Correct p-value 
 
@@ -2034,6 +2102,36 @@ X-squared = 8.6693, df = 17, p-value = 0.9501
 
 \end{verbatim}
 \end{enumerate}
+\end{frame}
+
+\begin{frame}[fragile]{Example -- GoF in Python}
+\small
+\begin{verbatim}
+import numpy as np
+import scipy.stats as st
+
+np.random.seed(1)
+n = 500
+y = st.nbinom.rvs(n=2, p=2/(2+3), size=n)
+
+## fit NB via method of moments
+mu_hat = y.mean()
+var_hat = y.var(ddof=1)
+size_hat = mu_hat**2 / (var_hat - mu_hat)
+prob_hat = size_hat / (size_hat + mu_hat)
+
+## expected frequencies
+rng = np.arange(y.min(), y.max() + 1)
+obs = np.array([(y == k).sum() for k in rng])
+pmf = st.nbinom.pmf(rng, n=size_hat, p=prob_hat)
+pmf[-1] += 1 - pmf.sum()
+exp_f = n * pmf
+
+## WRONG (ddof=0, ignores estimated parameters)
+st.chisquare(obs, f_exp=exp_f)
+## CORRECT (ddof=2 for NB with s=2 parameters)
+st.chisquare(obs, f_exp=exp_f, ddof=2)
+\end{verbatim}
 \end{frame}
 
 \begin{frame}[fragile]{Example (vcd) -- warning}
