@@ -27,7 +27,10 @@
 | 3 | Contingency tables | [.R](codes/R/03-ctables.R) | [.py](codes/python/03-ctables.py) | [.jl](codes/julia/03-ctables.jl) | [.ipynb](codes/notebooks/03-ctables.ipynb) |
 | 4 | Discrete distributions | [.R](codes/R/04-distributions.R) | [.py](codes/python/04-distributions.py) | [.jl](codes/julia/04-distributions.jl) | [.ipynb](codes/notebooks/04-distributions.ipynb) |
 | 5 | Maximum likelihood estimation | [.R](codes/R/05-mle.R) | [.py](codes/python/05-mle.py) | [.jl](codes/julia/05-mle.jl) | [.ipynb](codes/notebooks/05-mle.ipynb) |
-| 6 | Goodness of fit | [.R](codes/R/06-gof.R) | [.py](codes/python/06-gof.py) | [.jl](codes/julia/06-gof.jl) | [.ipynb](codes/notebooks/06-gof.ipynb) |
+| 6 | Optimization methods | -- | -- | -- | [.ipynb](codes/notebooks/05a-optimization-methods.ipynb) |
+| 7 | Goodness of fit | [.R](codes/R/06-gof.R) | [.py](codes/python/06-gof.py) | [.jl](codes/julia/06-gof.jl) | [.ipynb](codes/notebooks/06-gof.ipynb) |
+| 8 | Linear regression | [.R](codes/R/07-linreg.R) | [.py](codes/python/07-linreg.py) | [.jl](codes/julia/07-linreg.jl) | [.ipynb](codes/notebooks/07-linreg.ipynb) |
+| 9 | GLM: Logistic regression | -- | -- | -- | [.ipynb](codes/notebooks/08-glm-lr.ipynb) |
 
 ## Problem sets
 

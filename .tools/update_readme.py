@@ -24,7 +24,10 @@ TOPIC_ORDER = [
     "03-ctables",
     "04-distributions",
     "05-mle",
+    "05a-optimization-methods",
     "06-gof",
+    "07-linreg",
+    "08-glm-lr",
 ]
 
 TOPIC_NAMES = {
@@ -33,7 +36,10 @@ TOPIC_NAMES = {
     "03-ctables": "Contingency tables",
     "04-distributions": "Discrete distributions",
     "05-mle": "Maximum likelihood estimation",
+    "05a-optimization-methods": "Optimization methods",
     "06-gof": "Goodness of fit",
+    "07-linreg": "Linear regression",
+    "08-glm-lr": "GLM: Logistic regression",
 }
 
 
