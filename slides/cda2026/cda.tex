@@ -2200,6 +2200,456 @@ In summary.goodfit(object) : Chi-squared approximation may be incorrect
 \end{itemize}
 \end{frame}
 
+\section{Linear regression}
+
+\subsection{Categorical variables in regression}
+
+\begin{frame}{Categorical variables in regression -- recap}
+Recall: a categorical variable with $k$ levels is represented in a regression
+model by $k-1$ indicator (dummy) variables to avoid rank deficiency.
+
+\medskip
+\textbf{Example.} Let \texttt{woj} (voivodeship) have $k=16$ levels with
+reference \texttt{02}. The regression model is:
+\begin{equation}
+    \text{vacancies}_i = \beta_0 + \beta_1 I(\text{woj}_i\!=\!\texttt{04})
+    + \beta_2 I(\text{woj}_i\!=\!\texttt{06}) + \cdots
+    + \beta_{15} I(\text{woj}_i\!=\!\texttt{32}) + \varepsilon_i.
+\end{equation}
+
+Each $\beta_j$ represents the \textbf{difference in expected vacancies} between
+voivodeship $j$ and the reference voivodeship (\texttt{02}).
+
+\medskip
+The intercept $\beta_0$ equals the mean of the reference group.
+\end{frame}
+
+
+\begin{frame}{What happens when coding is wrong?}
+If \texttt{woj} is treated as a \textbf{numeric} variable (02, 04, 06, \ldots, 32),
+the model becomes:
+\begin{equation}
+    \text{vacancies}_i = \beta_0 + \beta_1 \cdot \text{woj}_i + \varepsilon_i.
+\end{equation}
+
+This assumes:
+\begin{itemize}
+    \item A \textbf{linear} relationship between the code number and vacancies,
+    \item \textbf{Equal spacing}: going from 04 to 06 has the same effect as
+          going from 28 to 30,
+    \item A \textbf{single slope} $\beta_1$ summarises all 16 regions.
+\end{itemize}
+
+\medskip
+\textbf{Result:} The model has only 2 parameters instead of 16, is severely
+misspecified, and the coefficients are meaningless -- the code numbers are
+arbitrary labels, not measurements.
+
+\medskip
+\textit{Rule of thumb: if re-ordering the levels would change the interpretation,
+the variable must be treated as categorical.}
+\end{frame}
+
+
+\begin{frame}{Choice of contrast affects interpretation}
+The contrast scheme determines \textbf{what the coefficients mean},
+not the overall model fit (identical $R^2$, fitted values, residuals).
+
+\medskip
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{lll}
+  \hline
+  \textbf{Scheme} & \textbf{$\hat{\beta}_j$ interprets as} & \textbf{When to use} \\
+  \hline
+  Treatment & $\mu_j - \mu_{\text{ref}}$ & clear baseline (e.g.\ control group) \\
+  Sum (effect) & $\mu_j - \bar{\mu}$ & compare each level to grand mean \\
+  Polynomial & linear/quadratic/\ldots trend & ordered levels, equal spacing \\
+  \hline
+\end{tabular}
+\end{table}
+
+\medskip
+For the JVS data:
+\begin{itemize}
+    \item \texttt{woj} (nominal, 16 levels) $\rightarrow$ treatment or sum coding
+    \item \texttt{size} (ordinal: S $<$ M $<$ L) $\rightarrow$ treatment, sum, or polynomial
+    \item \texttt{public} (binary: 0/1) $\rightarrow$ treatment coding (automatically 1 dummy)
+\end{itemize}
+
+\medskip
+\textit{Next: interactions and how to interpret them.}
+\end{frame}
+
+\subsection{Interactions between two categorical variables}
+
+\begin{frame}{Two categorical variables with interaction}
+    Consider the model \texttt{vacancies $\sim$ size * public}, i.e.:
+    \[
+    Y = \beta_0 + \beta_1 I_{\text{Med}} + \beta_2 I_{\text{Large}} + \beta_3 I_{\text{pub}} + \beta_4 I_{\text{Med}} I_{\text{pub}} + \beta_5 I_{\text{Large}} I_{\text{pub}} + \varepsilon
+    \]
+
+    \medskip
+    With \texttt{size} (3 levels, ref = Large, alphabetical) and \texttt{public} (2 levels, ref = 0), we estimate \textbf{6 parameters} for $2 \times 3 = 6$ cell means:
+
+    \begin{table}[h]\centering\small
+    \begin{tabular}{l|cc}
+    & Private (ref) & Public \\
+    \hline
+    Large (ref) & $\beta_0$ & $\beta_0 + \beta_3$ \\
+    Medium & $\beta_0 + \beta_1$ & $\beta_0 + \beta_1 + \beta_3 + \beta_4$ \\
+    Small & $\beta_0 + \beta_2$ & $\beta_0 + \beta_2 + \beta_3 + \beta_5$ \\
+    \end{tabular}
+    \end{table}
+
+    \medskip
+    \alert{``Main effects'' are conditional on the reference level} of the other variable, not averaged across groups.
+\end{frame}
+
+\begin{frame}{Interaction = departure from additivity}
+    The interaction term $\beta_4$ has a \textbf{difference-in-differences} interpretation:
+    \[
+    \beta_4 = \underbrace{\left[E(Y \mid \text{Med, pub}) - E(Y \mid \text{Med, priv})\right]}_{\text{public effect for Medium}} - \underbrace{\left[E(Y \mid \text{Large, pub}) - E(Y \mid \text{Large, priv})\right]}_{\text{public effect for Large}}
+    \]
+
+    \medskip
+    \begin{itemize}
+        \item \textbf{Without interaction} ($\beta_4 = \beta_5 = 0$): the effect of \texttt{public} is the same regardless of \texttt{size}
+        \item \textbf{With interaction}: the effect of \texttt{public} \emph{depends on} \texttt{size} (and vice versa)
+        \item The interaction measures \emph{how much} the effect of one variable changes across levels of the other
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Two categorical interactions -- practice}
+\begin{center}
+Now, proceed to the example
+\end{center}
+\end{frame}
+
+
+\subsection{ANOVA Type I, II, III}
+
+\begin{frame}{Why ANOVA?}
+    With a $k$-level categorical predictor, the model has $k - 1$ dummy variables. To test whether the variable \textbf{as a whole} matters, we need a \textbf{joint test} of all $k - 1$ coefficients.
+
+    \medskip
+    ANOVA F-tests do this via Sum of Squares (SS) decomposition. Three types exist:
+
+    \begin{table}[h]\centering\small
+    \begin{tabular}{lp{7cm}}
+    \hline
+    \textbf{Type} & \textbf{What is tested} \\
+    \hline
+    I (Sequential) & Each term added sequentially in formula order \\
+    II (Partial) & Each term after all terms of equal or lower order \\
+    III (Partial + interactions) & Each term after \emph{all} other terms, including interactions \\
+    \hline
+    \end{tabular}
+    \end{table}
+
+    \medskip
+    For \textbf{balanced} data, all three types give identical results. For \textbf{unbalanced} data (observational studies), they differ.
+\end{frame}
+
+\begin{frame}{Type I -- Sequential SS}
+    SS for each term is computed \textbf{in the order it appears} in the formula:
+    \[
+    \text{SS}(A), \quad \text{SS}(B \mid A), \quad \text{SS}(A{:}B \mid A, B)
+    \]
+
+    \begin{itemize}
+        \item \alert{Order-dependent}: changing the formula order changes the SS for main effects
+        \item $\text{SS}(A) \neq \text{SS}(A \mid B)$ in general (unless balanced)
+        \item Default in R's \texttt{anova()}
+        \item Appropriate when the order is theoretically motivated, or for balanced designs
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Type II and Type III SS}
+    \textbf{Type II:} each term tested after all terms of equal or lower order
+    \[
+    \text{SS}(A \mid B), \quad \text{SS}(B \mid A), \quad \text{SS}(A{:}B \mid A, B)
+    \]
+    \begin{itemize}
+        \item \textbf{Respects marginality} -- main effects are \emph{not} adjusted for interactions
+        \item Order-independent. Recommended when interaction is not significant
+    \end{itemize}
+
+    \bigskip
+    \textbf{Type III:} each term tested after \emph{all} other terms, including interactions
+    \[
+    \text{SS}(A \mid B, A{:}B), \quad \text{SS}(B \mid A, A{:}B), \quad \text{SS}(A{:}B \mid A, B)
+    \]
+    \begin{itemize}
+        \item With \textbf{treatment coding}: tests main effect at the reference level of the other variable
+        \item With \textbf{sum coding}: tests main effect at the grand mean (usually preferred)
+        \item Use for unbalanced data when interaction is significant
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{ANOVA types -- practice}
+
+    \begin{table}[h]\centering\small
+        \begin{tabular}{cp{3cm}p{3cm}p{2.5cm}}
+        \hline
+          \textbf{Type}   & \textbf{R} &  \textbf{Python} & \textbf{Julia} \\
+        \hline
+         I  & \texttt{anova()} & \texttt{anova\_lm(typ=1)} & \texttt{ftest()} \\
+         II & \texttt{car::Anova( type="II")} & \texttt{anova\_lm(typ=2)} & manual nested models \\
+         III & \texttt{car::Anova( type="III")} & \texttt{anova\_lm(typ=3)} & manual nested models \\
+        \hline
+        \end{tabular}
+    \end{table}
+
+    \medskip
+    \textbf{Recommendation:} For Type III, use \textbf{sum contrasts} (\texttt{contr.sum} in R, \texttt{C(x, Sum)} in Python) so that main effects are tested at the grand mean.
+
+    \medskip
+    \begin{center}
+    Now, proceed to the example
+    \end{center}
+\end{frame}
+
+
+\subsection{Categorical $\times$ continuous interaction}
+
+\begin{frame}{Categorical $\times$ continuous interaction}
+    Model: \texttt{vacancies $\sim$ size * n\_firms}, i.e.:
+    \[
+    Y = \beta_0 + \beta_1 I_{\text{Med}} + \beta_2 I_{\text{Large}} + \beta_3 x + \beta_4 I_{\text{Med}} \cdot x + \beta_5 I_{\text{Large}} \cdot x + \varepsilon
+    \]
+
+    Each group gets its own \textbf{intercept and slope}:
+    \begin{table}[h]\centering\small
+    \begin{tabular}{lcc}
+    \hline
+    Group & Intercept & Slope \\
+    \hline
+    Large (ref) & $\beta_0$ & $\beta_3$ \\
+    Medium & $\beta_0 + \beta_1$ & $\beta_3 + \beta_4$ \\
+    Small & $\beta_0 + \beta_2$ & $\beta_3 + \beta_5$ \\
+    \hline
+    \end{tabular}
+    \end{table}
+
+    \begin{itemize}
+        \item $\beta_4, \beta_5$ measure how much the slope \emph{differs} from the reference group slope
+        \item If $\beta_4 = \beta_5 = 0$: parallel lines (same slope, different intercepts)
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Parallel vs.\ crossing lines}
+    \begin{columns}
+    \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{Without interaction}\\[0.3em]
+    Same slope, different intercepts\\
+    (parallel lines)\\[0.5em]
+    $Y = \beta_0 + \beta_1 I_{\text{group}} + \beta_3 x$
+    \end{column}
+    \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{With interaction}\\[0.3em]
+    Different slopes per group\\
+    (lines may cross)\\[0.5em]
+    $Y = \beta_0 + \beta_1 I_{\text{group}} + \beta_3 x + \beta_4 I_{\text{group}} \cdot x$
+    \end{column}
+    \end{columns}
+
+    \bigskip
+    Testing the interaction ($H_0: \beta_4 = \beta_5 = 0$) is equivalent to testing whether the slopes are equal across groups.
+\end{frame}
+
+\begin{frame}{Categorical $\times$ continuous -- practice}
+\begin{center}
+Now, proceed to the example
+\end{center}
+\end{frame}
+
+
+\subsection{Centering continuous variables}
+
+\begin{frame}{Why center?}
+    In a model with interaction \texttt{Y $\sim$ group * x}:
+    \begin{itemize}
+        \item The ``main effect'' of \texttt{group} is the effect \textbf{when $x = 0$}
+        \item If $x = 0$ is outside the observed range $\Rightarrow$ \alert{meaningless extrapolation}
+    \end{itemize}
+
+    \bigskip
+    \textbf{Grand-mean centering:} replace $x$ with $x_c = x - \bar{x}$
+    \begin{itemize}
+        \item Now the main effect of \texttt{group} = effect \textbf{at the mean of $x$}
+        \item Much more interpretable!
+    \end{itemize}
+
+    \bigskip
+    \textbf{What changes and what stays the same:}
+    \begin{table}[h]\centering\small
+    \begin{tabular}{lcc}
+    \hline
+    & Centering & Standardisation \\
+    \hline
+    $R^2$, residuals, fitted values & \textbf{unchanged} & \textbf{unchanged} \\
+    Interaction coefficients & \textbf{unchanged} & change (rescaled) \\
+    Intercept, main-effect coefs & change & change \\
+    \hline
+    \end{tabular}
+    \end{table}
+\end{frame}
+
+\begin{frame}{Grand-mean centering vs.\ standardisation}
+    \textbf{Grand-mean centering:} $x_c = x - \bar{x}$
+    \begin{itemize}
+        \item Shifts the zero-point to the sample mean
+        \item Preserves original measurement units
+    \end{itemize}
+
+    \bigskip
+    \textbf{Standardisation (z-score):} $x_s = (x - \bar{x}) / s_x$
+    \begin{itemize}
+        \item Shifts zero-point \emph{and} rescales to standard deviation units
+        \item Coefficients become comparable across variables with different scales
+        \item One-unit change = one-SD change
+    \end{itemize}
+
+    \bigskip
+    Both preserve model fit ($R^2$, F-test). Only the \textbf{interpretation} of coefficients changes.
+\end{frame}
+
+\begin{frame}{Centering -- practice}
+\begin{center}
+Now, proceed to the example
+\end{center}
+\end{frame}
+
+\subsection{Marginal effects}
+
+\begin{frame}{Marginal effects}
+    What are marginal effects?
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\textwidth]{figs/margin.png}
+        \caption{Visualisation of marginal effect}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Marginal effects  -- definition}
+Marginal effect is defined as follows
+\begin{equation}
+    ME(x_{j}) = \frac{\partial\, E[y \mid \mathbf{x}]}{\partial\, x_{j}}
+\end{equation}
+For example, assume that $y = \beta_0 + \beta_1x_1 + \beta_2x_2 + \epsilon$. Then marginal effect for $x_1$ is equal to
+\begin{equation}
+    ME(x_1) = \frac{\partial (\beta_0 + \beta_1x_1 + \beta_2x_2)}{\partial x_1} = \beta_1.
+\end{equation}
+\end{frame}
+
+\begin{frame}{Marginal effects -- examples}
+\small
+\begin{table}[ht]
+\centering
+\begin{tabular}{clcc}
+  \hline
+  & \textbf{Regression equation} & \textbf{ME w.r.t.} & \textbf{Formula} \\
+  \hline
+  (1) & $\hat{Y} = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \beta_3 X_1 X_2$
+      & $X_1$ & $\beta_1 + \beta_3 X_2$ \\
+      & & $X_2$ & $\beta_2 + \beta_3 X_1$ \\[6pt]
+  (2) & $\hat{Y} = \beta_0 + \beta_1 X_1 + \beta_2 X^2_1 + \beta_3 X_2$
+      & $X_1$ & $\beta_1 + 2\beta_2 X_1$ \\
+      & & $X_2$ & $\beta_3$ \\[6pt]
+  (3) & $\hat{Y} = \beta_0 + \beta_1 X_1 + \beta_2 X_2 +$
+      & $X_1$ & $\beta_1 + \beta_4 X_2 +$ \\
+      & $\beta_3 X_3 + \beta_4 X_1 X_2 +$ & & $\beta_6 X_3 + \beta_7 X_2 X_3$ \\
+      & $\beta_5 X_2 X_3 + \beta_6 X_1 X_3 +$ & $X_2$ & $\beta_2 + \beta_4 X_1 +$ \\
+      & $\beta_7 X_1 X_2 X_3$ & & $\beta_5 X_3 + \beta_7 X_1 X_3$ \\
+      & & $X_3$ & $\beta_3 + \beta_5 X_2 +$ \\
+      & & & $\beta_6 X_1 + \beta_7 X_1 X_2$ \\
+  \hline
+\end{tabular}
+\end{table}
+
+In models with interactions or polynomial terms, marginal effects depend on the values of other variables -- they are no longer constant.
+\end{frame}
+
+\begin{frame}{Marginal effects}
+\begin{center}
+    \Large
+
+    How to calculate a unit change (marginal effect) of a given variable on the target variable?
+
+\end{center}
+\end{frame}
+
+\begin{frame}{Calculations of marginal effects}
+There are several ways to tackle this problem, the most popular are:
+
+\begin{itemize}
+    \item Average Marginal Effects (AME),
+    \item Marginal Effects at the Mean / Median (MEM),
+    \item Marginal Effects at  Representative Values (MERV).
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Average Marginal Effects}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth]{figs/ame.png}
+        Source: \texttt{marginaleffects} package (\url{https://vincentarelbundock.github.io/marginaleffects/articles/slopes.html}).
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Marginal Effects at the Mean}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth]{figs/mem.png}
+        Source: \texttt{marginaleffects} package (\url{https://vincentarelbundock.github.io/marginaleffects/articles/slopes.html}).
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Marginal Effects at  Representative Values}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth]{figs/merv.png}
+        Source: \texttt{marginaleffects} package (\url{https://vincentarelbundock.github.io/marginaleffects/articles/slopes.html}).
+    \end{figure}
+\end{frame}
+
+\begin{frame}{What about ML?}
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{figs/biecek-book.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Practice -- marginal effects}
+      \begin{table}[]
+        \centering
+        \caption{Overview of functions}
+        %\label{tab:my_label}
+        \begin{tabular}{cp{3cm}p{2cm}p{2cm}}
+        \hline
+          \textbf{Language}   & \textbf{R} &  \textbf{Python} & \textbf{Julia} \\
+        \hline
+         Packages  &
+         marginaleffects &  marginaleffects & Effects.jl \\
+        Functions &
+         \texttt{avg\_slopes()}  & \texttt{avg\_slopes()} & effects \\
+        \hline
+        \end{tabular}
+    \end{table}
+\end{frame}
+
+\begin{frame}{Marginal effects -- practice}
+
+\begin{center}
+Now, proceed to the example
+\end{center}
+
+\end{frame}
 
 \end{document}
 

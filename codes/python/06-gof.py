@@ -11,7 +11,7 @@ import pandas as pd
 
 
 np.random.seed(1)
-N = 1000
+N = 10000
 x = st.nbinom(n = 2, p = 2/(2+3)).rvs(N)
 np.mean(x)
 
@@ -20,29 +20,29 @@ x = np.loadtxt("../../data/nb_sim.txt", dtype = np.int64)
 np.mean(x)
 
 
-def pdf_nbinom(par, x):
+def ll_nbinom(par, x):
   pdfnbinom = st.nbinom(par[0],par[1]).logpmf(x)
   return -np.sum(pdfnbinom)
 
-res = minimize(fun=pdf_nbinom, x0=[2, 0.5], args = (x), method = "Nelder-Mead")
+res = minimize(fun=ll_nbinom, x0=[2, 0.5], args = (x), method = "Nelder-Mead")
 res
 res.x
 
 
 x_uniq_vals, x_uniq_counts = np.unique(x, return_counts=True)
 ## we simply use pdf(NB(2.01357331, 0.40157875), x) 
-est_pdf = st.nbinom(res.x[0],res.x[1]).pmf(x_uniq_vals) 
-est_pdf = est_pdf/np.sum(est_pdf)
-np.round(est_pdf*100,)
+est_pmf = st.nbinom(res.x[0],res.x[1]).pmf(x_uniq_vals) 
+est_pmf = est_pmf/np.sum(est_pmf)
+np.round(est_pmf*100,)
 
 
 st.power_divergence(x_uniq_counts, 
-                    sum(x_uniq_counts)*est_pdf, 
+                    sum(x_uniq_counts)*est_pmf, 
                     lambda_ = 0, ddof = 2)
 
 
 st.power_divergence(x_uniq_counts, 
-                    sum(x_uniq_counts)*est_pdf, 
+                    sum(x_uniq_counts)*est_pmf, 
                     lambda_ = 1, ddof = 2)
 
 
@@ -62,11 +62,11 @@ X_dt
 
 
 ## loglik for n
-def pdf_nbinom(par, x):
+def ll_nbinom(par, x):
   pdfnbinom = st.nbinom(par[0],par[1]).logpmf(x)
   return -np.sum(pdfnbinom)
 
-res_nb = minimize(fun=pdf_nbinom, x0=[2, 0.5], args = (X), method = "Nelder-Mead")
+res_nb = minimize(fun=ll_nbinom, x0=[2, 0.5], args = (X), method = "Nelder-Mead")
 ll_po = sum(st.poisson(np.mean(X)).logpmf(X))
 ll_nb = -res_nb.fun
 LR_test =  2*ll_nb - 2*ll_po

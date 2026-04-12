@@ -6,9 +6,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Maciej Beręsewicz">
 
-<title>Goodness of fit statistics</title>
+<title>Generalized linear regression: logistic regression</title>
 <style>
 
 code{white-space: pre-wrap;}
@@ -2348,9 +2347,9 @@ window.Quarto = {
    
   <ul>
   <li><a href="#setup" id="toc-setup" class="nav-link active" data-scroll-target="#setup"><span class="header-section-number">1</span> Setup</a></li>
-  <li><a href="#exercise-for-the-lecture-1" id="toc-exercise-for-the-lecture-1" class="nav-link" data-scroll-target="#exercise-for-the-lecture-1"><span class="header-section-number">2</span> Exercise for the lecture #1</a></li>
-  <li><a href="#example-from-the-lecture-2" id="toc-example-from-the-lecture-2" class="nav-link" data-scroll-target="#example-from-the-lecture-2"><span class="header-section-number">3</span> Example from the lecture #2</a></li>
-  <li><span class="header-section-number">4</span> Script files</li>
+  <li><a href="#example-1-individual-data" id="toc-example-1-individual-data" class="nav-link" data-scroll-target="#example-1-individual-data"><span class="header-section-number">2</span> Example 1 – individual data</a></li>
+  <li><a href="#example-2-aggregated-data" id="toc-example-2-aggregated-data" class="nav-link" data-scroll-target="#example-2-aggregated-data"><span class="header-section-number">3</span> Example 2 – aggregated data</a></li>
+  <li><a href="#example-3-more-variables" id="toc-example-3-more-variables" class="nav-link" data-scroll-target="#example-3-more-variables"><span class="header-section-number">4</span> Example 3 – more variables</a></li>
   </ul>
 </nav>
 </div>
@@ -2358,19 +2357,13 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Goodness of fit statistics</h1>
+<h1 class="title">Generalized linear regression: logistic regression</h1>
 </div>
 
 
 
 <div class="quarto-title-meta">
 
-    <div>
-    <div class="quarto-title-meta-heading">Author</div>
-    <div class="quarto-title-meta-contents">
-             <p>Maciej Beręsewicz </p>
-          </div>
-  </div>
     
   
     
@@ -2381,405 +2374,199 @@ window.Quarto = {
 </header>
 
 
-<section id="setup" class="level1" data-number="1">
-<h1 data-number="1"><span class="header-section-number">1</span> Setup</h1>
+<section id="setup" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="setup"><span class="header-section-number">1</span> Setup</h2>
 <div class="tabset-margin-container"></div><div class="panel-tabset">
 <ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href>R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href>Python</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false" href>Julia</a></li></ul>
 <div class="tab-content">
 <div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
-<p>Install <code>vcd</code> and <code>fitdistrplus</code> packages.</p>
+<p>Install packages if necessary.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;vcd&quot;</span>, <span class="st">&quot;fitdistrplus&quot;</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;marginaleffects&quot;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;modelsummary&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;car&quot;</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;broom&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(vcd)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(fitdistrplus)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(marginaleffects)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(modelsummary)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(car)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Read in the dataset for the lecture and specify column classes (types).</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;../data/polish-jvs.csv&quot;</span>, <span class="at">colClasses =</span> <span class="fu">c</span>(<span class="st">&quot;character&quot;</span>, <span class="st">&quot;factor&quot;</span>, <span class="fu">rep</span>(<span class="st">&quot;character&quot;</span>, <span class="dv">4</span>), <span class="st">&quot;numeric&quot;</span>))</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
 <p>Load modules</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.stats <span class="im">as</span> st</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.optimize <span class="im">import</span> minimize</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">!pip</span> install statsmodels </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> statsmodels.api <span class="im">as</span> sm</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> statsmodels.formula.api <span class="im">as</span> smf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Read in the dataset for the lecture and specify column classes (types).</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">&quot;../data/polish-jvs.csv&quot;</span>, dtype<span class="op">=</span>{<span class="st">&quot;id&quot;</span>: np.int64, <span class="st">&quot;woj&quot;</span>:<span class="bu">str</span>, <span class="st">&quot;public&quot;</span>:<span class="bu">str</span>,<span class="st">&quot;size&quot;</span>: <span class="bu">str</span>, <span class="st">&quot;nace_division&quot;</span>: <span class="bu">str</span>, <span class="st">&quot;nace&quot;</span>: <span class="bu">str</span>})</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>df.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <div id="tabset-1-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-3-tab">
-<p>Install modules</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Pkg</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">add</span>([<span class="st">&quot;HypothesisTests&quot;</span>, <span class="st">&quot;StatsBase&quot;</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Pkg</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Pkg</span>.<span class="fu">add</span>([<span class="st">&quot;Effects&quot;</span>, <span class="st">&quot;StatsBase&quot;</span>, <span class="st">&quot;CSV&quot;</span>, <span class="st">&quot;CategoricalArrays&quot;</span>, <span class="st">&quot;GLM&quot;</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Load packages</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Distributions</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Random</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">HypothesisTests</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Optim</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">StatsBase</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">DelimitedFiles</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">DataFrames</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Effects</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">StatsBase</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">CSV</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">CategoricalArrays</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">GLM</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Statistics</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">DataFrames</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Read in the dataset for the lecture and specify column classes (types).</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>df<span class="op">=</span>CSV.<span class="fu">read</span>(<span class="st">&quot;../data/polish-jvs.csv&quot;</span>, DataFrame, </span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>            types <span class="op">=</span> <span class="fu">Dict</span>(<span class="op">:</span>id <span class="op">=&gt;</span> <span class="dt">Int64</span>, <span class="op">:</span>woj<span class="op">=&gt;</span> <span class="dt">String</span>, <span class="op">:</span>public<span class="op">=&gt;</span> <span class="dt">String</span>, </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                         <span class="op">:</span>size <span class="op">=&gt;</span> <span class="dt">String</span>, <span class="op">:</span>nace_division <span class="op">=&gt;</span> <span class="dt">String</span>, <span class="op">:</span>nace <span class="op">=&gt;</span> <span class="dt">String</span>));</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">first</span>(df, <span class="fl">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
 </div>
 </section>
-<section id="exercise-for-the-lecture-1" class="level1" data-number="2">
-<h1 data-number="2"><span class="header-section-number">2</span> Exercise for the lecture #1</h1>
+<section id="example-1-individual-data" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="example-1-individual-data"><span class="header-section-number">2</span> Example 1 – individual data</h2>
+<p>Create new variable</p>
+<p><span class="math display">\[
+\text{Has vacancies} =
+\begin{cases}
+1 &amp; \text{if has at least one vacancy},\\
+0 &amp; \text{otherwise}
+\end{cases}
+\]</span></p>
 <div class="tabset-margin-container"></div><div class="panel-tabset">
 <ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-2-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-1" role="tab" aria-controls="tabset-2-1" aria-selected="true" href>R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-2" role="tab" aria-controls="tabset-2-2" aria-selected="false" href>Python</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-3" role="tab" aria-controls="tabset-2-3" aria-selected="false" href>Julia</a></li></ul>
 <div class="tab-content">
 <div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">rnbinom</span>(n, <span class="at">mu =</span> <span class="dv">3</span>, <span class="at">size =</span> <span class="dv">2</span>)</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="do">## or</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">rnbinom</span>(n, <span class="at">prob =</span> <span class="dv">2</span><span class="sc">/</span>(<span class="dv">2</span><span class="sc">+</span><span class="dv">3</span>), <span class="at">size =</span> <span class="dv">2</span>)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>x_length <span class="ot">&lt;-</span> <span class="fu">length</span>(<span class="fu">table</span>(x))</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>x_dof <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">+</span><span class="dv">2</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>x_fitted <span class="ot">&lt;-</span> <span class="fu">fitdistr</span>(<span class="at">x =</span> x, <span class="at">densfun =</span> <span class="st">&quot;negative binomial&quot;</span>) <span class="do">## using MASS::fitdistr</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>x_fitted</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>has_vacancy <span class="ot">&lt;-</span> df<span class="sc">$</span>vacancies <span class="sc">&gt;</span> <span class="dv">0</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>size <span class="ot">&lt;-</span> <span class="fu">factor</span>(df<span class="sc">$</span>size, <span class="fu">c</span>(<span class="st">&quot;Large&quot;</span>, <span class="st">&quot;Medium&quot;</span>, <span class="st">&quot;Small&quot;</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The same using <code>fitdistrplus</code> package</p>
+<p>Consider the following model</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fitdist</span>(x, <span class="st">&quot;nbinom&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>model1 <span class="ot">&lt;-</span> <span class="fu">glm</span>(<span class="at">formula =</span> has_vacancy <span class="sc">~</span> public, </span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">data =</span> df,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">family =</span> <span class="fu">binomial</span>())</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model1)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>fitdistrplus</code> package have PMF and CDF plots for assessing the fit.</p>
+<p>Alternativelly, we may use <code>modelsummary</code> package and the same function</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fitdist</span>(x, <span class="st">&quot;nbinom&quot;</span>) <span class="sc">|&gt;</span> <span class="fu">plot</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">modelsummary</span>(model1, <span class="at">exponentiate =</span> T, <span class="at">conf_level =</span> <span class="fl">0.05</span>, </span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>             <span class="at">statistic  =</span> <span class="cn">NULL</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>             <span class="at">estimate  =</span> <span class="st">&quot;{estimate} [{conf.low}, {conf.high}]&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>save data for other languages</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(x, <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>, <span class="at">file =</span> <span class="st">&quot;../../data/nb_sim.txt&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>Small note regarding the <code>vcd</code> package. It gives correct answers but in a slightly different way.</p>
-<ol type="1">
-<li><code>goodfit</code> function returns a list with <code>fitted</code> (expected) frequencies under a given distribution using <code>pmf</code> of this distribution</li>
-<li><code>summary(goodfit object)</code> returns a <span class="math inline">\(\chi^2\)</span> and <span class="math inline">\(G^2\)</span> tests using <code>cdf</code> of a given distribution. 3. Pearson residuals are calculated as</li>
-</ol>
+<p>Let’s write down this model</p>
 <p><span class="math display">\[
-\widehat{\text{resid}}_{k,\text{Pearson}} = \frac{n_k - \hat{n}_k}{\sqrt{\hat{n}_k}}
-\]</span></p>
-<p>Thus, if we use <code>object$fitted</code> created by <code>goodfit</code> to calculate <span class="math inline">\(\chi^2\)</span> and <span class="math inline">\(G^2\)</span> statistics by hand we will get slightly different statistics values than the one returned by <code>summary.goodfit()</code> function. Thus, both are accepted results.</p>
-<p>In this material, we use the first approach in Python and Julia.</p>
+\operatorname{Pr}(\text { Has vacancy }=1 \mid \text { public })=\frac{\exp (-2.03+0.12 \times \text { public })}{1+\exp (-2.03+0.12 \times \text { public })}
+\]</span> In order to interpret results of logistic regression we should calculate odds ratio which can be done by just using <span class="math inline">\(\exp(\mathbf{\beta})\)</span></p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>gof_nb <span class="ot">&lt;-</span> <span class="fu">goodfit</span>(x, <span class="st">&quot;nbinomial&quot;</span>)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>gof_po <span class="ot">&lt;-</span> <span class="fu">goodfit</span>(x, <span class="st">&quot;poisson&quot;</span>)</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>gof_nb</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">exp</span>(<span class="fu">coef</span>(model1))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gof_nb)</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gof_po)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rootogram</span>(gof_nb, <span class="at">main =</span> <span class="st">&quot;Negative binomial&quot;</span>)</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rootogram</span>(gof_po, <span class="at">main =</span> <span class="st">&quot;Poisson&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
+<p>Interpretation of <code>1.13</code>:</p>
+<ul>
+<li>probability that a~<em>public</em> entity is 1.13 higher than the probability that a~private entity has a~vacancy.</li>
+<li>another interpretation: for 100 private entities with vacancies, we will have 113 public entities with vacancies</li>
+</ul>
 </div>
 <div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
-<p>Python uses a different specification of negative binomial than we specified in R so we need to rewrite it as follows:</p>
-<p><span class="math display">\[
-p = \frac{\text{size}}{\text{size} + \mu}.
-\]</span></p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">1</span>)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> <span class="dv">10000</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> st.nbinom(n <span class="op">=</span> <span class="dv">2</span>, p <span class="op">=</span> <span class="dv">2</span><span class="op">/</span>(<span class="dv">2</span><span class="op">+</span><span class="dv">3</span>)).rvs(N)</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>np.mean(x)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">&quot;has_vacancy&quot;</span>] <span class="op">=</span> np.where(df[<span class="st">&quot;vacancies&quot;</span>] <span class="op">&gt;</span> <span class="dv">0</span>, <span class="va">True</span>, <span class="va">False</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>df[<span class="st">&quot;public&quot;</span>]<span class="op">=</span>df[<span class="st">&quot;public&quot;</span>].astype(<span class="st">&quot;category&quot;</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>mod1 <span class="op">=</span> smf.glm(formula<span class="op">=</span><span class="st">&quot;has_vacancy ~ public&quot;</span>, data<span class="op">=</span>df, family<span class="op">=</span>sm.families.Binomial()).fit()</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(mod1.summary())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>However, these pseudo-random numbers are not the same as in R. So, to make our example comparable with R, we read data generated from R that was saved to text file.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.loadtxt(<span class="st">&quot;../../data/nb_sim.txt&quot;</span>, dtype <span class="op">=</span> np.int64)</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>np.mean(x)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>Optimization using pmf function</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ll_nbinom(par, x):</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  pdfnbinom <span class="op">=</span> st.nbinom(par[<span class="dv">0</span>],par[<span class="dv">1</span>]).logpmf(x)</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="op">-</span>np.<span class="bu">sum</span>(pdfnbinom)</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> minimize(fun<span class="op">=</span>ll_nbinom, x0<span class="op">=</span>[<span class="dv">2</span>, <span class="fl">0.5</span>], args <span class="op">=</span> (x), method <span class="op">=</span> <span class="st">&quot;Nelder-Mead&quot;</span>)</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>res</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>res.x</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p><strong>Goodness of fit – step by step</strong></p>
-<p><span class="math inline">\(G^2\)</span> and <span class="math inline">\(\chi^2\)</span> GoF can be calculated using <code>scipy.stats.power_divergence</code> function</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>x_uniq_vals, x_uniq_counts <span class="op">=</span> np.unique(x, return_counts<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co">## we simply use pdf(NB(2.01357331, 0.40157875), x) </span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>est_pmf <span class="op">=</span> st.nbinom(res.x[<span class="dv">0</span>],res.x[<span class="dv">1</span>]).pmf(x_uniq_vals) </span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>est_pmf <span class="op">=</span> est_pmf<span class="op">/</span>np.<span class="bu">sum</span>(est_pmf)</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>np.<span class="bu">round</span>(est_pmf<span class="op">*</span><span class="dv">100</span>,)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p><span class="math inline">\(G^2\)</span> test</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>st.power_divergence(x_uniq_counts, </span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">sum</span>(x_uniq_counts)<span class="op">*</span>est_pmf, </span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>                    lambda_ <span class="op">=</span> <span class="dv">0</span>, ddof <span class="op">=</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p><span class="math inline">\(\chi^2\)</span> test</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>st.power_divergence(x_uniq_counts, </span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">sum</span>(x_uniq_counts)<span class="op">*</span>est_pmf, </span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>                    lambda_ <span class="op">=</span> <span class="dv">1</span>, ddof <span class="op">=</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p><strong>Rootograms</strong> are not available in python. There are some scripts that recreate this plot using <code>matplotlib</code>, see https://stackoverflow.com/questions/38252879/how-to-plot-a-hanging-rootogram-in-python</p>
 </div>
 <div id="tabset-2-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-3-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="bu">Random</span>.<span class="fu">seed!</span>(<span class="fl">123</span>);</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="fl">10000</span>;</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> <span class="fu">rand</span>(<span class="fu">NegativeBinomial</span>(<span class="fl">2</span>, <span class="fl">2</span><span class="op">/</span>(<span class="fl">2</span><span class="op">+</span><span class="fl">3</span>)), n);</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(x)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>However, these pseudo-random numbers are not the same as in R. So, to make our example comparable with R, we read data generated from R that was saved to text file.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> <span class="fu">readdlm</span>(<span class="st">&quot;../../data/nb_sim.txt&quot;</span>, <span class="dt">Int</span>);</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> <span class="fu">vec</span>(x);</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(x)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">llnb</span>(par, data)</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  ll <span class="op">=</span> <span class="fu">logpdf</span>.(<span class="fu">NegativeBinomial</span>(par[<span class="fl">1</span>], par[<span class="fl">2</span>]), data)</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="fu">-sum</span>(ll)</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> <span class="fu">optimize</span>(par <span class="op">-&gt;</span> <span class="fu">llnb</span>(par, x), [<span class="fl">0.01</span>, <span class="fl">0.01</span>], [<span class="fl">100.0</span>, <span class="fl">0.99</span>], [<span class="fl">2.0</span>, <span class="fl">0.5</span>])</span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>res.minimizer</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>Goodness of fit statistics</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>x_uniq_dict <span class="op">=</span> <span class="fu">sort</span>(<span class="fu">countmap</span>(x));</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>x_uniq_vals <span class="op">=</span> <span class="fu">Int</span>.(<span class="fu">keys</span>(x_uniq_dict));</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>x_uniq_counts <span class="op">=</span> <span class="fu">Int</span>.(<span class="fu">values</span>(x_uniq_dict));</span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>x_params <span class="op">=</span> res.minimizer;</span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>est_pmf <span class="op">=</span> <span class="fu">pdf</span>.(<span class="fu">NegativeBinomial</span>(x_params[<span class="fl">1</span>], x_params[<span class="fl">2</span>]), x_uniq_vals);</span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>est_pmf <span class="op">=</span> est_pmf <span class="op">./</span> <span class="fu">sum</span>(est_pmf);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p><span class="math inline">\(G^2\)</span> test</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PowerDivergenceTest</span>(x_uniq_counts, lambda <span class="op">=</span> <span class="fl">0.0</span>, theta0 <span class="op">=</span> est_pmf) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>Multinomial Likelihood Ratio <span class="bu">Test</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="op">---------------------------------</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>Population details<span class="op">:</span></span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    parameter of interest<span class="op">:</span>   Multinomial Probabilities</span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    value under h_0<span class="op">:</span>         [<span class="fl">0.162756</span>, <span class="fl">0.192213</span>, <span class="fl">0.171812</span>, <span class="fl">0.137132</span>, <span class="fl">0.102889</span>, <span class="fl">0.074243</span>, <span class="fl">0.0521512</span>, <span class="fl">0.03592</span>, <span class="fl">0.0243722</span>, <span class="fl">0.0163424</span>, <span class="fl">0.0108539</span>, <span class="fl">0.00715202</span>, <span class="fl">0.0046816</span>, <span class="fl">0.00304727</span>, <span class="fl">0.00197386</span>, <span class="fl">0.00127317</span>, <span class="fl">0.000818163</span>, <span class="fl">0.000334669</span>, <span class="fl">3.4335e-5</span>]</span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    point estimate<span class="op">:</span>          [<span class="fl">0.16</span>, <span class="fl">0.195</span>, <span class="fl">0.17</span>, <span class="fl">0.137</span>, <span class="fl">0.114</span>, <span class="fl">0.068</span>, <span class="fl">0.052</span>, <span class="fl">0.033</span>, <span class="fl">0.019</span>, <span class="fl">0.02</span>, <span class="fl">0.006</span>, <span class="fl">0.014</span>, <span class="fl">0.005</span>, <span class="fl">0.002</span>, <span class="fl">0.001</span>, <span class="fl">0.001</span>, <span class="fl">0.001</span>, <span class="fl">0.001</span>, <span class="fl">0.001</span>]</span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    <span class="fl">95</span><span class="op">%</span> confidence interval<span class="op">:</span> [(<span class="fl">0.131</span>, <span class="fl">0.1891</span>), (<span class="fl">0.166</span>, <span class="fl">0.2241</span>), (<span class="fl">0.141</span>, <span class="fl">0.1991</span>), (<span class="fl">0.108</span>, <span class="fl">0.1661</span>), (<span class="fl">0.085</span>, <span class="fl">0.1431</span>), (<span class="fl">0.039</span>, <span class="fl">0.09709</span>), (<span class="fl">0.023</span>, <span class="fl">0.08109</span>), (<span class="fl">0.004</span>, <span class="fl">0.06209</span>), (<span class="fl">0.0</span>, <span class="fl">0.04809</span>), (<span class="fl">0.0</span>, <span class="fl">0.04909</span>), (<span class="fl">0.0</span>, <span class="fl">0.03509</span>), (<span class="fl">0.0</span>, <span class="fl">0.04309</span>), (<span class="fl">0.0</span>, <span class="fl">0.03409</span>), (<span class="fl">0.0</span>, <span class="fl">0.03109</span>), (<span class="fl">0.0</span>, <span class="fl">0.03009</span>), (<span class="fl">0.0</span>, <span class="fl">0.03009</span>), (<span class="fl">0.0</span>, <span class="fl">0.03009</span>), (<span class="fl">0.0</span>, <span class="fl">0.03009</span>), (<span class="fl">0.0</span>, <span class="fl">0.03009</span>)]</span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="bu">Test</span> summary<span class="op">:</span></span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    outcome with <span class="fl">95</span><span class="op">%</span> confidence<span class="op">:</span> fail to reject h_0</span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>    one<span class="op">-</span>sided p<span class="op">-</span>value<span class="op">:</span>           <span class="fl">0.4174</span></span>
-<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>Details<span class="op">:</span></span>
-<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>    Sample size<span class="op">:</span>        <span class="fl">1000</span></span>
-<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>    statistic<span class="op">:</span>          <span class="fl">18.591632916708782</span></span>
-<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>    degrees of freedom<span class="op">:</span> <span class="fl">18</span></span>
-<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    residuals<span class="op">:</span>          [<span class="op">-</span><span class="fl">0.216012</span>, <span class="fl">0.200997</span>, <span class="op">-</span><span class="fl">0.138238</span>, <span class="op">-</span><span class="fl">0.0112519</span>, <span class="fl">1.09536</span>, <span class="op">-</span><span class="fl">0.724547</span>, <span class="op">-</span><span class="fl">0.0209416</span>, <span class="op">-</span><span class="fl">0.487213</span>, <span class="op">-</span><span class="fl">1.08818</span>, <span class="fl">0.904765</span>, <span class="op">-</span><span class="fl">1.47332</span>, <span class="fl">2.56064</span>, <span class="fl">0.147156</span>, <span class="op">-</span><span class="fl">0.599932</span>, <span class="op">-</span><span class="fl">0.693168</span>, <span class="op">-</span><span class="fl">0.242094</span>, <span class="fl">0.201031</span>, <span class="fl">1.15008</span>, <span class="fl">5.21144</span>]</span>
-<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>    std. residuals<span class="op">:</span>     [<span class="op">-</span><span class="fl">0.236076</span>, <span class="fl">0.223635</span>, <span class="op">-</span><span class="fl">0.151902</span>, <span class="op">-</span><span class="fl">0.0121131</span>, <span class="fl">1.15647</span>, <span class="op">-</span><span class="fl">0.75304</span>, <span class="op">-</span><span class="fl">0.02151</span>, <span class="op">-</span><span class="fl">0.496206</span>, <span class="op">-</span><span class="fl">1.10169</span>, <span class="fl">0.91225</span>, <span class="op">-</span><span class="fl">1.48139</span>, <span class="fl">2.56985</span>, <span class="fl">0.147502</span>, <span class="op">-</span><span class="fl">0.600848</span>, <span class="op">-</span><span class="fl">0.693853</span>, <span class="op">-</span><span class="fl">0.242248</span>, <span class="fl">0.201113</span>, <span class="fl">1.15028</span>, <span class="fl">5.21153</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Corrected p-value (df = 18 - 2 = 16):</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fl">1</span><span class="fu">-cdf</span>(<span class="fu">Chisq</span>(<span class="fl">16</span>), <span class="fl">18.591632916708782</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p><span class="math inline">\(\chi^2\)</span> test</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PowerDivergenceTest</span>(x_uniq_counts, lambda <span class="op">=</span> <span class="fl">1.0</span>, theta0 <span class="op">=</span> est_pmf)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>Pearson<span class="op">&#39;</span>s Chi<span class="op">-</span>square <span class="bu">Test</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="op">-------------------------</span></span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>Population details<span class="op">:</span></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    parameter of interest<span class="op">:</span>   Multinomial Probabilities</span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>    value under h_0<span class="op">:</span>         [<span class="fl">0.162756</span>, <span class="fl">0.192213</span>, <span class="fl">0.171812</span>, <span class="fl">0.137132</span>, <span class="fl">0.102889</span>, <span class="fl">0.074243</span>, <span class="fl">0.0521512</span>, <span class="fl">0.03592</span>, <span class="fl">0.0243722</span>, <span class="fl">0.0163424</span>, <span class="fl">0.0108539</span>, <span class="fl">0.00715202</span>, <span class="fl">0.0046816</span>, <span class="fl">0.00304727</span>, <span class="fl">0.00197386</span>, <span class="fl">0.00127317</span>, <span class="fl">0.000818163</span>, <span class="fl">0.000334669</span>, <span class="fl">3.4335e-5</span>]</span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>    point estimate<span class="op">:</span>          [<span class="fl">0.16</span>, <span class="fl">0.195</span>, <span class="fl">0.17</span>, <span class="fl">0.137</span>, <span class="fl">0.114</span>, <span class="fl">0.068</span>, <span class="fl">0.052</span>, <span class="fl">0.033</span>, <span class="fl">0.019</span>, <span class="fl">0.02</span>, <span class="fl">0.006</span>, <span class="fl">0.014</span>, <span class="fl">0.005</span>, <span class="fl">0.002</span>, <span class="fl">0.001</span>, <span class="fl">0.001</span>, <span class="fl">0.001</span>, <span class="fl">0.001</span>, <span class="fl">0.001</span>]</span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>    <span class="fl">95</span><span class="op">%</span> confidence interval<span class="op">:</span> [(<span class="fl">0.131</span>, <span class="fl">0.1891</span>), (<span class="fl">0.166</span>, <span class="fl">0.2241</span>), (<span class="fl">0.141</span>, <span class="fl">0.1991</span>), (<span class="fl">0.108</span>, <span class="fl">0.1661</span>), (<span class="fl">0.085</span>, <span class="fl">0.1431</span>), (<span class="fl">0.039</span>, <span class="fl">0.09709</span>), (<span class="fl">0.023</span>, <span class="fl">0.08109</span>), (<span class="fl">0.004</span>, <span class="fl">0.06209</span>), (<span class="fl">0.0</span>, <span class="fl">0.04809</span>), (<span class="fl">0.0</span>, <span class="fl">0.04909</span>), (<span class="fl">0.0</span>, <span class="fl">0.03509</span>), (<span class="fl">0.0</span>, <span class="fl">0.04309</span>), (<span class="fl">0.0</span>, <span class="fl">0.03409</span>), (<span class="fl">0.0</span>, <span class="fl">0.03109</span>), (<span class="fl">0.0</span>, <span class="fl">0.03009</span>), (<span class="fl">0.0</span>, <span class="fl">0.03009</span>), (<span class="fl">0.0</span>, <span class="fl">0.03009</span>), (<span class="fl">0.0</span>, <span class="fl">0.03009</span>), (<span class="fl">0.0</span>, <span class="fl">0.03009</span>)]</span>
-<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a><span class="bu">Test</span> summary<span class="op">:</span></span>
-<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>    outcome with <span class="fl">95</span><span class="op">%</span> confidence<span class="op">:</span> reject h_0</span>
-<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>    one<span class="op">-</span>sided p<span class="op">-</span>value<span class="op">:</span>           <span class="fl">0.0010</span></span>
-<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>Details<span class="op">:</span></span>
-<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>    Sample size<span class="op">:</span>        <span class="fl">1000</span></span>
-<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>    statistic<span class="op">:</span>          <span class="fl">42.242072813765624</span></span>
-<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>    degrees of freedom<span class="op">:</span> <span class="fl">18</span></span>
-<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a>    residuals<span class="op">:</span>          [<span class="op">-</span><span class="fl">0.216012</span>, <span class="fl">0.200997</span>, <span class="op">-</span><span class="fl">0.138238</span>, <span class="op">-</span><span class="fl">0.0112519</span>, <span class="fl">1.09536</span>, <span class="op">-</span><span class="fl">0.724547</span>, <span class="op">-</span><span class="fl">0.0209416</span>, <span class="op">-</span><span class="fl">0.487213</span>, <span class="op">-</span><span class="fl">1.08818</span>, <span class="fl">0.904765</span>, <span class="op">-</span><span class="fl">1.47332</span>, <span class="fl">2.56064</span>, <span class="fl">0.147156</span>, <span class="op">-</span><span class="fl">0.599932</span>, <span class="op">-</span><span class="fl">0.693168</span>, <span class="op">-</span><span class="fl">0.242094</span>, <span class="fl">0.201031</span>, <span class="fl">1.15008</span>, <span class="fl">5.21144</span>]</span>
-<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a>    std. residuals<span class="op">:</span>     [<span class="op">-</span><span class="fl">0.236076</span>, <span class="fl">0.223635</span>, <span class="op">-</span><span class="fl">0.151902</span>, <span class="op">-</span><span class="fl">0.0121131</span>, <span class="fl">1.15647</span>, <span class="op">-</span><span class="fl">0.75304</span>, <span class="op">-</span><span class="fl">0.02151</span>, <span class="op">-</span><span class="fl">0.496206</span>, <span class="op">-</span><span class="fl">1.10169</span>, <span class="fl">0.91225</span>, <span class="op">-</span><span class="fl">1.48139</span>, <span class="fl">2.56985</span>, <span class="fl">0.147502</span>, <span class="op">-</span><span class="fl">0.600848</span>, <span class="op">-</span><span class="fl">0.693853</span>, <span class="op">-</span><span class="fl">0.242248</span>, <span class="fl">0.201113</span>, <span class="fl">1.15028</span>, <span class="fl">5.21153</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Note that p-value is calculated incorrectly because <code>PowerDivergenceTest</code> does not account for estimated parameters. The correct df is 16, not 18 (18 categories minus <span class="math inline">\(s=2\)</span> estimated NB parameters). Corrected p-value:</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fl">1</span><span class="fu">-cdf</span>(<span class="fu">Chisq</span>(<span class="fl">16</span>), <span class="fl">42.242072813765624</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>df.has_vacancy <span class="op">=</span> <span class="fu">ifelse</span>.(df.vacancies <span class="op">.&gt;</span> <span class="fl">0</span>, <span class="cn">true</span>, <span class="cn">false</span>);</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>m1 <span class="op">=</span> <span class="fu">glm</span>(<span class="pp">@formula</span>(has_vacancy <span class="op">~</span> public), df, <span class="fu">Binomial</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
 </div>
 </section>
-<section id="example-from-the-lecture-2" class="level1" data-number="3">
-<h1 data-number="3"><span class="header-section-number">3</span> Example from the lecture #2</h1>
+<section id="example-2-aggregated-data" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="example-2-aggregated-data"><span class="header-section-number">3</span> Example 2 – aggregated data</h2>
+<p>We show that it is possible to use aggregated data for logistic regression.</p>
 <div class="tabset-margin-container"></div><div class="panel-tabset">
 <ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-3-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-1" role="tab" aria-controls="tabset-3-1" aria-selected="true" href>R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-3-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-2" role="tab" aria-controls="tabset-3-2" aria-selected="false" href>Python</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-3-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-3" role="tab" aria-controls="tabset-3-3" aria-selected="false" href>Julia</a></li></ul>
 <div class="tab-content">
 <div id="tabset-3-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-3-1-tab">
-<p>Vector with data from the lecture</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span><span class="sc">:</span><span class="dv">4</span>, <span class="fu">c</span>(<span class="dv">100</span>,<span class="dv">50</span>,<span class="dv">15</span>,<span class="dv">5</span>,<span class="dv">1</span>))</span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>X_tab <span class="ot">&lt;-</span> <span class="fu">table</span>(X)</span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>X_tab</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>df_aggregated <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(vacancies <span class="sc">~</span> has_vacancy <span class="sc">+</span> public, <span class="at">data =</span> df, <span class="at">FUN =</span> length) <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reshape</span>(<span class="at">data =</span> _, <span class="at">direction =</span> <span class="st">&quot;wide&quot;</span>, <span class="at">idvar =</span> <span class="fu">c</span>(<span class="st">&quot;public&quot;</span>), <span class="at">timevar =</span> <span class="st">&quot;has_vacancy&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;_&quot;</span>)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>df_aggregated</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Check if Poisson distribution fits the data</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>X_po <span class="ot">&lt;-</span> <span class="fu">goodfit</span>(X, <span class="st">&quot;poisson&quot;</span>)</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>X_po</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>model2 <span class="ot">&lt;-</span> <span class="fu">glm</span>(<span class="at">formula =</span> <span class="fu">cbind</span>(vacancies_TRUE, vacancies_FALSE) <span class="sc">~</span> public,</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">data =</span> df_aggregated, </span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">family =</span> <span class="fu">binomial</span>())</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Step by step:</p>
-<ol type="1">
-<li>estimate <span class="math inline">\(\lambda\)</span>.</li>
-</ol>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>lambda_hat <span class="ot">&lt;-</span> <span class="fu">mean</span>(X)</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>lambda_hat</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<ol start="2" type="1">
-<li>get expected values</li>
-</ol>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>n_hat <span class="ot">&lt;-</span> <span class="fu">length</span>(X)<span class="sc">*</span><span class="fu">dpois</span>(<span class="dv">0</span><span class="sc">:</span><span class="dv">4</span>, lambda_hat)</span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>n_hat</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<ol start="3" type="1">
-<li>get pearson residual</li>
-</ol>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>r_hat <span class="ot">&lt;-</span> (<span class="fu">as.vector</span>(X_tab)<span class="sc">-</span>n_hat)<span class="sc">/</span><span class="fu">sqrt</span>(n_hat)</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>r_hat</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<ol start="4" type="1">
-<li>Save the result into a table</li>
-</ol>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>X_dt <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">X =</span> <span class="dv">0</span><span class="sc">:</span><span class="dv">4</span>, <span class="at">n =</span> <span class="fu">as.vector</span>(X_tab), <span class="at">n_hat =</span> n_hat, <span class="at">r_hat =</span> r_hat)</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>X_dt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>Check if negative binomial distribution fits the data better.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>X_nb <span class="ot">&lt;-</span> <span class="fu">goodfit</span>(X, <span class="st">&quot;nbinom&quot;</span>)</span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>X_nb</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>Let’s now look at <span class="math inline">\(G^2\)</span> test. Results indicate that Poisson and negative binomial distribution fit the data equally well.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(X_po)</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(X_nb)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>Now, let’s see what AIC, BIC and LR test will say.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>X_fit_ll_po <span class="ot">&lt;-</span> <span class="fu">fitdistr</span>(X, <span class="st">&quot;poisson&quot;</span>)</span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>X_fit_ll_nb <span class="ot">&lt;-</span> <span class="fu">fitdistr</span>(X, <span class="st">&quot;negative binomial&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>The lower the better – Poisson seems to be a better distribution</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(X_fit_ll_po, X_fit_ll_nb)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>The lower the better – Poisson seems to be a better distribution. Note that in this case the difference is higher due to larger number of parameters for NB, so BIC suggest distribution with lower number of parameters.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">BIC</span>(X_fit_ll_po, X_fit_ll_nb)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>Now, let’s see what LR test will tell. For this example it seems that two distributions equally well fit the data.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>LR_test <span class="ot">&lt;-</span> <span class="dv">2</span><span class="sc">*</span>X_fit_ll_nb<span class="sc">$</span>loglik <span class="sc">-</span> <span class="dv">2</span><span class="sc">*</span>X_fit_ll_po<span class="sc">$</span>loglik</span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>LR_test_p <span class="ot">&lt;-</span> <span class="fu">pchisq</span>(LR_test, <span class="dv">1</span>, <span class="at">lower.tail =</span> F)</span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">LR=</span>LR_test, <span class="at">df =</span> <span class="dv">1</span>, <span class="at">p_val =</span> LR_test_p)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p><strong>Conclusion</strong>: based only on the data we cannot indicate which distribution fit the data better.</p>
 </div>
 <div id="tabset-3-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-2-tab">
-<p>Code in Python that reproduce R results.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co">## generate data</span></span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> np.concatenate([np.repeat(i, n) <span class="cf">for</span> i, n <span class="kw">in</span> <span class="bu">enumerate</span>([<span class="dv">100</span>, <span class="dv">50</span>, <span class="dv">15</span>, <span class="dv">5</span>, <span class="dv">1</span>])])</span>
-<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="co">## frequency table</span></span>
-<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>X_tab <span class="op">=</span> pd.Series(X).value_counts().sort_index()</span>
-<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a><span class="co">## estimated lambda</span></span>
-<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>lambda_hat <span class="op">=</span> np.mean(X)</span>
-<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a><span class="co">## fitted counts</span></span>
-<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>n_hat <span class="op">=</span> <span class="bu">len</span>(X) <span class="op">*</span> st.poisson.pmf(np.arange(<span class="dv">0</span>, <span class="dv">5</span>), lambda_hat)</span>
-<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a><span class="co">## pearson residual</span></span>
-<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>r_hat <span class="op">=</span> (X_tab.values <span class="op">-</span> n_hat) <span class="op">/</span> np.sqrt(n_hat)</span>
-<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a><span class="co">## store results in data.frame</span></span>
-<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a>X_dt <span class="op">=</span> pd.DataFrame({<span class="st">&#39;X&#39;</span>: np.arange(<span class="dv">0</span>, <span class="dv">5</span>), <span class="st">&#39;n&#39;</span>: X_tab.values, <span class="st">&#39;n_hat&#39;</span>: n_hat, <span class="st">&#39;r_hat&#39;</span>: r_hat})</span>
-<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>X_dt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co">## loglik for n</span></span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ll_nbinom(par, x):</span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  pdfnbinom <span class="op">=</span> st.nbinom(par[<span class="dv">0</span>],par[<span class="dv">1</span>]).logpmf(x)</span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="op">-</span>np.<span class="bu">sum</span>(pdfnbinom)</span>
-<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>res_nb <span class="op">=</span> minimize(fun<span class="op">=</span>ll_nbinom, x0<span class="op">=</span>[<span class="dv">2</span>, <span class="fl">0.5</span>], args <span class="op">=</span> (X), method <span class="op">=</span> <span class="st">&quot;Nelder-Mead&quot;</span>)</span>
-<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>ll_po <span class="op">=</span> <span class="bu">sum</span>(st.poisson(np.mean(X)).logpmf(X))</span>
-<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>ll_nb <span class="op">=</span> <span class="op">-</span>res_nb.fun</span>
-<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>LR_test <span class="op">=</span>  <span class="dv">2</span><span class="op">*</span>ll_nb <span class="op">-</span> <span class="dv">2</span><span class="op">*</span>ll_po</span>
-<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>[LR_test, <span class="dv">1</span>, <span class="dv">1</span> <span class="op">-</span> st.chi2.cdf(LR_test, <span class="dv">1</span>)]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>AIC_po <span class="op">=</span> <span class="dv">2</span><span class="op">*</span><span class="dv">1</span> <span class="op">-</span> <span class="dv">2</span><span class="op">*</span>ll_po</span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>AIC_nb <span class="op">=</span> <span class="dv">2</span><span class="op">*</span><span class="dv">2</span> <span class="op">-</span> <span class="dv">2</span><span class="op">*</span>ll_nb</span>
-<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>[AIC_nb, AIC_po]</span>
-<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>BIC_po <span class="op">=</span> np.log(<span class="bu">len</span>(X))<span class="op">*</span><span class="dv">1</span> <span class="op">-</span> <span class="dv">2</span><span class="op">*</span>ll_po</span>
-<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>BIC_nb <span class="op">=</span> np.log(<span class="bu">len</span>(X))<span class="op">*</span><span class="dv">2</span> <span class="op">-</span> <span class="dv">2</span><span class="op">*</span>ll_nb</span>
-<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>[BIC_nb, BIC_po]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
+
 </div>
 <div id="tabset-3-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-3-tab">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> <span class="fu">vcat</span>([<span class="fu">fill</span>(i<span class="op">-</span><span class="fl">1</span>,n) for (i, n) <span class="kw">in</span> <span class="fu">enumerate</span>([<span class="fl">100</span>,<span class="fl">50</span>,<span class="fl">15</span>,<span class="fl">5</span>,<span class="fl">1</span>])]<span class="op">...</span>);</span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>X_tab <span class="op">=</span> <span class="fu">sort</span>(<span class="fu">countmap</span>(X));</span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>lambda_hat <span class="op">=</span> <span class="fu">mean</span>(X);</span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>n_hat <span class="op">=</span> <span class="fu">length</span>(X) <span class="op">*</span> <span class="fu">pdf</span>.(<span class="fu">Poisson</span>(lambda_hat), <span class="fl">0</span><span class="op">:</span><span class="fl">4</span>);</span>
-<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>r_hat <span class="op">=</span> (<span class="fu">values</span>(X_tab) <span class="op">.-</span> n_hat) <span class="op">./</span> <span class="fu">sqrt</span>.(n_hat);</span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>X_dt <span class="op">=</span> <span class="fu">DataFrame</span>(X <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="fl">4</span>, n <span class="op">=</span> <span class="fu">values</span>(X_tab)<span class="op">.*</span><span class="fl">1</span>, n_hat <span class="op">=</span> n_hat, r_hat <span class="op">=</span> r_hat)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>GoF, AIC, BIC and LR test</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co">## fit NB</span></span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">llnb_jl</span>(par, data)</span>
-<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  ll <span class="op">=</span> <span class="fu">logpdf</span>.(<span class="fu">NegativeBinomial</span>(par[<span class="fl">1</span>], par[<span class="fl">2</span>]), data)</span>
-<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="fu">-sum</span>(ll)</span>
-<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
-<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>res_nb <span class="op">=</span> <span class="fu">optimize</span>(par <span class="op">-&gt;</span> <span class="fu">llnb_jl</span>(par, X), [<span class="fl">0.01</span>, <span class="fl">0.01</span>], [<span class="fl">100.0</span>, <span class="fl">0.99</span>], [<span class="fl">2.0</span>, <span class="fl">0.5</span>])</span>
-<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>nb_params <span class="op">=</span> Optim.<span class="fu">minimizer</span>(res_nb)</span>
-<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a><span class="co">## log-likelihoods</span></span>
-<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>ll_po <span class="op">=</span> <span class="fu">sum</span>(<span class="fu">logpdf</span>.(<span class="fu">Poisson</span>(lambda_hat), X))</span>
-<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a>ll_nb <span class="op">=</span> <span class="op">-</span>Optim.<span class="fu">minimum</span>(res_nb)</span>
-<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-14"><a href="#cb45-14" aria-hidden="true" tabindex="-1"></a><span class="co">## AIC and BIC</span></span>
-<span id="cb45-15"><a href="#cb45-15" aria-hidden="true" tabindex="-1"></a>n_obs <span class="op">=</span> <span class="fu">length</span>(X)</span>
-<span id="cb45-16"><a href="#cb45-16" aria-hidden="true" tabindex="-1"></a>AIC_po <span class="op">=</span> <span class="fl">2</span><span class="op">*</span><span class="fl">1</span> <span class="op">-</span> <span class="fl">2</span><span class="op">*</span>ll_po</span>
-<span id="cb45-17"><a href="#cb45-17" aria-hidden="true" tabindex="-1"></a>AIC_nb <span class="op">=</span> <span class="fl">2</span><span class="op">*</span><span class="fl">2</span> <span class="op">-</span> <span class="fl">2</span><span class="op">*</span>ll_nb</span>
-<span id="cb45-18"><a href="#cb45-18" aria-hidden="true" tabindex="-1"></a>BIC_po <span class="op">=</span> <span class="fu">log</span>(n_obs)<span class="op">*</span><span class="fl">1</span> <span class="op">-</span> <span class="fl">2</span><span class="op">*</span>ll_po</span>
-<span id="cb45-19"><a href="#cb45-19" aria-hidden="true" tabindex="-1"></a>BIC_nb <span class="op">=</span> <span class="fu">log</span>(n_obs)<span class="op">*</span><span class="fl">2</span> <span class="op">-</span> <span class="fl">2</span><span class="op">*</span>ll_nb</span>
-<span id="cb45-20"><a href="#cb45-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-21"><a href="#cb45-21" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">&quot;AIC: Poisson = &quot;</span>, <span class="fu">round</span>(AIC_po, digits<span class="op">=</span><span class="fl">4</span>), <span class="st">&quot;, NB = &quot;</span>, <span class="fu">round</span>(AIC_nb, digits<span class="op">=</span><span class="fl">4</span>))</span>
-<span id="cb45-22"><a href="#cb45-22" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">&quot;BIC: Poisson = &quot;</span>, <span class="fu">round</span>(BIC_po, digits<span class="op">=</span><span class="fl">4</span>), <span class="st">&quot;, NB = &quot;</span>, <span class="fu">round</span>(BIC_nb, digits<span class="op">=</span><span class="fl">4</span>))</span>
-<span id="cb45-23"><a href="#cb45-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-24"><a href="#cb45-24" aria-hidden="true" tabindex="-1"></a><span class="co">## LR test (Poisson nested in NB)</span></span>
-<span id="cb45-25"><a href="#cb45-25" aria-hidden="true" tabindex="-1"></a>LR_test <span class="op">=</span> <span class="fl">2</span><span class="op">*</span>ll_nb <span class="op">-</span> <span class="fl">2</span><span class="op">*</span>ll_po</span>
-<span id="cb45-26"><a href="#cb45-26" aria-hidden="true" tabindex="-1"></a>LR_pval <span class="op">=</span> <span class="fl">1</span> <span class="op">-</span> <span class="fu">cdf</span>(<span class="fu">Chisq</span>(<span class="fl">1</span>), LR_test)</span>
-<span id="cb45-27"><a href="#cb45-27" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">&quot;LR test: &quot;</span>, <span class="fu">round</span>(LR_test, digits<span class="op">=</span><span class="fl">4</span>), <span class="st">&quot;, p-value: &quot;</span>, <span class="fu">round</span>(LR_pval, digits<span class="op">=</span><span class="fl">4</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
+
 </div>
 </div>
 </div>
 </section>
-<section class="level1" data-number="4">
-<h1 data-number="4"><span class="header-section-number">4</span> Script files</h1>
-<p>The code for this document can be found here:</p>
-<ul>
-<li><a href="06-gof.jl">06-gof.jl</a></li>
-<li><a href="06-gof.py">06-gof.py</a></li>
-<li><a href="06-gof.R">06-gof.R</a></li>
-</ul>
+<section id="example-3-more-variables" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="example-3-more-variables"><span class="header-section-number">4</span> Example 3 – more variables</h2>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-4-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-1" role="tab" aria-controls="tabset-4-1" aria-selected="true" href>R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-2" role="tab" aria-controls="tabset-4-2" aria-selected="false" href>Python</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-3" role="tab" aria-controls="tabset-4-3" aria-selected="false" href>Julia</a></li></ul>
+<div class="tab-content">
+<div id="tabset-4-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-4-1-tab">
+<p>Consider the following model</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>model3 <span class="ot">&lt;-</span> <span class="fu">glm</span>(<span class="at">formula =</span> has_vacancy <span class="sc">~</span> public <span class="sc">+</span> size <span class="sc">+</span> nace, </span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">data =</span> df,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">family =</span> <span class="fu">binomial</span>())</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model3)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Now, the interpretation becomes more complex, so it is better to look at plots.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">modelplot</span>(model3, <span class="at">exponentiate =</span> T) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Additionally we can check whether a~given variable as a whole is “significant” using <code>car::Anova(type=2)</code></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>car<span class="sc">::</span><span class="fu">Anova</span>(model3, <span class="at">type =</span> <span class="dv">2</span>) <span class="sc">|&gt;</span> broom<span class="sc">::</span><span class="fu">tidy</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+<div id="tabset-4-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-2-tab">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>mod3 <span class="op">=</span> smf.glm(formula<span class="op">=</span><span class="st">&quot;has_vacancy ~ public + size + nace&quot;</span>, data<span class="op">=</span>df, family<span class="op">=</span>sm.families.Binomial()).fit()</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(mod3.summary())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+<div id="tabset-4-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-3-tab">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>m3 <span class="op">=</span> <span class="fu">glm</span>(<span class="pp">@formula</span>(has_vacancy <span class="op">~</span> public <span class="op">+</span> size <span class="op">+</span> nace), df, <span class="fu">Binomial</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
 </section>
 
 </main>

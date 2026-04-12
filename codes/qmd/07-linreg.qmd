@@ -1,0 +1,1109 @@
+---
+title: "Categorical variables in regression and marginal effects"
+author: "Maciej Beręsewicz"
+format:
+  html:
+    embed-resources: true
+    table-of-contents: true
+    number-sections: true
+    df-print: kable
+editor: source
+execute:
+  eval: true
+  warning: false
+  message: false
+filters:
+  - ripper
+ripper:
+  output-dir: "extracted"
+  script-links-position: "none"
+  include-yaml: true
+---
+
+```{r setup, echo = FALSE}
+JuliaCall::julia_setup(JULIA_HOME = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/")
+knitr::opts_chunk$set(engine.path = list(
+  python = "/opt/anaconda3/bin/python3.12",
+  julia = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/"
+))
+```
+
+# Packages
+
+::: panel-tabset
+## R
+
+Install `marginaleffects` package if necessary.
+
+```{r, eval = FALSE}
+install.packages("marginaleffects")
+install.packages("car")
+```
+
+```{r}
+library(marginaleffects)
+library(car)
+```
+
+## Python
+
+```{bash, eval = F}
+!pip install statsmodels
+!pip install marginaleffects
+```
+
+```{python}
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from marginaleffects import *
+```
+
+## Julia
+
+```{julia, eval = F}
+using Pkg
+Pkg.add(["Effects", "StatsBase", "CSV", "CategoricalArrays", "GLM"])
+```
+
+```{julia}
+using Effects
+using StatsBase
+using CSV
+using CategoricalArrays
+using GLM
+using Statistics
+using DataFrames
+```
+:::
+
+# Data
+
+Read in the dataset for the lecture and specify column classes (types).
+
+::: panel-tabset
+## R
+
+```{r}
+df <- read.csv("../../data/polish-jvs.csv", colClasses = c("character", "factor", rep("character", 4), "numeric"))
+head(df)
+```
+
+Check the levels
+
+```{r}
+levels(df$woj)
+```
+
+Read in the dataset but without specifying classes/types, so `woj` is treated as a numeric variable.
+
+```{r}
+df_wrong <- read.csv("../../data/polish-jvs.csv")
+head(df_wrong)
+```
+
+## Python
+
+```{python}
+df = pd.read_csv("../../data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
+df.head()
+```
+
+Read in the dataset but without specifying classes/types, so `woj` is treated as a numeric variable.
+
+```{python}
+df_wrong = pd.read_csv("../../data/polish-jvs.csv")
+df_wrong.head()
+```
+
+## Julia
+
+```{julia}
+df=CSV.read("../../data/polish-jvs.csv", DataFrame,
+            types = Dict(:id => String, :woj=> String, :public=> String,
+                         :size => String, :nace_division => String, :nace => String));
+first(df, 5)
+```
+
+Read in the dataset but without specifying classes/types, so `woj` is treated as a numeric variable.
+
+```{julia}
+df_wrong=CSV.read("../../data/polish-jvs.csv", DataFrame);
+first(df_wrong, 5)
+```
+:::
+
+# Categorical variables in regression
+
+Consider the following model that tries to explain level of `vacancies`
+using `woj`. If `woj` would be treated as continuous than the postulated
+model has the following form
+
+$$
+\text{vacancies} = \beta_0 + \beta_1\text{woj} + \epsilon.
+$$ However, `woj` is categorical, so this model is incorrect. We should
+consider the following model with *dummy variables*
+
+$$
+\text{vacancies} = \beta_0 + \beta_1I(\text{woj='04'})+ \beta_2I(\text{woj='06'}) + \cdots + \beta_{15}I(\text{woj='32'}) + \epsilon.
+$$ Note that code `02` is missing, as it is the reference level.
+
+::: panel-tabset
+## R
+
+```{r}
+model1 <- lm(vacancies ~ woj, data = df_wrong)
+summary(model1)
+```
+
+```{r}
+model2 <- lm(vacancies ~ woj, data = df)
+summary(model2)
+```
+
+Compare this model with the following summary. Why they are equal?
+because OLS
+
+```{r}
+tab1 <- aggregate(vacancies ~ woj, data = df, FUN = mean)
+tab1$coef_by_hand <- with(tab1, vacancies-vacancies[1])
+tab1$coef <- coef(model2)
+head(tab1)
+```
+
+```{r}
+model3 <- lm(vacancies ~ relevel(woj, ref = "30"), data = df)
+summary(model3)
+```
+
+```{r}
+model4 <- lm(formula = vacancies ~ woj, data = df, contrasts = list(woj = contr.sum))
+summary(model4)
+```
+
+0.82902 -- average of averages
+
+```{r}
+mean(tab1$vacancies)
+```
+
+## Python
+
+```{python}
+model1 = smf.ols("vacancies ~ woj", data = df_wrong).fit()
+print(model1.summary())
+```
+
+```{python}
+model2 = smf.ols("vacancies ~ woj", data = df).fit()
+print(model2.summary())
+```
+
+```{python}
+model3 = smf.ols("vacancies ~ C(woj, Treatment(reference='30'))", data = df).fit()
+print(model3.summary())
+```
+
+```{python}
+model4 = smf.ols("vacancies ~ C(woj, Sum)", data = df).fit()
+print(model4.summary())
+```
+
+## Julia
+
+```{julia}
+model1 = lm(@formula(vacancies ~ woj), df_wrong)
+```
+
+```{julia}
+model2 = lm(@formula(vacancies ~ woj), df)
+```
+
+```{julia}
+model3 = lm(@formula(vacancies ~ woj), df, contrasts = Dict(:woj => DummyCoding(base="30")))
+```
+
+```{julia}
+model4 = lm(@formula(vacancies ~ woj), df, contrasts = Dict(:woj => EffectsCoding()))
+```
+:::
+
+# Interpreting interactions between two categorical variables
+
+## The model
+
+Consider the model `vacancies ~ size * public`, which expands to
+`vacancies ~ size + public + size:public`. With `size` (3 levels: Large, Medium, Small
+— alphabetical order, so Large is the reference) and `public` (2 levels: 0 as reference, 1), we get 6 parameters:
+
+- $\beta_0$ — expected vacancies for Large, private (the baseline cell)
+- $\beta_{\text{Medium}}$ — difference Medium vs Large **among private firms**
+- $\beta_{\text{Small}}$ — difference Small vs Large **among private firms**
+- $\beta_{\text{public}}$ — difference public vs private **among Large firms**
+- $\beta_{\text{Medium:public}}$ — how much the public-vs-private difference changes for Medium relative to Large (departure from additivity)
+- $\beta_{\text{Small:public}}$ — same for Small relative to Large
+
+**Key insight:** "main effects" are conditional on the reference level of the other variable, not averaged across groups. The interaction terms are difference-in-differences.
+
+## Fit the interaction model
+
+::: panel-tabset
+## R
+
+```{r}
+model_int1 <- lm(vacancies ~ size * public, data = df)
+summary(model_int1)
+```
+
+## Python
+
+```{python}
+model_int1 = smf.ols("vacancies ~ size * public", data = df).fit()
+print(model_int1.summary())
+```
+
+## Julia
+
+```{julia}
+model_int1 = lm(@formula(vacancies ~ size * public), df)
+```
+:::
+
+## Verify with cell means
+
+Compute the 6 cell means directly and confirm they match the coefficients:
+
+::: panel-tabset
+## R
+
+```{r}
+## Cell means
+cell_means <- aggregate(vacancies ~ size + public, data = df, FUN = mean)
+cell_means
+
+## Reconstruct from coefficients
+## Note: R uses alphabetical order, so Large is the reference level
+b <- coef(model_int1)
+cat("Large, private:", b[1], "\n")
+cat("Medium, private:", b[1] + b[2], "\n")
+cat("Small, private:", b[1] + b[3], "\n")
+cat("Large, public:", b[1] + b[4], "\n")
+cat("Medium, public:", b[1] + b[2] + b[4] + b[5], "\n")
+cat("Small, public:", b[1] + b[3] + b[4] + b[6], "\n")
+```
+
+## Python
+
+```{python}
+## Cell means
+cell_means = df.groupby(["size", "public"])["vacancies"].mean()
+print(cell_means)
+
+## Reconstruct from coefficients
+## Note: Python/statsmodels uses alphabetical order, so Large is the reference level
+b = model_int1.params
+print(f"Large, private: {b['Intercept']:.4f}")
+print(f"Medium, private: {b['Intercept'] + b['size[T.Medium]']:.4f}")
+print(f"Small, private: {b['Intercept'] + b['size[T.Small]']:.4f}")
+print(f"Large, public: {b['Intercept'] + b['public[T.1]']:.4f}")
+print(f"Medium, public: {b['Intercept'] + b['size[T.Medium]'] + b['public[T.1]'] + b['size[T.Medium]:public[T.1]']:.4f}")
+print(f"Small, public: {b['Intercept'] + b['size[T.Small]'] + b['public[T.1]'] + b['size[T.Small]:public[T.1]']:.4f}")
+```
+
+## Julia
+
+```{julia}
+## Cell means
+cell_means = combine(groupby(df, [:size, :public]), :vacancies => mean => :mean_vac)
+println(cell_means)
+
+## Reconstruct from coefficients
+## Note: Julia also uses alphabetical order, so Large is the reference level
+b = coef(model_int1)
+println("Large, private: ", b[1])
+println("Medium, private: ", b[1] + b[2])
+println("Small, private: ", b[1] + b[3])
+println("Large, public: ", b[1] + b[4])
+println("Medium, public: ", b[1] + b[2] + b[4] + b[5])
+println("Small, public: ", b[1] + b[3] + b[4] + b[6])
+```
+:::
+
+# ANOVA Type I, II, III
+
+When a categorical predictor has $k$ levels, the model includes $k-1$ dummy variables. To test whether the variable **as a whole** is significant, we need a joint test of all $k-1$ coefficients. This is what ANOVA F-tests do. Three types of Sum of Squares (SS) decomposition exist, and they differ in what they adjust for.
+
+## Type I (Sequential SS)
+
+SS for each term is computed **in the order it appears** in the formula:
+
+- $\text{SS}(A)$, $\text{SS}(B \mid A)$, $\text{SS}(A{:}B \mid A, B)$
+
+The result is **order-dependent**: changing the formula order changes the SS for main effects. This is the default in R's `anova()`. Appropriate for balanced designs or when the order is theoretically motivated.
+
+::: panel-tabset
+## R
+
+```{r}
+## Type I (sequential) -- note: order matters!
+anova(model_int1)
+```
+
+## Python
+
+```{python}
+## Type I (sequential)
+print(sm.stats.anova_lm(model_int1, typ=1))
+```
+
+## Julia
+
+```{julia}
+## Type I via nested model comparison
+model_null = lm(@formula(vacancies ~ 1), df)
+model_size = lm(@formula(vacancies ~ size), df)
+model_add  = lm(@formula(vacancies ~ size + public), df)
+ftest(model_null.model, model_size.model, model_add.model, model_int1.model)
+```
+:::
+
+## Type II SS
+
+Each term is tested after all other terms of **equal or lower order**:
+
+- $\text{SS}(A \mid B)$, $\text{SS}(B \mid A)$, $\text{SS}(A{:}B \mid A, B)$
+
+Type II respects the **marginality principle** — main effects are not adjusted for
+interactions. Order-independent. Recommended when there is no significant interaction.
+
+::: panel-tabset
+## R
+
+```{r}
+## Type II
+Anova(model_int1, type = "II")
+```
+
+## Python
+
+```{python}
+## Type II
+print(sm.stats.anova_lm(model_int1, typ=2))
+```
+
+## Julia
+
+```{julia}
+## Type II via manual model comparisons
+## SS(size | public): compare (public) vs (size + public)
+model_public = lm(@formula(vacancies ~ public), df)
+ftest(model_public.model, model_add.model)
+
+## SS(public | size): compare (size) vs (size + public)
+ftest(model_size.model, model_add.model)
+
+## SS(size:public | size, public): compare (size + public) vs (size * public)
+ftest(model_add.model, model_int1.model)
+```
+:::
+
+## Type III SS
+
+Each term is tested after **all** other terms, **including** interactions:
+
+- $\text{SS}(A \mid B, A{:}B)$, $\text{SS}(B \mid A, A{:}B)$, $\text{SS}(A{:}B \mid A, B)$
+
+With treatment (dummy) coding, Type III tests the main effect of $A$ **at the reference level** of $B$. For main effects interpretable at the grand mean, use **sum contrasts**.
+
+::: panel-tabset
+## R
+
+```{r}
+## Type III -- with treatment contrasts (default)
+Anova(model_int1, type = "III")
+
+## Type III with sum contrasts for interpretability
+df_sum <- df
+contrasts(df_sum$size) <- contr.sum(3)
+contrasts(df_sum$public) <- contr.sum(2)
+model_int1_sum <- lm(vacancies ~ size * public, data = df_sum)
+Anova(model_int1_sum, type = "III")
+```
+
+## Python
+
+```{python}
+## Type III
+print(sm.stats.anova_lm(model_int1, typ=3))
+
+## Type III with sum contrasts
+model_int1_sum = smf.ols("vacancies ~ C(size, Sum) * C(public, Sum)", data = df).fit()
+print(sm.stats.anova_lm(model_int1_sum, typ=3))
+```
+
+## Julia
+
+```{julia}
+## Type III via manual model comparisons
+## SS(size | public, size:public): compare (public) vs (size * public)
+## This tests whether adding size (and the interaction) improves over public alone
+## For a proper Type III test, we need the model without size but with public and interaction
+## In practice, Type III tests each term "last" -- for main effects in presence of interaction
+## this requires dropping the main effect while keeping the interaction, which is unusual.
+## A simpler approach: use the F-statistics from the coefficient table directly.
+coeftable(model_int1)
+```
+:::
+
+## Comparison
+
+For **balanced** data (equal cell sizes), all three types give identical results.
+For **unbalanced** data (which is typical in observational studies like our JVS data),
+the results differ. Type II is generally preferred unless there is a significant
+interaction, in which case Type III may be more appropriate (with sum contrasts).
+
+# Categorical × continuous interaction
+
+## Creating a continuous predictor
+
+Our dataset has only categorical predictors. For this example, we create a continuous
+variable `n_firms` — the number of observations (firms) per `nace_division`, a proxy
+for the size of the economic sector.
+
+::: panel-tabset
+## R
+
+```{r}
+nace_counts <- as.data.frame(table(df$nace_division))
+names(nace_counts) <- c("nace_division", "n_firms")
+df <- merge(df, nace_counts, by = "nace_division")
+df$n_firms <- as.numeric(df$n_firms)
+head(df[, c("nace_division", "size", "n_firms", "vacancies")])
+```
+
+## Python
+
+```{python}
+nace_counts = df.groupby("nace_division").size().reset_index(name="n_firms")
+df = df.merge(nace_counts, on="nace_division")
+print(df[["nace_division", "size", "n_firms", "vacancies"]].head())
+```
+
+## Julia
+
+```{julia}
+nace_counts = combine(groupby(df, :nace_division), nrow => :n_firms)
+df = leftjoin(df, nace_counts, on = :nace_division)
+first(df[:, [:nace_division, :size, :n_firms, :vacancies]], 5)
+```
+:::
+
+## Model without interaction (parallel lines)
+
+The model `vacancies ~ size + n_firms` assumes the same slope for `n_firms` across
+all size groups — only the intercept differs. The lines are parallel.
+
+::: panel-tabset
+## R
+
+```{r}
+model_par <- lm(vacancies ~ size + n_firms, data = df)
+summary(model_par)
+```
+
+## Python
+
+```{python}
+model_par = smf.ols("vacancies ~ size + n_firms", data = df).fit()
+print(model_par.summary())
+```
+
+## Julia
+
+```{julia}
+model_par = lm(@formula(vacancies ~ size + n_firms), df)
+```
+:::
+
+## Model with interaction (different slopes)
+
+The model `vacancies ~ size * n_firms` allows a different slope for `n_firms` in each
+size group. The coefficient of `n_firms` is the slope for the reference group (Large).
+The interaction terms measure how much the slope differs for other groups.
+
+::: panel-tabset
+## R
+
+```{r}
+model_slopes <- lm(vacancies ~ size * n_firms, data = df)
+summary(model_slopes)
+
+## Slopes by group
+b <- coef(model_slopes)
+cat("Slope for Large:", b["n_firms"], "\n")
+cat("Slope for Medium:", b["n_firms"] + b["sizeMedium:n_firms"], "\n")
+cat("Slope for Small:", b["n_firms"] + b["sizeSmall:n_firms"], "\n")
+```
+
+## Python
+
+```{python}
+model_slopes = smf.ols("vacancies ~ size * n_firms", data = df).fit()
+print(model_slopes.summary())
+
+## Slopes by group
+b = model_slopes.params
+print(f"Slope for Large: {b['n_firms']:.6f}")
+print(f"Slope for Medium: {b['n_firms'] + b['size[T.Medium]:n_firms']:.6f}")
+print(f"Slope for Small: {b['n_firms'] + b['size[T.Small]:n_firms']:.6f}")
+```
+
+## Julia
+
+```{julia}
+model_slopes = lm(@formula(vacancies ~ size * n_firms), df)
+
+## Slopes by group
+b = coef(model_slopes)
+println("Slope for Large: ", b[4])
+println("Slope for Medium: ", b[4] + b[5])
+println("Slope for Small: ", b[4] + b[6])
+```
+:::
+
+# Centering continuous variables
+
+## Why center?
+
+In a model with interaction `vacancies ~ size * n_firms`, the "main effect" of `size`
+is the effect **when `n_firms = 0`**. But `n_firms = 0` is outside the observed range
+(there are no sectors with zero firms), so this main effect is an extrapolation with
+no practical meaning.
+
+**Grand-mean centering** replaces `n_firms` with `n_firms - mean(n_firms)`. Now the
+main effect of `size` is the effect **at the average sector size**, which is much more
+interpretable.
+
+## Grand-mean centering
+
+::: panel-tabset
+## R
+
+```{r}
+df$n_firms_c <- df$n_firms - mean(df$n_firms)
+
+model_cent <- lm(vacancies ~ size * n_firms_c, data = df)
+summary(model_cent)
+```
+
+## Python
+
+```{python}
+df["n_firms_c"] = df["n_firms"] - df["n_firms"].mean()
+
+model_cent = smf.ols("vacancies ~ size * n_firms_c", data = df).fit()
+print(model_cent.summary())
+```
+
+## Julia
+
+```{julia}
+df.n_firms_c = df.n_firms .- mean(df.n_firms)
+
+model_cent = lm(@formula(vacancies ~ size * n_firms_c), df)
+```
+:::
+
+## What changes and what stays the same?
+
+::: panel-tabset
+## R
+
+```{r}
+## R-squared: identical
+cat("R² (uncentered):", summary(model_slopes)$r.squared, "\n")
+cat("R² (centered):  ", summary(model_cent)$r.squared, "\n")
+
+## Interaction coefficients: identical
+cat("\nInteraction coefs (uncentered):\n")
+print(coef(model_slopes)[5:6])
+cat("Interaction coefs (centered):\n")
+print(coef(model_cent)[5:6])
+
+## Main-effect coefficients: different
+cat("\nMain effects (uncentered):\n")
+print(coef(model_slopes)[1:3])
+cat("Main effects (centered):\n")
+print(coef(model_cent)[1:3])
+
+## Fitted values: identical
+cat("\nFitted values identical?", all.equal(fitted(model_slopes), fitted(model_cent)), "\n")
+```
+
+## Python
+
+```{python}
+## R-squared: identical
+print(f"R² (uncentered): {model_slopes.rsquared:.6f}")
+print(f"R² (centered):   {model_cent.rsquared:.6f}")
+
+## Interaction coefficients: identical
+print(f"\nInteraction coefs (uncentered):")
+print(model_slopes.params.filter(like=":"))
+print(f"Interaction coefs (centered):")
+print(model_cent.params.filter(like=":"))
+
+## Main-effect coefficients: different
+print(f"\nMain effects (uncentered):")
+print(model_slopes.params.iloc[:3])
+print(f"Main effects (centered):")
+print(model_cent.params.iloc[:3])
+```
+
+## Julia
+
+```{julia}
+## R-squared: identical
+println("R² (uncentered): ", r2(model_slopes))
+println("R² (centered):   ", r2(model_cent))
+
+## Interaction coefficients: identical
+println("\nInteraction coefs (uncentered): ", coef(model_slopes)[5:6])
+println("Interaction coefs (centered):   ", coef(model_cent)[5:6])
+
+## Main-effect coefficients: different
+println("\nMain effects (uncentered): ", coef(model_slopes)[1:3])
+println("Main effects (centered):   ", coef(model_cent)[1:3])
+```
+:::
+
+## Standardisation
+
+Standardising (`z-score`) additionally rescales to standard deviation units, so
+coefficients become comparable across variables with different scales.
+
+::: panel-tabset
+## R
+
+```{r}
+df$n_firms_s <- as.numeric(scale(df$n_firms))
+
+model_std <- lm(vacancies ~ size * n_firms_s, data = df)
+summary(model_std)
+```
+
+## Python
+
+```{python}
+df["n_firms_s"] = (df["n_firms"] - df["n_firms"].mean()) / df["n_firms"].std()
+
+model_std = smf.ols("vacancies ~ size * n_firms_s", data = df).fit()
+print(model_std.summary())
+```
+
+## Julia
+
+```{julia}
+df.n_firms_s = (df.n_firms .- mean(df.n_firms)) ./ std(df.n_firms)
+
+model_std = lm(@formula(vacancies ~ size * n_firms_s), df)
+```
+:::
+
+# Marginal effects
+
+## Why marginal effects?
+
+In models with interactions or polynomial terms, the effect of a variable on the
+response depends on the values of other variables. The regression coefficients
+alone no longer have a straightforward interpretation. Marginal effects provide
+a way to summarise the effect of each variable in a meaningful way.
+
+## Model with interactions
+
+Consider the following model
+
+$$
+\text{vacancies} = \beta_0 + \boldsymbol{\beta}_{\text{woj}} + \boldsymbol{\beta}_{\text{size}} + \beta_{\text{public}} + \boldsymbol{\beta}_{\text{woj} \times \text{size}} + \boldsymbol{\beta}_{\text{woj} \times \text{public}} + \varepsilon,
+$$
+
+where $\times$ denotes interactions between two variables.
+
+::: panel-tabset
+## R
+
+```{r}
+model5 <- lm(vacancies ~ woj*size + woj*public, df)
+summary(model5)
+```
+
+Calculate **Average Marginal Effects** (AME) -- the marginal effect is computed
+for each observation, then averaged across the sample.
+
+```{r}
+avg_slopes(model5)
+```
+
+Calculate **Marginal Effects at the Mean** (MEM) -- the marginal effect evaluated
+at the mean values of all other variables.
+
+```{r}
+avg_slopes(model5, newdata = "mean")
+```
+
+## Python
+
+```{python}
+model5 = smf.ols("vacancies ~ woj*size + woj*public", data = df).fit()
+print(model5.summary())
+```
+
+Calculate **Average Marginal Effects** (AME).
+
+```{python}
+model5_ame = avg_slopes(model5)
+model5_ame.to_pandas().head()
+```
+
+Calculate **Marginal Effects at the Mean** (MEM).
+
+```{python}
+model5_mem = avg_slopes(model5, newdata="mean")
+model5_mem.to_pandas().head()
+```
+
+## Julia
+
+```{julia}
+model5 = lm(@formula(vacancies ~ woj*size + woj*public), df)
+```
+
+`Effects.jl` returns marginal effects for each level separately, not as
+deviations from the reference level.
+
+```{julia}
+vcat(
+  effects(Dict(:woj => sort(unique(df.woj))), model5),
+  effects(Dict(:public => sort(unique(df.public))), model5),
+  effects(Dict(:size => sort(unique(df.size))), model5),
+  cols = :union
+)
+```
+:::
+
+## AME by subgroups
+
+We can compute AME of one variable separately for subgroups defined by another
+variable. For example, does the effect of `size` differ between public and
+private firms?
+
+::: panel-tabset
+## R
+
+```{r}
+avg_slopes(model5, variables = "size", by = "public")
+```
+
+## Python
+
+```{python}
+avg_slopes(model5, variables = "size", by = "public").to_pandas()
+```
+
+## Julia
+
+```{julia}
+effects(Dict(:size => sort(unique(df.size))), model5)
+```
+:::
+
+## Marginal Effects at Representative Values (MERV)
+
+We can also compute fitted values at specific combinations of variable
+values. For example, expected vacancies for each voivodeship, holding
+`size = "Medium"` and `public = "0"`.
+
+::: panel-tabset
+## R
+
+```{r}
+predictions(model5,
+            newdata = datagrid(woj = unique(df$woj), size = "Medium", public = "0"))
+```
+
+## Python
+
+```{python}
+from marginaleffects import predictions, datagrid
+pred = predictions(model5,
+                   newdata = datagrid(model5, woj = df["woj"].unique(), size = "Medium", public = "0"))
+pred.to_pandas().head()
+```
+
+## Julia
+
+```{julia}
+effects(Dict(:woj => sort(unique(df.woj)),
+             :size => ["Medium"],
+             :public => ["0"]), model5)
+```
+:::
+
+# Exercises
+
+## Exercise 1: What happens when you forget to specify the variable type?
+
+Fit two models with `vacancies` as the dependent variable and `woj` as the
+independent variable:
+
+- **Model A**: using `df_wrong` (where `woj` is treated as numeric),
+- **Model B**: using `df` (where `woj` is treated as a factor/categorical variable).
+
+Tasks:
+
+1. Compare the number of estimated parameters in each model.
+2. Compare $R^2$ values. Which model fits better? Why?
+3. Compute the mean of `vacancies` for each `woj` level. Verify that the
+   coefficients of Model B equal the difference between each group mean and
+   the reference group mean.
+
+::: panel-tabset
+## R
+
+```{r}
+## Model A -- woj treated as numeric (wrong)
+model_a <- lm(vacancies ~ woj, data = df_wrong)
+summary(model_a)
+```
+
+```{r}
+## Model B -- woj treated as factor (correct)
+model_b <- lm(vacancies ~ woj, data = df)
+summary(model_b)
+```
+
+```{r}
+## Compare R-squared
+cat("R-squared (numeric):", summary(model_a)$r.squared, "\n")
+cat("R-squared (factor): ", summary(model_b)$r.squared, "\n")
+```
+
+```{r}
+## Verify coefficients equal group mean differences
+group_means <- aggregate(vacancies ~ woj, data = df, FUN = mean)
+group_means$diff_from_ref <- group_means$vacancies - group_means$vacancies[1]
+group_means$coef <- coef(model_b)
+head(group_means)
+```
+
+## Python
+
+```{python}
+## Model A -- woj treated as numeric (wrong)
+model_a = smf.ols("vacancies ~ woj", data = df_wrong).fit()
+print(f"R-squared (numeric): {model_a.rsquared:.6f}")
+print(f"Number of parameters: {len(model_a.params)}")
+```
+
+```{python}
+## Model B -- woj treated as factor (correct)
+model_b = smf.ols("vacancies ~ woj", data = df).fit()
+print(f"R-squared (factor): {model_b.rsquared:.6f}")
+print(f"Number of parameters: {len(model_b.params)}")
+```
+
+```{python}
+## Verify coefficients equal group mean differences
+group_means = df.groupby("woj")["vacancies"].mean()
+ref_mean = group_means.iloc[0]
+comparison = pd.DataFrame({
+    "group_mean": group_means,
+    "diff_from_ref": group_means - ref_mean,
+    "coef": model_b.params.values
+})
+comparison.head()
+```
+
+## Julia
+
+```{julia}
+## Model A -- woj treated as numeric (wrong)
+model_a = lm(@formula(vacancies ~ woj), df_wrong)
+```
+
+```{julia}
+## Model B -- woj treated as factor (correct)
+model_b = lm(@formula(vacancies ~ woj), df)
+```
+
+```{julia}
+## Compare R-squared
+println("R-squared (numeric): ", r2(model_a))
+println("R-squared (factor):  ", r2(model_b))
+```
+:::
+
+## Exercise 2: Average Marginal Effect of firm size
+
+Fit the model: `vacancies ~ size * public + woj`.
+
+Tasks:
+
+1. How many parameters does this model estimate?
+2. Compute the AME of `size`. Interpret: what is the average difference in
+   expected vacancies between Large and Small firms, averaging over all
+   values of `public` and `woj`?
+3. Compute the AME of `size` separately for `public = 0` and `public = 1`.
+   Does firm size matter more in the public or private sector?
+
+::: panel-tabset
+## R
+
+```{r}
+model6 <- lm(vacancies ~ size * public + woj, data = df)
+summary(model6)
+```
+
+```{r}
+cat("Number of parameters:", length(coef(model6)), "\n")
+```
+
+AME of `size`:
+
+```{r}
+avg_slopes(model6, variables = "size")
+```
+
+AME of `size` by `public`:
+
+```{r}
+avg_slopes(model6, variables = "size", by = "public")
+```
+
+## Python
+
+```{python}
+model6 = smf.ols("vacancies ~ size * public + woj", data = df).fit()
+print(f"Number of parameters: {len(model6.params)}")
+```
+
+AME of `size`:
+
+```{python}
+avg_slopes(model6, variables = "size").to_pandas()
+```
+
+AME of `size` by `public`:
+
+```{python}
+avg_slopes(model6, variables = "size", by = "public").to_pandas()
+```
+
+## Julia
+
+```{julia}
+model6 = lm(@formula(vacancies ~ size * public + woj), df)
+println("Number of parameters: ", length(coef(model6)))
+```
+
+```{julia}
+effects(Dict(:size => sort(unique(df.size))), model6)
+```
+:::
+
+## Exercise 3: Fitted values across NACE sectors
+
+Fit the model: `vacancies ~ nace + size + public`.
+
+Tasks:
+
+1. Compute the fitted values for each NACE section, holding
+   `size = "Medium"` and `public = "0"`.
+2. Which 3 sectors have the highest expected vacancies? Which 3 have the
+   lowest?
+3. Add the interaction `nace * size` and repeat. Do the rankings change
+   across size categories?
+
+::: panel-tabset
+## R
+
+```{r}
+model7 <- lm(vacancies ~ nace + size + public, data = df)
+summary(model7)
+```
+
+Fitted values at representative values:
+
+```{r}
+pred7 <- predictions(model7,
+                     newdata = datagrid(nace = unique(df$nace), size = "Medium", public = "0"))
+pred7 <- as.data.frame(pred7)
+pred7_sorted <- pred7[order(-pred7$estimate), c("nace", "estimate")]
+head(pred7_sorted, 3)
+tail(pred7_sorted, 3)
+```
+
+Now add the interaction `nace * size`:
+
+```{r}
+model8 <- lm(vacancies ~ nace * size + public, data = df)
+```
+
+```{r}
+pred8_medium <- predictions(model8,
+                            newdata = datagrid(nace = unique(df$nace), size = "Medium", public = "0"))
+pred8_large <- predictions(model8,
+                           newdata = datagrid(nace = unique(df$nace), size = "Large", public = "0"))
+pred8_medium <- as.data.frame(pred8_medium)
+pred8_large <- as.data.frame(pred8_large)
+cat("Top 3 NACE (Medium):\n")
+head(pred8_medium[order(-pred8_medium$estimate), "nace"], 3)
+cat("Top 3 NACE (Large):\n")
+head(pred8_large[order(-pred8_large$estimate), "nace"], 3)
+```
+
+## Python
+
+```{python}
+model7 = smf.ols("vacancies ~ nace + size + public", data = df).fit()
+```
+
+```{python}
+from marginaleffects import predictions, datagrid
+pred7 = predictions(model7,
+                    newdata = datagrid(model7, nace = df["nace"].unique(), size = "Medium", public = "0"))
+pred7_df = pred7.to_pandas().sort_values("estimate", ascending=False)
+print("Top 3:", pred7_df.head(3)[["nace", "estimate"]].to_string())
+print("Bottom 3:", pred7_df.tail(3)[["nace", "estimate"]].to_string())
+```
+
+```{python}
+model8 = smf.ols("vacancies ~ nace * size + public", data = df).fit()
+pred8 = predictions(model8,
+                    newdata = datagrid(model8, nace = df["nace"].unique(), size = "Medium", public = "0"))
+pred8.to_pandas().sort_values("estimate", ascending=False).head(3)[["nace", "estimate"]]
+```
+
+## Julia
+
+```{julia}
+model7 = lm(@formula(vacancies ~ nace + size + public), df)
+```
+
+```{julia}
+effects(Dict(:nace => sort(unique(df.nace)),
+             :size => ["Medium"],
+             :public => ["0"]), model7)
+```
+
+```{julia}
+model8 = lm(@formula(vacancies ~ nace * size + public), df)
+```
+
+```{julia}
+effects(Dict(:nace => sort(unique(df.nace)),
+             :size => ["Medium"],
+             :public => ["0"]), model8)
+```
+:::

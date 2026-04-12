@@ -18,7 +18,7 @@ using DataFrames
 
 
 Random.seed!(123);
-n = 1000;
+n = 10000;
 x = rand(NegativeBinomial(2, 2/(2+3)), n);
 mean(x)
 
@@ -33,7 +33,7 @@ function llnb(par, data)
   return -sum(ll)
 end
 
-res = optimize(par -> llnb(par, x), [2, 0.5])
+res = optimize(par -> llnb(par, x), [0.01, 0.01], [100.0, 0.99], [2.0, 0.5])
 res.minimizer
 
 
@@ -41,11 +41,11 @@ x_uniq_dict = sort(countmap(x));
 x_uniq_vals = Int.(keys(x_uniq_dict));
 x_uniq_counts = Int.(values(x_uniq_dict));
 x_params = res.minimizer;
-est_pdf = pdf.(NegativeBinomial(x_params[1], x_params[2]), x_uniq_vals);
-est_pdf = est_pdf ./ sum(est_pdf);
+est_pmf = pdf.(NegativeBinomial(x_params[1], x_params[2]), x_uniq_vals);
+est_pmf = est_pmf ./ sum(est_pmf);
 
 
-PowerDivergenceTest(x_uniq_counts, lambda = 0.0, theta0 = est_pdf) 
+PowerDivergenceTest(x_uniq_counts, lambda = 0.0, theta0 = est_pmf) 
 
 
 Multinomial Likelihood Ratio Test
@@ -71,7 +71,7 @@ Details:
 1-cdf(Chisq(16), 18.591632916708782)
 
 
-PowerDivergenceTest(x_uniq_counts, lambda = 1.0, theta0 = est_pdf)
+PowerDivergenceTest(x_uniq_counts, lambda = 1.0, theta0 = est_pmf)
 
 
 Pearson's Chi-square Test
@@ -103,3 +103,32 @@ lambda_hat = mean(X);
 n_hat = length(X) * pdf.(Poisson(lambda_hat), 0:4);
 r_hat = (values(X_tab) .- n_hat) ./ sqrt.(n_hat);
 X_dt = DataFrame(X = 0:4, n = values(X_tab).*1, n_hat = n_hat, r_hat = r_hat)
+
+
+## fit NB
+function llnb_jl(par, data)
+  ll = logpdf.(NegativeBinomial(par[1], par[2]), data)
+  return -sum(ll)
+end
+
+res_nb = optimize(par -> llnb_jl(par, X), [0.01, 0.01], [100.0, 0.99], [2.0, 0.5])
+nb_params = Optim.minimizer(res_nb)
+
+## log-likelihoods
+ll_po = sum(logpdf.(Poisson(lambda_hat), X))
+ll_nb = -Optim.minimum(res_nb)
+
+## AIC and BIC
+n_obs = length(X)
+AIC_po = 2*1 - 2*ll_po
+AIC_nb = 2*2 - 2*ll_nb
+BIC_po = log(n_obs)*1 - 2*ll_po
+BIC_nb = log(n_obs)*2 - 2*ll_nb
+
+println("AIC: Poisson = ", round(AIC_po, digits=4), ", NB = ", round(AIC_nb, digits=4))
+println("BIC: Poisson = ", round(BIC_po, digits=4), ", NB = ", round(BIC_nb, digits=4))
+
+## LR test (Poisson nested in NB)
+LR_test = 2*ll_nb - 2*ll_po
+LR_pval = 1 - cdf(Chisq(1), LR_test)
+println("LR test: ", round(LR_test, digits=4), ", p-value: ", round(LR_pval, digits=4))

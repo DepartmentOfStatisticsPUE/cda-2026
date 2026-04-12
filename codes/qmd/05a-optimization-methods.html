@@ -2448,49 +2448,22 @@ window.Quarto = {
 <div id="tabset-3-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-3-1-tab">
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Evaluating at invalid parameter values</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">log</span>(<span class="sc">-</span><span class="fl">0.3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in log(-0.3): NaNs produced</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] NaN</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">log</span>(<span class="fu">exp</span>(<span class="sc">-</span><span class="fl">0.3</span>) <span class="sc">-</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in log(exp(-0.3) - 1): NaNs produced</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] NaN</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">log</span>(<span class="fl">0.35</span>), <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] -1.0498</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">log</span>(<span class="fu">exp</span>(<span class="fl">0.35</span>) <span class="sc">-</span> <span class="dv">1</span>), <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] -0.8697</code></pre>
-</div>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">log</span>(<span class="sc">-</span><span class="fl">0.3</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">log</span>(<span class="fu">exp</span>(<span class="sc">-</span><span class="fl">0.3</span>) <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">log</span>(<span class="fl">0.35</span>), <span class="dv">4</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">log</span>(<span class="fu">exp</span>(<span class="fl">0.35</span>) <span class="sc">-</span> <span class="dv">1</span>), <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <div id="tabset-3-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-2-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co">## Evaluating at invalid parameter values</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> warnings.catch_warnings():</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    warnings.simplefilter(<span class="st">&quot;always&quot;</span>)</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;log(-0.3) = </span><span class="sc">{</span>np<span class="sc">.</span>log(<span class="op">-</span><span class="fl">0.3</span>)<span class="sc">}</span><span class="ss">&quot;</span>)</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;log(exp(-0.3) - 1) = log(</span><span class="sc">{</span>np<span class="sc">.</span>exp(<span class="op">-</span><span class="fl">0.3</span>) <span class="op">-</span> <span class="dv">1</span><span class="sc">:.4f}</span><span class="ss">) = </span><span class="sc">{</span>np<span class="sc">.</span>log(np.exp(<span class="op">-</span><span class="fl">0.3</span>) <span class="op">-</span> <span class="dv">1</span>)<span class="sc">}</span><span class="ss">&quot;</span>)</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;log(0.35) = </span><span class="sc">{</span>np<span class="sc">.</span>log(<span class="fl">0.35</span>)<span class="sc">:.4f}</span><span class="ss">  -- valid&quot;</span>)</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;log(exp(0.35) - 1) = </span><span class="sc">{</span>np<span class="sc">.</span>log(np.exp(<span class="fl">0.35</span>) <span class="op">-</span> <span class="dv">1</span>)<span class="sc">:.4f}</span><span class="ss">  -- valid&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>&lt;string&gt;:4: RuntimeWarning: invalid value encountered in log
-log(-0.3) = nan
-&lt;string&gt;:5: RuntimeWarning: invalid value encountered in log
-log(exp(-0.3) - 1) = log(-0.2592) = nan
-
-log(0.35) = -1.0498  -- valid
-log(exp(0.35) - 1) = -0.8697  -- valid</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">## Evaluating at invalid parameter values</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> warnings.catch_warnings():</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    warnings.simplefilter(<span class="st">&quot;always&quot;</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;log(-0.3) = </span><span class="sc">{</span>np<span class="sc">.</span>log(<span class="op">-</span><span class="fl">0.3</span>)<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;log(exp(-0.3) - 1) = log(</span><span class="sc">{</span>np<span class="sc">.</span>exp(<span class="op">-</span><span class="fl">0.3</span>) <span class="op">-</span> <span class="dv">1</span><span class="sc">:.4f}</span><span class="ss">) = </span><span class="sc">{</span>np<span class="sc">.</span>log(np.exp(<span class="op">-</span><span class="fl">0.3</span>) <span class="op">-</span> <span class="dv">1</span>)<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;log(0.35) = </span><span class="sc">{</span>np<span class="sc">.</span>log(<span class="fl">0.35</span>)<span class="sc">:.4f}</span><span class="ss">  -- valid&quot;</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;log(exp(0.35) - 1) = </span><span class="sc">{</span>np<span class="sc">.</span>log(np.exp(<span class="fl">0.35</span>) <span class="op">-</span> <span class="dv">1</span>)<span class="sc">:.4f}</span><span class="ss">  -- valid&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -2509,66 +2482,10 @@ log(exp(0.35) - 1) = -0.8697  -- valid</code></pre>
 <ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-4-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-1" role="tab" aria-controls="tabset-4-1" aria-selected="true" href>R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-2" role="tab" aria-controls="tabset-4-2" aria-selected="false" href>Python</a></li></ul>
 <div class="tab-content">
 <div id="tabset-4-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-4-1-tab">
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>At lambda = 1.0:</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  Gradient = -789.12 (strongly negative: optimum is to the LEFT)</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  Hessian  = -454.13 </code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  Full Newton step: lambda_new = 1 - ( -789.12 / -454.13 ) = -0.7376 </code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>If line search tries step size 1.5:</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  lambda_candidate = -1.6064 </code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in log(par): NaNs produced</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in log(exp(par) - 1): NaNs produced</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  ll( -1.6064 ) = NaN </code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  -&gt; If candidate &lt; 0, log() produces NaN, line search backtracks</code></pre>
-</div>
-</div>
+
 </div>
 <div id="tabset-4-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-2-tab">
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>At lambda = 1.0:</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  Gradient = -789.12 (strongly negative: optimum is to the LEFT)</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  Hessian  = -454.13</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  Full Newton step: lambda_new = 1.0 - (-789.12 / -454.13) = -0.7376</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>If line search tries step size 1.5:</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  lambda_candidate = -1.6064</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>&lt;string&gt;:3: RuntimeWarning: invalid value encountered in log
-&lt;string&gt;:3: RuntimeWarning: invalid value encountered in log
-  ll(-1.6064) = nan
-  -&gt; If candidate &lt; 0, log() produces NaN, line search backtracks</code></pre>
-</div>
-</div>
+
 </div>
 </div>
 </div>
@@ -2584,54 +2501,10 @@ f&#39;(\lambda) \approx \frac{f(\lambda + \varepsilon) - f(\lambda - \varepsilon
 <ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-5-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-1" role="tab" aria-controls="tabset-5-1" aria-selected="true" href>R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-5-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-2" role="tab" aria-controls="tabset-5-2" aria-selected="false" href>Python</a></li></ul>
 <div class="tab-content">
 <div id="tabset-5-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-5-1-tab">
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>At lambda = 0.01 :</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  ll(lam + eps) = ll( 0.0101 ) = -1411.04 </code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  ll(lam - eps) = ll( 0.0099 ) = -1416.96 -- still valid</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>At lambda = 5e-05 :</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  ll(lam + eps) = ll( 0.00015 ) = -2685.63 </code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in log(par): NaNs produced</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in log(exp(par) - 1): NaNs produced</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  ll(lam - eps) = ll( -5e-05 ) = NaN -- NaN!</code></pre>
-</div>
-</div>
+
 </div>
 <div id="tabset-5-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-2-tab">
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>At lambda = 0.01:</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  ll(lam + eps) = -1411.04</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  ll(lam - eps) = -1416.96 -- still valid</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>At lambda = 5e-05:</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  ll(lam + eps) = -2685.63
-&lt;string&gt;:4: RuntimeWarning: invalid value encountered in log
-&lt;string&gt;:4: RuntimeWarning: invalid value encountered in log
-  ll(lam - eps) = nan -- NaN!</code></pre>
-</div>
-</div>
+
 </div>
 </div>
 </div>
@@ -2645,61 +2518,22 @@ f&#39;(\lambda) \approx \frac{f(\lambda + \varepsilon) - f(\lambda - \varepsilon
 <div id="tabset-6-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-6-1-tab">
 <p>Warnings were suppressed.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>res_nr <span class="ot">&lt;-</span> <span class="fu">maxLik</span>(<span class="at">logLik =</span> ll, <span class="at">start =</span> <span class="dv">1</span>, <span class="at">x =</span> x)</span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>res_nr</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Maximum Likelihood estimation
-Newton-Raphson maximisation, 6 iterations
-Return code 8: successive function values within relative tolerance limit (reltol)
-Log-Likelihood: -656.1294 (1 free parameter(s))
-Estimate(s): 0.308619 </code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>res_bfgs <span class="ot">&lt;-</span> <span class="fu">maxLik</span>(<span class="at">logLik =</span> ll, <span class="at">start =</span> <span class="dv">1</span>, <span class="at">x =</span> x, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>res_bfgs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Maximum Likelihood estimation
-BFGS maximization, 39 iterations
-Return code 0: successful convergence 
-Log-Likelihood: -656.1294 (1 free parameter(s))
-Estimate(s): 0.308619 </code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>res_nr <span class="ot">&lt;-</span> <span class="fu">maxLik</span>(<span class="at">logLik =</span> ll, <span class="at">start =</span> <span class="dv">1</span>, <span class="at">x =</span> x)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>res_nr</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>res_bfgs <span class="ot">&lt;-</span> <span class="fu">maxLik</span>(<span class="at">logLik =</span> ll, <span class="at">start =</span> <span class="dv">1</span>, <span class="at">x =</span> x, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>res_bfgs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <div id="tabset-6-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-2-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>res_nm <span class="op">=</span> minimize(neg_ll, x0<span class="op">=</span>[<span class="fl">0.5</span>], args<span class="op">=</span>(x,), method<span class="op">=</span><span class="st">&quot;Nelder-Mead&quot;</span>)</span>
-<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>res_nm</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>       message: Optimization terminated successfully.
-       success: True
-        status: 0
-           fun: 656.1294309687689
-             x: [ 3.086e-01]
-           nit: 13
-          nfev: 26
- final_simplex: (array([[ 3.086e-01],
-                       [ 3.087e-01]]), array([ 6.561e+02,  6.561e+02]))</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>res_bfgs <span class="op">=</span> minimize(neg_ll, x0<span class="op">=</span>[<span class="fl">0.5</span>], args<span class="op">=</span>(x,), method<span class="op">=</span><span class="st">&quot;BFGS&quot;</span>, jac<span class="op">=</span><span class="kw">lambda</span> p, x: neg_grad(p, x), options<span class="op">=</span>{<span class="st">&quot;disp&quot;</span>: <span class="va">False</span>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>&lt;string&gt;:4: RuntimeWarning: invalid value encountered in log
-&lt;string&gt;:4: RuntimeWarning: invalid value encountered in log</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>res_lbfgsb <span class="op">=</span> minimize(neg_ll, x0<span class="op">=</span>[<span class="fl">0.5</span>], args<span class="op">=</span>(x,), method<span class="op">=</span><span class="st">&quot;L-BFGS-B&quot;</span>,</span>
-<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>                       jac<span class="op">=</span><span class="kw">lambda</span> p, x: neg_grad(p, x), bounds<span class="op">=</span>[(<span class="fl">1e-8</span>, <span class="va">None</span>)])</span>
-<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>res_lbfgsb</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  message: CONVERGENCE: RELATIVE REDUCTION OF F &lt;= FACTR*EPSMCH
-  success: True
-   status: 0
-      fun: 656.1294299023307
-        x: [ 3.086e-01]
-      nit: 5
-      jac: [-1.720e-04]
-     nfev: 7
-     njev: 7
- hess_inv: &lt;1x1 LbfgsInvHessProduct with dtype=float64&gt;</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>res_nm <span class="op">=</span> minimize(neg_ll, x0<span class="op">=</span>[<span class="fl">0.5</span>], args<span class="op">=</span>(x,), method<span class="op">=</span><span class="st">&quot;Nelder-Mead&quot;</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>res_nm</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>res_bfgs <span class="op">=</span> minimize(neg_ll, x0<span class="op">=</span>[<span class="fl">0.5</span>], args<span class="op">=</span>(x,), method<span class="op">=</span><span class="st">&quot;BFGS&quot;</span>, jac<span class="op">=</span><span class="kw">lambda</span> p, x: neg_grad(p, x), options<span class="op">=</span>{<span class="st">&quot;disp&quot;</span>: <span class="va">False</span>})</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>res_lbfgsb <span class="op">=</span> minimize(neg_ll, x0<span class="op">=</span>[<span class="fl">0.5</span>], args<span class="op">=</span>(x,), method<span class="op">=</span><span class="st">&quot;L-BFGS-B&quot;</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>                       jac<span class="op">=</span><span class="kw">lambda</span> p, x: neg_grad(p, x), bounds<span class="op">=</span>[(<span class="fl">1e-8</span>, <span class="va">None</span>)])</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>res_lbfgsb</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -2713,43 +2547,25 @@ Estimate(s): 0.308619 </code></pre>
 <div class="tab-content">
 <div id="tabset-7-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-7-1-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>ll_safe <span class="ot">&lt;-</span> <span class="cf">function</span>(par, x) {</span>
-<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (par <span class="sc">&lt;=</span> <span class="dv">0</span>) <span class="fu">return</span>(<span class="cn">NA</span>)</span>
-<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>(x) <span class="sc">*</span> <span class="fu">log</span>(par) <span class="sc">-</span> <span class="fu">length</span>(x) <span class="sc">*</span> <span class="fu">log</span>(<span class="fu">exp</span>(par) <span class="sc">-</span> <span class="dv">1</span>)</span>
-<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>res_safe <span class="ot">&lt;-</span> <span class="fu">maxLik</span>(<span class="at">logLik =</span> ll_safe, <span class="at">start =</span> <span class="dv">1</span>, <span class="at">x =</span> x)</span>
-<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>res_safe</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Maximum Likelihood estimation
-Newton-Raphson maximisation, 6 iterations
-Return code 8: successive function values within relative tolerance limit (reltol)
-Log-Likelihood: -656.1294 (1 free parameter(s))
-Estimate(s): 0.308619 </code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>ll_safe <span class="ot">&lt;-</span> <span class="cf">function</span>(par, x) {</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (par <span class="sc">&lt;=</span> <span class="dv">0</span>) <span class="fu">return</span>(<span class="cn">NA</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>(x) <span class="sc">*</span> <span class="fu">log</span>(par) <span class="sc">-</span> <span class="fu">length</span>(x) <span class="sc">*</span> <span class="fu">log</span>(<span class="fu">exp</span>(par) <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>res_safe <span class="ot">&lt;-</span> <span class="fu">maxLik</span>(<span class="at">logLik =</span> ll_safe, <span class="at">start =</span> <span class="dv">1</span>, <span class="at">x =</span> x)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>res_safe</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>No NaN warnings!</p>
 </div>
 <div id="tabset-7-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-7-2-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> neg_ll_safe(par, x):</span>
-<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>    lam <span class="op">=</span> par[<span class="dv">0</span>]</span>
-<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> lam <span class="op">&lt;=</span> <span class="dv">0</span>:</span>
-<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> np.inf</span>
-<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">-</span>(np.<span class="bu">sum</span>(x) <span class="op">*</span> np.log(lam) <span class="op">-</span> <span class="bu">len</span>(x) <span class="op">*</span> np.log(np.exp(lam) <span class="op">-</span> <span class="dv">1</span>))</span>
-<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a>res_safe <span class="op">=</span> minimize(neg_ll_safe, x0<span class="op">=</span>[<span class="fl">0.5</span>], args<span class="op">=</span>(x,), method<span class="op">=</span><span class="st">&quot;Nelder-Mead&quot;</span>)</span>
-<span id="cb59-8"><a href="#cb59-8" aria-hidden="true" tabindex="-1"></a>res_safe</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>       message: Optimization terminated successfully.
-       success: True
-        status: 0
-           fun: 656.1294309687689
-             x: [ 3.086e-01]
-           nit: 13
-          nfev: 26
- final_simplex: (array([[ 3.086e-01],
-                       [ 3.087e-01]]), array([ 6.561e+02,  6.561e+02]))</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> neg_ll_safe(par, x):</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    lam <span class="op">=</span> par[<span class="dv">0</span>]</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> lam <span class="op">&lt;=</span> <span class="dv">0</span>:</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> np.inf</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">-</span>(np.<span class="bu">sum</span>(x) <span class="op">*</span> np.log(lam) <span class="op">-</span> <span class="bu">len</span>(x) <span class="op">*</span> np.log(np.exp(lam) <span class="op">-</span> <span class="dv">1</span>))</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>res_safe <span class="op">=</span> minimize(neg_ll_safe, x0<span class="op">=</span>[<span class="fl">0.5</span>], args<span class="op">=</span>(x,), method<span class="op">=</span><span class="st">&quot;Nelder-Mead&quot;</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>res_safe</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>No NaN warnings!</p>
 </div>
@@ -2765,69 +2581,37 @@ Estimate(s): 0.308619 </code></pre>
 <div class="tab-content">
 <div id="tabset-8-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-8-1-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Without safeguards: still produces NaN warnings during line search</span></span>
-<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>res_exact <span class="ot">&lt;-</span> <span class="fu">maxLik</span>(<span class="at">logLik =</span> ll, <span class="at">start =</span> <span class="dv">1</span>, <span class="at">grad =</span> grad, <span class="at">hess =</span> hess, <span class="at">x =</span> x)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in log(par): NaNs produced</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in log(exp(par) - 1): NaNs produced</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>res_exact</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Maximum Likelihood estimation
-Newton-Raphson maximisation, 6 iterations
-Return code 8: successive function values within relative tolerance limit (reltol)
-Log-Likelihood: -656.1294 (1 free parameter(s))
-Estimate(s): 0.3086189 </code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Without safeguards: still produces NaN warnings during line search</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>res_exact <span class="ot">&lt;-</span> <span class="fu">maxLik</span>(<span class="at">logLik =</span> ll, <span class="at">start =</span> <span class="dv">1</span>, <span class="at">grad =</span> grad, <span class="at">hess =</span> hess, <span class="at">x =</span> x)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>res_exact</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Combine safeguards with analytical derivatives for clean output <strong>and</strong> fast convergence:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>grad_safe <span class="ot">&lt;-</span> <span class="cf">function</span>(par, x) {</span>
-<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (par <span class="sc">&lt;=</span> <span class="dv">0</span>) <span class="fu">return</span>(<span class="cn">NA</span>)</span>
-<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">grad</span>(par, x)</span>
-<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a>hess_safe <span class="ot">&lt;-</span> <span class="cf">function</span>(par, x) {</span>
-<span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (par <span class="sc">&lt;=</span> <span class="dv">0</span>) <span class="fu">return</span>(<span class="cn">NA</span>)</span>
-<span id="cb66-7"><a href="#cb66-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">hess</span>(par, x)</span>
-<span id="cb66-8"><a href="#cb66-8" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb66-9"><a href="#cb66-9" aria-hidden="true" tabindex="-1"></a>res_exact_safe <span class="ot">&lt;-</span> <span class="fu">maxLik</span>(<span class="at">logLik =</span> ll_safe, <span class="at">start =</span> <span class="dv">1</span>,</span>
-<span id="cb66-10"><a href="#cb66-10" aria-hidden="true" tabindex="-1"></a>                         <span class="at">grad =</span> grad_safe, <span class="at">hess =</span> hess_safe, <span class="at">x =</span> x)</span>
-<span id="cb66-11"><a href="#cb66-11" aria-hidden="true" tabindex="-1"></a>res_exact_safe</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Maximum Likelihood estimation
-Newton-Raphson maximisation, 6 iterations
-Return code 8: successive function values within relative tolerance limit (reltol)
-Log-Likelihood: -656.1294 (1 free parameter(s))
-Estimate(s): 0.3086189 </code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>grad_safe <span class="ot">&lt;-</span> <span class="cf">function</span>(par, x) {</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (par <span class="sc">&lt;=</span> <span class="dv">0</span>) <span class="fu">return</span>(<span class="cn">NA</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">grad</span>(par, x)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>hess_safe <span class="ot">&lt;-</span> <span class="cf">function</span>(par, x) {</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (par <span class="sc">&lt;=</span> <span class="dv">0</span>) <span class="fu">return</span>(<span class="cn">NA</span>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">hess</span>(par, x)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>res_exact_safe <span class="ot">&lt;-</span> <span class="fu">maxLik</span>(<span class="at">logLik =</span> ll_safe, <span class="at">start =</span> <span class="dv">1</span>,</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>                         <span class="at">grad =</span> grad_safe, <span class="at">hess =</span> hess_safe, <span class="at">x =</span> x)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>res_exact_safe</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>No NaN warnings — and only 6 iterations (vs 39 for BFGS without derivatives).</p>
 </div>
 <div id="tabset-8-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-8-2-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb68"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> neg_hess(par, x):</span>
-<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>    lam <span class="op">=</span> par[<span class="dv">0</span>]</span>
-<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array([[np.<span class="bu">sum</span>(x) <span class="op">/</span> lam<span class="op">**</span><span class="dv">2</span> <span class="op">-</span> <span class="bu">len</span>(x) <span class="op">*</span> np.exp(lam) <span class="op">/</span> (np.exp(lam) <span class="op">-</span> <span class="dv">1</span>)<span class="op">**</span><span class="dv">2</span>]])</span>
-<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb68-5"><a href="#cb68-5" aria-hidden="true" tabindex="-1"></a><span class="co">## Safeguarded + exact derivatives</span></span>
-<span id="cb68-6"><a href="#cb68-6" aria-hidden="true" tabindex="-1"></a>res_exact <span class="op">=</span> minimize(neg_ll_safe, x0<span class="op">=</span>[<span class="fl">0.5</span>], args<span class="op">=</span>(x,), method<span class="op">=</span><span class="st">&quot;Newton-CG&quot;</span>,</span>
-<span id="cb68-7"><a href="#cb68-7" aria-hidden="true" tabindex="-1"></a>                     jac<span class="op">=</span><span class="kw">lambda</span> p, x: neg_grad(p, x),</span>
-<span id="cb68-8"><a href="#cb68-8" aria-hidden="true" tabindex="-1"></a>                     hessp<span class="op">=</span><span class="kw">lambda</span> p, v, x: neg_hess(p, x) <span class="op">@</span> v)</span>
-<span id="cb68-9"><a href="#cb68-9" aria-hidden="true" tabindex="-1"></a>res_exact</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> message: Optimization terminated successfully.
- success: True
-  status: 0
-     fun: 656.1294299023266
-       x: [ 3.086e-01]
-     nit: 5
-     jac: [-1.873e-03]
-    nfev: 7
-    njev: 7
-    nhev: 5</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> neg_hess(par, x):</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    lam <span class="op">=</span> par[<span class="dv">0</span>]</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array([[np.<span class="bu">sum</span>(x) <span class="op">/</span> lam<span class="op">**</span><span class="dv">2</span> <span class="op">-</span> <span class="bu">len</span>(x) <span class="op">*</span> np.exp(lam) <span class="op">/</span> (np.exp(lam) <span class="op">-</span> <span class="dv">1</span>)<span class="op">**</span><span class="dv">2</span>]])</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co">## Safeguarded + exact derivatives</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>res_exact <span class="op">=</span> minimize(neg_ll_safe, x0<span class="op">=</span>[<span class="fl">0.5</span>], args<span class="op">=</span>(x,), method<span class="op">=</span><span class="st">&quot;Newton-CG&quot;</span>,</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>                     jac<span class="op">=</span><span class="kw">lambda</span> p, x: neg_grad(p, x),</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>                     hessp<span class="op">=</span><span class="kw">lambda</span> p, v, x: neg_hess(p, x) <span class="op">@</span> v)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>res_exact</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -2841,47 +2625,18 @@ Estimate(s): 0.3086189 </code></pre>
 <div class="tab-content">
 <div id="tabset-9-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-9-1-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>res_b2 <span class="ot">&lt;-</span> <span class="fu">optim</span>(<span class="dv">1</span>, <span class="cf">function</span>(p) <span class="sc">-</span><span class="fu">ll</span>(p, x), <span class="at">method =</span> <span class="st">&quot;L-BFGS-B&quot;</span>,</span>
-<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>                <span class="at">lower =</span> <span class="fl">1e-8</span>, <span class="at">upper =</span> <span class="dv">50</span>)</span>
-<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>res_b2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$par
-[1] 0.30862
-
-$value
-[1] 656.1294
-
-$counts
-function gradient 
-      12       12 
-
-$convergence
-[1] 0
-
-$message
-[1] &quot;CONVERGENCE: REL_REDUCTION_OF_F &lt;= FACTR*EPSMCH&quot;</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>res_b2 <span class="ot">&lt;-</span> <span class="fu">optim</span>(<span class="dv">1</span>, <span class="cf">function</span>(p) <span class="sc">-</span><span class="fu">ll</span>(p, x), <span class="at">method =</span> <span class="st">&quot;L-BFGS-B&quot;</span>,</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>                <span class="at">lower =</span> <span class="fl">1e-8</span>, <span class="at">upper =</span> <span class="dv">50</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>res_b2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>No NaN warnings!</p>
 </div>
 <div id="tabset-9-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-9-2-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb72"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>res_bounded <span class="op">=</span> minimize(neg_ll, x0<span class="op">=</span>[<span class="fl">0.5</span>], args<span class="op">=</span>(x,), method<span class="op">=</span><span class="st">&quot;L-BFGS-B&quot;</span>,</span>
-<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>                       bounds<span class="op">=</span>[(<span class="fl">1e-8</span>, <span class="va">None</span>)])</span>
-<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a>res_bounded</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  message: CONVERGENCE: RELATIVE REDUCTION OF F &lt;= FACTR*EPSMCH
-  success: True
-   status: 0
-      fun: 656.1294299023298
-        x: [ 3.086e-01]
-      nit: 5
-      jac: [-6.821e-05]
-     nfev: 14
-     njev: 7
- hess_inv: &lt;1x1 LbfgsInvHessProduct with dtype=float64&gt;</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>res_bounded <span class="op">=</span> minimize(neg_ll, x0<span class="op">=</span>[<span class="fl">0.5</span>], args<span class="op">=</span>(x,), method<span class="op">=</span><span class="st">&quot;L-BFGS-B&quot;</span>,</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>                       bounds<span class="op">=</span>[(<span class="fl">1e-8</span>, <span class="va">None</span>)])</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>res_bounded</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
