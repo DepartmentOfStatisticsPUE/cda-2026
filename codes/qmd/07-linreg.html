@@ -2785,10 +2785,12 @@ window.Quarto = {
 <span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a><span class="do">## Type III with sum contrasts for interpretability</span></span>
 <span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>df_sum <span class="ot">&lt;-</span> df</span>
-<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a><span class="fu">contrasts</span>(df_sum<span class="sc">$</span>size) <span class="ot">&lt;-</span> <span class="fu">contr.sum</span>(<span class="dv">3</span>)</span>
-<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a><span class="fu">contrasts</span>(df_sum<span class="sc">$</span>public) <span class="ot">&lt;-</span> <span class="fu">contr.sum</span>(<span class="dv">2</span>)</span>
-<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>model_int1_sum <span class="ot">&lt;-</span> <span class="fu">lm</span>(vacancies <span class="sc">~</span> size <span class="sc">*</span> public, <span class="at">data =</span> df_sum)</span>
-<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(model_int1_sum, <span class="at">type =</span> <span class="st">&quot;III&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>df_sum<span class="sc">$</span>size <span class="ot">&lt;-</span> <span class="fu">factor</span>(df_sum<span class="sc">$</span>size)</span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>df_sum<span class="sc">$</span>public <span class="ot">&lt;-</span> <span class="fu">factor</span>(df_sum<span class="sc">$</span>public)</span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a><span class="fu">contrasts</span>(df_sum<span class="sc">$</span>size) <span class="ot">&lt;-</span> <span class="fu">contr.sum</span>(<span class="dv">3</span>)</span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a><span class="fu">contrasts</span>(df_sum<span class="sc">$</span>public) <span class="ot">&lt;-</span> <span class="fu">contr.sum</span>(<span class="dv">2</span>)</span>
+<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a>model_int1_sum <span class="ot">&lt;-</span> <span class="fu">lm</span>(vacancies <span class="sc">~</span> size <span class="sc">*</span> public, <span class="at">data =</span> df_sum)</span>
+<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(model_int1_sum, <span class="at">type =</span> <span class="st">&quot;III&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <div id="tabset-8-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-8-2-tab">
@@ -3407,8 +3409,8 @@ window.Quarto = {
 <h1 data-number="10"><span class="header-section-number">10</span> Script files</h1>
 <p>The code for this document can be found here:</p>
 <ul>
-<li><a href="07-linreg.sh">07-linreg.sh</a></li>
 <li><a href="07-linreg.jl">07-linreg.jl</a></li>
+<li><a href="07-linreg.sh">07-linreg.sh</a></li>
 <li><a href="07-linreg.R">07-linreg.R</a></li>
 <li><a href="07-linreg.py">07-linreg.py</a></li>
 </ul>

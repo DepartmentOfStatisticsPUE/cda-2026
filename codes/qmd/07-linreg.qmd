@@ -425,6 +425,8 @@ Anova(model_int1, type = "III")
 
 ## Type III with sum contrasts for interpretability
 df_sum <- df
+df_sum$size <- factor(df_sum$size)
+df_sum$public <- factor(df_sum$public)
 contrasts(df_sum$size) <- contr.sum(3)
 contrasts(df_sum$public) <- contr.sum(2)
 model_int1_sum <- lm(vacancies ~ size * public, data = df_sum)
