@@ -124,6 +124,7 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 
+
 print(f"Profile likelihood 95% CI: [{ci_lower:.4f}, {ci_upper:.4f}]")
 
 

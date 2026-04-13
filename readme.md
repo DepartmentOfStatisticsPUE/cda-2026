@@ -8,11 +8,15 @@
 4. Discrete distributions - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/04-distributions.html)
 5. Maximum likelihood estimation - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/05-mle.html)
 6. Goodness of fit - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/06-gof.html)
+7. Linear regression - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/07-linreg.html)
+8. Marginal effects - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/08-marginal-effects.html)
+9. GLM: Logistic regression - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/09-glm-lr.html)
 
 
 ## Extra materials
 
 - Optimization methods for MLE - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/05a-optimization-methods.html)
+- Interactions and scaling - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/07a-interactions-scaling.html)
 
 ## Case study
 
@@ -30,7 +34,9 @@
 | 6 | Optimization methods | -- | -- | -- | [.ipynb](codes/notebooks/05a-optimization-methods.ipynb) |
 | 7 | Goodness of fit | [.R](codes/R/06-gof.R) | [.py](codes/python/06-gof.py) | [.jl](codes/julia/06-gof.jl) | [.ipynb](codes/notebooks/06-gof.ipynb) |
 | 8 | Linear regression | [.R](codes/R/07-linreg.R) | [.py](codes/python/07-linreg.py) | [.jl](codes/julia/07-linreg.jl) | [.ipynb](codes/notebooks/07-linreg.ipynb) |
-| 9 | GLM: Logistic regression | -- | -- | -- | [.ipynb](codes/notebooks/08-glm-lr.ipynb) |
+| 9 | Interactions and scaling | -- | -- | -- | [.ipynb](codes/notebooks/07a-interactions-scaling.ipynb) |
+| 10 | Marginal effects | [.R](codes/R/08-marginal-effects.R) | [.py](codes/python/08-marginal-effects.py) | [.jl](codes/julia/08-marginal-effects.jl) | [.ipynb](codes/notebooks/08-marginal-effects.ipynb) |
+| 11 | GLM: Logistic regression | -- | -- | -- | [.ipynb](codes/notebooks/09-glm-lr.ipynb) |
 
 ## Problem sets
 

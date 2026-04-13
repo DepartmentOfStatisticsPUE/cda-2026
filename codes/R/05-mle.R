@@ -47,11 +47,17 @@ x <- rep(1:6,d)
 
 
 optim(par = 1, fn = ll_min, x = x, method = "Brent", lower = 0, upper = 6, hessian = T)
+
+
 optim(par = 1, fn = ll_min, gr = grad, x = x, method = "Brent", lower = 0, upper = 6, hessian = T)
+
+
 optim(par = 1, fn = pdf_ztpois,  x = x, method = "Brent", lower = 0, upper = 6, hessian = T) 
 
 
 optimize(f = ll_min, lower = 0, upper = 6, x = x) ## minimization
+
+
 optimize(f = ll, lower = 0, upper = 6, x = x, maximum = T) ## maximization
 
 
@@ -59,6 +65,8 @@ nlm(f = ll_min, p = 1, x = x, hessian = T)
 
 
 maxLik(logLik = ll, start = 1,  x = x) |> summary()
+
+
 maxLik(logLik = ll, start = 1, grad = grad, hess = hess,  x = x) |> summary()
 
 
@@ -132,6 +140,7 @@ legend("topright",
        legend = c("Profile LL", "95% CI cutoff", "CI bounds", "MLE"),
        col = c("black", "red", "blue", "darkgreen"),
        lty = c(1, 2, 2, 1), lwd = c(2, 1, 1, 1), cex = 0.8)
+
 
 cat("Profile likelihood 95% CI: [", ci_lower, ",", ci_upper, "]\n")
 

@@ -1,14 +1,13 @@
 #' ---
-#' title: Categorical variables in regression and marginal effects
+#' title: Categorical variables in regression
 #' author: Maciej Beręsewicz
 #' ---
 #' 
 
 using Pkg
-Pkg.add(["Effects", "StatsBase", "CSV", "CategoricalArrays", "GLM"])
+Pkg.add(["StatsBase", "CSV", "CategoricalArrays", "GLM"])
 
 
-using Effects
 using StatsBase
 using CSV
 using CategoricalArrays
@@ -39,38 +38,82 @@ model3 = lm(@formula(vacancies ~ woj), df, contrasts = Dict(:woj => DummyCoding(
 model4 = lm(@formula(vacancies ~ woj), df, contrasts = Dict(:woj => EffectsCoding()))
 
 
+model_treat = lm(@formula(vacancies ~ size), df)  ## default DummyCoding
+
+
+model_sum_size = lm(@formula(vacancies ~ size), df, contrasts = Dict(:size => EffectsCoding()))
+
+
+## Julia does not have built-in polynomial coding in StatsModels.jl
+## We can construct the contrast matrix manually for 3 ordered levels
+using StatsModels
+poly_contrasts = [-1/sqrt(2) 1/sqrt(6); 0 -2/sqrt(6); 1/sqrt(2) 1/sqrt(6)]
+
+
+## Or use HelmertCoding as an alternative for ordered contrasts
+model_helm = lm(@formula(vacancies ~ size), df, contrasts = Dict(:size => HelmertCoding()))
+
+
 model_int1 = lm(@formula(vacancies ~ size * public), df)
 
 
 ## Cell means
 cell_means = combine(groupby(df, [:size, :public]), :vacancies => mean => :mean_vac)
+
+
 println(cell_means)
+
+
 
 ## Reconstruct from coefficients
 ## Note: Julia also uses alphabetical order, so Large is the reference level
 b = coef(model_int1)
+
+
 println("Large, private: ", b[1])
+
+
 println("Medium, private: ", b[1] + b[2])
+
+
 println("Small, private: ", b[1] + b[3])
+
+
 println("Large, public: ", b[1] + b[4])
+
+
 println("Medium, public: ", b[1] + b[2] + b[4] + b[5])
+
+
 println("Small, public: ", b[1] + b[3] + b[4] + b[6])
 
 
 ## Type I via nested model comparison
 model_null = lm(@formula(vacancies ~ 1), df)
+
+
 model_size = lm(@formula(vacancies ~ size), df)
+
+
 model_add  = lm(@formula(vacancies ~ size + public), df)
+
+
 ftest(model_null.model, model_size.model, model_add.model, model_int1.model)
 
 
 ## Type II via manual model comparisons
 ## SS(size | public): compare (public) vs (size + public)
 model_public = lm(@formula(vacancies ~ public), df)
+
+
 ftest(model_public.model, model_add.model)
+
+
 
 ## SS(public | size): compare (size) vs (size + public)
 ftest(model_size.model, model_add.model)
+
+
 
 ## SS(size:public | size, public): compare (size + public) vs (size * public)
 ftest(model_add.model, model_int1.model)
@@ -86,63 +129,26 @@ ftest(model_add.model, model_int1.model)
 coeftable(model_int1)
 
 
-nace_counts = combine(groupby(df, :nace_division), nrow => :n_firms)
-df = leftjoin(df, nace_counts, on = :nace_division)
-first(df[:, [:nace_division, :size, :n_firms, :vacancies]], 5)
+## Type I via nested models (order matters)
+m_null = lm(@formula(vacancies ~ 1), df)
 
 
-model_par = lm(@formula(vacancies ~ size + n_firms), df)
+m_size = lm(@formula(vacancies ~ size), df)
 
 
-model_slopes = lm(@formula(vacancies ~ size * n_firms), df)
-
-## Slopes by group
-b = coef(model_slopes)
-println("Slope for Large: ", b[4])
-println("Slope for Medium: ", b[4] + b[5])
-println("Slope for Small: ", b[4] + b[6])
+m_sp = lm(@formula(vacancies ~ size + public), df)
 
 
-df.n_firms_c = df.n_firms .- mean(df.n_firms)
-
-model_cent = lm(@formula(vacancies ~ size * n_firms_c), df)
+m_spi = lm(@formula(vacancies ~ size * public), df)
 
 
-## R-squared: identical
-println("R² (uncentered): ", r2(model_slopes))
-println("R² (centered):   ", r2(model_cent))
-
-## Interaction coefficients: identical
-println("\nInteraction coefs (uncentered): ", coef(model_slopes)[5:6])
-println("Interaction coefs (centered):   ", coef(model_cent)[5:6])
-
-## Main-effect coefficients: different
-println("\nMain effects (uncentered): ", coef(model_slopes)[1:3])
-println("Main effects (centered):   ", coef(model_cent)[1:3])
+m_spiw = lm(@formula(vacancies ~ size * public + woj), df)
 
 
-df.n_firms_s = (df.n_firms .- mean(df.n_firms)) ./ std(df.n_firms)
-
-model_std = lm(@formula(vacancies ~ size * n_firms_s), df)
+println("Type I (sequential):")
 
 
-model5 = lm(@formula(vacancies ~ woj*size + woj*public), df)
-
-
-vcat(
-  effects(Dict(:woj => sort(unique(df.woj))), model5),
-  effects(Dict(:public => sort(unique(df.public))), model5),
-  effects(Dict(:size => sort(unique(df.size))), model5),
-  cols = :union
-)
-
-
-effects(Dict(:size => sort(unique(df.size))), model5)
-
-
-effects(Dict(:woj => sort(unique(df.woj)),
-             :size => ["Medium"],
-             :public => ["0"]), model5)
+ftest(m_null.model, m_size.model, m_sp.model, m_spi.model, m_spiw.model)
 
 
 ## Model A -- woj treated as numeric (wrong)
@@ -155,27 +161,6 @@ model_b = lm(@formula(vacancies ~ woj), df)
 
 ## Compare R-squared
 println("R-squared (numeric): ", r2(model_a))
+
+
 println("R-squared (factor):  ", r2(model_b))
-
-
-model6 = lm(@formula(vacancies ~ size * public + woj), df)
-println("Number of parameters: ", length(coef(model6)))
-
-
-effects(Dict(:size => sort(unique(df.size))), model6)
-
-
-model7 = lm(@formula(vacancies ~ nace + size + public), df)
-
-
-effects(Dict(:nace => sort(unique(df.nace)),
-             :size => ["Medium"],
-             :public => ["0"]), model7)
-
-
-model8 = lm(@formula(vacancies ~ nace * size + public), df)
-
-
-effects(Dict(:nace => sort(unique(df.nace)),
-             :size => ["Medium"],
-             :public => ["0"]), model8)

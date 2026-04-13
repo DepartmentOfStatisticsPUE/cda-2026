@@ -27,7 +27,9 @@ TOPIC_ORDER = [
     "05a-optimization-methods",
     "06-gof",
     "07-linreg",
-    "08-glm-lr",
+    "07a-interactions-scaling",
+    "08-marginal-effects",
+    "09-glm-lr",
 ]
 
 TOPIC_NAMES = {
@@ -39,7 +41,9 @@ TOPIC_NAMES = {
     "05a-optimization-methods": "Optimization methods",
     "06-gof": "Goodness of fit",
     "07-linreg": "Linear regression",
-    "08-glm-lr": "GLM: Logistic regression",
+    "07a-interactions-scaling": "Interactions and scaling",
+    "08-marginal-effects": "Marginal effects",
+    "09-glm-lr": "GLM: Logistic regression",
 }
 
 

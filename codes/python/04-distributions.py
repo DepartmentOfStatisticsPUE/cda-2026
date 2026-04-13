@@ -35,7 +35,11 @@ n_entities = jvs3.groupby("nace")["vacancies"].count()
 Lambda_hat = n_entities * lambda_hat  ## total Poisson rates
 pi_hat = Lambda_hat / Lambda_hat.sum()
 print("Lambda (per-entity):", lambda_hat.to_dict())
+
+
 print("Lambda (total):", Lambda_hat.to_dict())
+
+
 print("Pi:", pi_hat.to_dict())
 
 
@@ -48,6 +52,8 @@ valid = totals > 0
 
 cond_prop = {s: np.mean(sim[s][valid] / totals[valid]) for s in ["C", "G", "P"]}
 print("Simulated proportions:", {k: round(v, 4) for k, v in cond_prop.items()})
+
+
 print("Theoretical pi:", {k: round(v, 4) for k, v in pi_hat.items()})
 
 
@@ -57,7 +63,10 @@ n_total = obs_totals.sum()
 expected = n_total * pi_hat
 
 print("Observed:", obs_totals.to_dict())
+
+
 print("Expected:", {k: round(v, 1) for k, v in expected.items()})
+
 
 ## simulate from multinomial
 np.random.seed(123)

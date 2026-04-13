@@ -16,14 +16,27 @@ head(df)
 
 df$vac <- df$vacancies > 0
 table(df$size, df$vac)
+
+
 tab1 <- with(df, table(size, vac))
 tab1
 
+
 prop.table(tab1, margin=1)
+
+
 prop.table(tab1, margin=1) |> addmargins()
+
+
 prop.table(tab1, margin=2)
+
+
 prop.table(tab1, margin=2) |> addmargins()
+
+
 mosaicplot(tab1)
+
+
 chisq.test(tab1)
 
 
@@ -31,6 +44,8 @@ assocstats(tab1) ## vcd
 
 
 xtabs(~size+vac, df) |> summary()
+
+
 tab1 |> summary()
 
 
@@ -39,8 +54,12 @@ tab <- matrix(c(1, 5, 9, 5), nrow = 2, byrow = TRUE,
                               c("Success", "Failure")))
 tab
 
+
 cat("\nExpected counts:\n")
+
+
 chisq.test(tab, correct = FALSE)$expected
+
 
 pearson <- chisq.test(tab, correct = FALSE)
 yates   <- chisq.test(tab, correct = TRUE)

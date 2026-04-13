@@ -37,10 +37,14 @@ gof_nb
 
 
 summary(gof_nb)
+
+
 summary(gof_po)
 
 
 rootogram(gof_nb, main = "Negative binomial")
+
+
 rootogram(gof_po, main = "Poisson")
 
 
@@ -74,6 +78,8 @@ X_nb
 
 
 summary(X_po)
+
+
 summary(X_nb)
 
 

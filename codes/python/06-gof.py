@@ -26,6 +26,8 @@ def ll_nbinom(par, x):
 
 res = minimize(fun=ll_nbinom, x0=[2, 0.5], args = (x), method = "Nelder-Mead")
 res
+
+
 res.x
 
 
@@ -76,6 +78,8 @@ LR_test =  2*ll_nb - 2*ll_po
 AIC_po = 2*1 - 2*ll_po
 AIC_nb = 2*2 - 2*ll_nb
 [AIC_nb, AIC_po]
+
+
 BIC_po = np.log(len(X))*1 - 2*ll_po
 BIC_nb = np.log(len(X))*2 - 2*ll_nb
 [BIC_nb, BIC_po]

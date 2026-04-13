@@ -15,6 +15,8 @@ df
 using StatsModels, CategoricalArrays
 
 df.group = categorical(df.group)   # reference: A (alphabetical)
+
+
 modelmatrix(@formula(0 ~ group), df)
 
 

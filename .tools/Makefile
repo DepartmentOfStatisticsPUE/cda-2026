@@ -12,10 +12,10 @@ all: extract
 extract: render sort notebooks readme
 
 render:
-	@echo "==> Rendering .qmd files (Ripper extracts code, HTML preserved for presentation)..."
+	@echo "==> Rendering .qmd files (executes code, Ripper extracts scripts)..."
 	@cd $(QMD_DIR) && for f in *.qmd; do \
 		echo "  Rendering $$f ..."; \
-		quarto render "$$f" --no-execute 2>&1 | tail -1; \
+		quarto render "$$f" 2>&1 | tail -1; \
 	done
 
 sort:

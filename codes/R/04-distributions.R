@@ -20,6 +20,8 @@ rbinom(n=10,size=50,prob=0.7)
 
 set.seed(20230228)
 rpois(n=10,lambda=1.5)
+
+
 rpois(10,1.5)
 
 
@@ -48,7 +50,11 @@ n_entities <- tapply(jvs3$vacancies, jvs3$nace, length)
 Lambda_hat <- n_entities * lambda_hat  ## total Poisson rates
 pi_hat <- Lambda_hat / sum(Lambda_hat)
 lambda_hat
+
+
 Lambda_hat
+
+
 pi_hat
 
 
@@ -77,6 +83,7 @@ n_total <- sum(obs_totals)
 expected <- n_total * pi_hat
 
 rbind(observed = obs_totals, expected = expected)
+
 
 ## simulate from multinomial
 set.seed(123)

@@ -20,13 +20,21 @@ df.head()
 df["vac"] = np.where(df["vacancies"] > 0, True, False)
 mosaic(df, ['size', 'vac'])
 plt.show()
+
+
 tab1 = st.contingency.crosstab(df["size"], df["vac"])
 row_props = tab1.count / tab1.count.sum(axis=1, keepdims=True)
 print(row_props)
+
+
 col_props = tab1.count / tab1.count.sum(axis=0, keepdims=True)
 print(col_props)
+
+
 res1=st.chi2_contingency(tab1.count)
 [res1.statistic, np.sqrt(res1.statistic/np.sum(tab1.count))]
+
+
 pg.chi2_independence(df, x = "size", y = "vac")
 
 
@@ -37,12 +45,16 @@ tab_df = pd.DataFrame(tab,
                        columns=["Success", "Failure"])
 print(tab_df)
 
+
 # Expected counts
 _, _, _, expected = chi2_contingency(tab, correction=False)
 print("\nExpected counts:")
+
+
 print(pd.DataFrame(expected,
                     index=["Treatment", "Control"],
                     columns=["Success", "Failure"]))
+
 
 # Pearson chi-squared (no correction)
 pearson_stat, pearson_p, _, _ = chi2_contingency(tab, correction=False)

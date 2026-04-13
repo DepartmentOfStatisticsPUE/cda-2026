@@ -33,7 +33,11 @@ function llnb(par, data)
   return -sum(ll)
 end
 
+
+
 res = optimize(par -> llnb(par, x), [0.01, 0.01], [100.0, 0.99], [2.0, 0.5])
+
+
 res.minimizer
 
 
@@ -111,24 +115,52 @@ function llnb_jl(par, data)
   return -sum(ll)
 end
 
+
+
 res_nb = optimize(par -> llnb_jl(par, X), [0.01, 0.01], [100.0, 0.99], [2.0, 0.5])
+
+
 nb_params = Optim.minimizer(res_nb)
+
+
 
 ## log-likelihoods
 ll_po = sum(logpdf.(Poisson(lambda_hat), X))
+
+
 ll_nb = -Optim.minimum(res_nb)
+
+
 
 ## AIC and BIC
 n_obs = length(X)
+
+
 AIC_po = 2*1 - 2*ll_po
+
+
 AIC_nb = 2*2 - 2*ll_nb
+
+
 BIC_po = log(n_obs)*1 - 2*ll_po
+
+
 BIC_nb = log(n_obs)*2 - 2*ll_nb
 
+
+
 println("AIC: Poisson = ", round(AIC_po, digits=4), ", NB = ", round(AIC_nb, digits=4))
+
+
 println("BIC: Poisson = ", round(BIC_po, digits=4), ", NB = ", round(BIC_nb, digits=4))
+
+
 
 ## LR test (Poisson nested in NB)
 LR_test = 2*ll_nb - 2*ll_po
+
+
 LR_pval = 1 - cdf(Chisq(1), LR_test)
+
+
 println("LR test: ", round(LR_test, digits=4), ", p-value: ", round(LR_pval, digits=4))

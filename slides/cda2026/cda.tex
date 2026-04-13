@@ -2282,12 +2282,112 @@ For the JVS data:
 \textit{Next: interactions and how to interpret them.}
 \end{frame}
 
+\begin{frame}{Treatment coding example: \texttt{size}}
+    Model: \texttt{vacancies $\sim$ size} with treatment coding (ref = Large, alphabetical default).
+
+    \begin{table}[h]\centering\small
+    \begin{tabular}{lccc}
+    \hline
+    & \textbf{Coefficient} & \textbf{Estimate} & \textbf{Interpretation} \\
+    \hline
+    $\hat{\beta}_0$ & Intercept & 1.920 & $\bar{Y}_{\text{Large}} = 1.920$ \\
+    $\hat{\beta}_1$ & sizeMedium & $-1.682$ & $\bar{Y}_{\text{Med}} - \bar{Y}_{\text{Large}} = 0.238 - 1.920$ \\
+    $\hat{\beta}_2$ & sizeSmall & $-1.840$ & $\bar{Y}_{\text{Small}} - \bar{Y}_{\text{Large}} = 0.080 - 1.920$ \\
+    \hline
+    \end{tabular}
+    \end{table}
+
+    \medskip
+    Each coefficient = \textbf{difference from the reference group mean}. Intercept = mean of the reference group.
+
+    \medskip
+    \small For a comprehensive treatment of contrasts, see Schad et al.\ (2020).
+\end{frame}
+
+\begin{frame}{Sum (effect) coding example: \texttt{size}}
+    Same model with sum contrasts (\texttt{contr.sum} in R, \texttt{C(size, Sum)} in Python).
+
+    \begin{table}[h]\centering\small
+    \begin{tabular}{lccc}
+    \hline
+    & \textbf{Coefficient} & \textbf{Estimate} & \textbf{Interpretation} \\
+    \hline
+    $\hat{\beta}_0$ & Intercept & 0.746 & grand mean $\bar{\mu} = \frac{1.920 + 0.238 + 0.080}{3}$ \\
+    $\hat{\beta}_1$ & size1 (Large) & 1.174 & $\bar{Y}_{\text{Large}} - \bar{\mu} = 1.920 - 0.746$ \\
+    $\hat{\beta}_2$ & size2 (Medium) & $-0.508$ & $\bar{Y}_{\text{Med}} - \bar{\mu} = 0.238 - 0.746$ \\
+    \hline
+    \end{tabular}
+    \end{table}
+
+    \medskip
+    The \textbf{omitted level} (Small): $\hat{\beta}_3 = -(\hat{\beta}_1 + \hat{\beta}_2) = -(1.174 - 0.508) = -0.666$
+
+    \medskip
+    Each coefficient = \textbf{deviation of group mean from grand mean}. Model fit ($R^2$, fitted values) is \textbf{identical} to treatment coding.
+\end{frame}
+
+\begin{frame}{Polynomial coding: ordinal \texttt{size}}
+    When \texttt{size} is \textbf{ordered} (Small $<$ Medium $<$ Large), polynomial contrasts decompose the effect into trends.
+
+    \begin{table}[h]\centering\small
+    \begin{tabular}{lccc}
+    \hline
+    & \textbf{Coefficient} & \textbf{Estimate} & \textbf{Tests} \\
+    \hline
+    $\hat{\beta}_0$ & Intercept & 0.746 & grand mean (same as sum coding) \\
+    $\hat{\beta}_L$ & Linear (.L) & 1.301 & monotonic trend: vacancies $\uparrow$ with size \\
+    $\hat{\beta}_Q$ & Quadratic (.Q) & 0.622 & curvature: non-linear jump at ``Large'' \\
+    \hline
+    \end{tabular}
+    \end{table}
+
+    \begin{itemize}
+        \item Linear contrast: do vacancies \textbf{increase or decrease} monotonically with firm size?
+        \item Quadratic contrast: is the relationship \textbf{curved} (e.g., large jump for Large firms)?
+        \item Assumes \textbf{equally spaced} levels (or approximate)
+    \end{itemize}
+
+    \medskip
+    \alert{All three coding schemes produce the same $R^2$ and fitted values.} Only the \textbf{interpretation of coefficients} differs.
+\end{frame}
+
+\begin{frame}{Wilkinson--Rogers formula notation}
+    Model formulas in R, Python (\texttt{statsmodels}/\texttt{patsy}), and Julia (\texttt{StatsModels.jl}) use the symbolic notation of Wilkinson and Rogers (1973):
+
+    \medskip
+    \begin{table}[h]\centering\small
+    \begin{tabular}{cl}
+    \hline
+    \textbf{Symbol} & \textbf{Meaning} \\
+    \hline
+    \texttt{\textasciitilde} & ``modelled by'' (separates response from predictors) \\
+    \texttt{+} & include term \\
+    \texttt{:} & interaction only (no main effects) \\
+    \texttt{*} & main effects + interaction: \ \texttt{A*B} $\equiv$ \texttt{A + B + A:B} \\
+    \texttt{-} & exclude term \\
+    \texttt{1} & intercept (included by default; \texttt{-1} removes it) \\
+    \hline
+    \end{tabular}
+    \end{table}
+
+    \medskip
+    \textbf{Examples:}
+    \begin{itemize}
+        \item \texttt{y \textasciitilde{} A + B} \quad main effects only (additive)
+        \item \texttt{y \textasciitilde{} A * B} \quad $=$ \texttt{y \textasciitilde{} A + B + A:B} \quad (full factorial)
+        \item \texttt{y \textasciitilde{} A + B + A:B - 1} \quad no intercept
+    \end{itemize}
+
+    \medskip
+    {\scriptsize Wilkinson, G.\,N.\ and Rogers, C.\,E.\ (1973). Symbolic description of factorial models for analysis of variance. \textit{Journal of the Royal Statistical Society C}, 22(3), 392--399.}
+\end{frame}
+
 \subsection{Interactions between two categorical variables}
 
 \begin{frame}{Two categorical variables with interaction}
     Consider the model \texttt{vacancies $\sim$ size * public}, i.e.:
     \[
-    Y = \beta_0 + \beta_1 I_{\text{Med}} + \beta_2 I_{\text{Large}} + \beta_3 I_{\text{pub}} + \beta_4 I_{\text{Med}} I_{\text{pub}} + \beta_5 I_{\text{Large}} I_{\text{pub}} + \varepsilon
+    Y = \beta_0 + \beta_1 I_{\text{Med}} + \beta_2 I_{\text{Small}} + \beta_3 I_{\text{pub}} + \beta_4 I_{\text{Med}} I_{\text{pub}} + \beta_5 I_{\text{Small}} I_{\text{pub}} + \varepsilon
     \]
 
     \medskip
@@ -2305,6 +2405,36 @@ For the JVS data:
 
     \medskip
     \alert{``Main effects'' are conditional on the reference level} of the other variable, not averaged across groups.
+\end{frame}
+
+\begin{frame}{Numerical example: cell means from JVS data}
+    Cell means $\bar{Y}$ for \texttt{vacancies $\sim$ size $\times$ public}:
+
+    \begin{table}[h]\centering
+    \begin{tabular}{l|cc}
+    & Private (ref) & Public \\
+    \hline
+    Large (ref) & 2.438 & 1.233 \\
+    Medium & 0.290 & 0.143 \\
+    Small & 0.080 & 0.076 \\
+    \end{tabular}
+    \end{table}
+
+    Mapping coefficients to cell mean arithmetic:
+    \begin{table}[h]\centering\small
+    \begin{tabular}{lrl}
+    \hline
+    $\hat{\beta}_0 = 2.438$ & $\bar{Y}_{\text{L,priv}}$ & baseline \\
+    $\hat{\beta}_{\text{Med}} = -2.148$ & $0.290 - 2.438$ & Med vs Large, private \\
+    $\hat{\beta}_{\text{Small}} = -2.357$ & $0.080 - 2.438$ & Small vs Large, private \\
+    $\hat{\beta}_{\text{pub}} = -1.205$ & $1.233 - 2.438$ & public vs private, Large \\
+    $\hat{\beta}_{\text{Med:pub}} = 1.058$ & $(0.143-0.290)-(1.233-2.438)$ & interaction \\
+    $\hat{\beta}_{\text{Small:pub}} = 1.200$ & $(0.076-0.080)-(1.233-2.438)$ & interaction \\
+    \hline
+    \end{tabular}
+    \end{table}
+
+    Verify: $\hat{\beta}_0 + \hat{\beta}_{\text{Med}} + \hat{\beta}_{\text{pub}} + \hat{\beta}_{\text{Med:pub}} = 2.438 - 2.148 - 1.205 + 1.058 = 0.143 = \bar{Y}_{\text{Med,pub}}$ \checkmark
 \end{frame}
 
 \begin{frame}{Interaction = departure from additivity}
@@ -2411,13 +2541,31 @@ Now, proceed to the example
     \end{center}
 \end{frame}
 
+\begin{frame}{Type II vs Type III: decision guide}
+    \begin{enumerate}
+        \item \textbf{Is the design balanced?} (equal cell sizes)\\
+              $\rightarrow$ All types give identical results. Type I is fine.
+        \item \textbf{Is the interaction significant?}
+        \begin{itemize}
+            \item \textbf{No} $\rightarrow$ Use \textbf{Type II}. Respects marginality, more powerful (Langsrud, 2003).
+            \item \textbf{Yes} $\rightarrow$ Use \textbf{Type III} with \textbf{sum contrasts}, so main effects are tested at the grand mean.
+        \end{itemize}
+        \item \textbf{More than 2 variables?}\\
+              Same logic applies. With 3+ predictors and their interactions:
+              \begin{itemize}
+                  \item Type II: each term tested after all terms \emph{not containing it} (marginality)
+                  \item Type III: each term tested after \emph{all} other terms
+              \end{itemize}
+        \item \alert{High-order interactions} ($A \times B \times C$) are rarely interpretable -- consider whether they are needed in the model.
+    \end{enumerate}
+\end{frame}
 
 \subsection{Categorical $\times$ continuous interaction}
 
 \begin{frame}{Categorical $\times$ continuous interaction}
     Model: \texttt{vacancies $\sim$ size * n\_firms}, i.e.:
     \[
-    Y = \beta_0 + \beta_1 I_{\text{Med}} + \beta_2 I_{\text{Large}} + \beta_3 x + \beta_4 I_{\text{Med}} \cdot x + \beta_5 I_{\text{Large}} \cdot x + \varepsilon
+    Y = \beta_0 + \beta_1 I_{\text{Med}} + \beta_2 I_{\text{Small}} + \beta_3 x + \beta_4 I_{\text{Med}} \cdot x + \beta_5 I_{\text{Small}} \cdot x + \varepsilon
     \]
 
     Each group gets its own \textbf{intercept and slope}:
@@ -2440,35 +2588,16 @@ Now, proceed to the example
 \end{frame}
 
 \begin{frame}{Parallel vs.\ crossing lines}
-    \begin{columns}
-    \begin{column}{0.48\textwidth}
-    \centering
-    \textbf{Without interaction}\\[0.3em]
-    Same slope, different intercepts\\
-    (parallel lines)\\[0.5em]
-    $Y = \beta_0 + \beta_1 I_{\text{group}} + \beta_3 x$
-    \end{column}
-    \begin{column}{0.48\textwidth}
-    \centering
-    \textbf{With interaction}\\[0.3em]
-    Different slopes per group\\
-    (lines may cross)\\[0.5em]
-    $Y = \beta_0 + \beta_1 I_{\text{group}} + \beta_3 x + \beta_4 I_{\text{group}} \cdot x$
-    \end{column}
-    \end{columns}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth]{figs/cat-cont-interaction.pdf}
+    \end{figure}
 
-    \bigskip
+    \smallskip
     Testing the interaction ($H_0: \beta_4 = \beta_5 = 0$) is equivalent to testing whether the slopes are equal across groups.
 \end{frame}
 
-\begin{frame}{Categorical $\times$ continuous -- practice}
-\begin{center}
-Now, proceed to the example
-\end{center}
-\end{frame}
-
-
-\subsection{Centering continuous variables}
+\subsection{Centering and scaling}
 
 \begin{frame}{Why center?}
     In a model with interaction \texttt{Y $\sim$ group * x}:
@@ -2499,32 +2628,19 @@ Now, proceed to the example
     \end{table}
 \end{frame}
 
-\begin{frame}{Grand-mean centering vs.\ standardisation}
-    \textbf{Grand-mean centering:} $x_c = x - \bar{x}$
-    \begin{itemize}
-        \item Shifts the zero-point to the sample mean
-        \item Preserves original measurement units
-    \end{itemize}
+\begin{frame}{Scaling approaches -- supplementary material}
+    For detailed examples with visualisations, centering vs.\ standardisation, and alternative scaling approaches, see \textbf{Supplementary notebook 07a: Interactions and scaling}.
 
     \bigskip
-    \textbf{Standardisation (z-score):} $x_s = (x - \bar{x}) / s_x$
+    Key additional topic: Gelman (2008) recommends:
     \begin{itemize}
-        \item Shifts zero-point \emph{and} rescales to standard deviation units
-        \item Coefficients become comparable across variables with different scales
-        \item One-unit change = one-SD change
+        \item Divide \textbf{continuous} inputs by $2 \cdot \text{SD}$ (not $1 \cdot \text{SD}$)
+        \item Center \textbf{binary} inputs by their mean
     \end{itemize}
-
-    \bigskip
-    Both preserve model fit ($R^2$, F-test). Only the \textbf{interpretation} of coefficients changes.
+    This makes coefficients of continuous and binary predictors directly comparable: a 1-unit change in the rescaled continuous variable represents moving from $1$ SD below to $1$ SD above the mean.
 \end{frame}
 
-\begin{frame}{Centering -- practice}
-\begin{center}
-Now, proceed to the example
-\end{center}
-\end{frame}
-
-\subsection{Marginal effects}
+\section{Marginal effects}
 
 \begin{frame}{Marginal effects}
     What are marginal effects?
@@ -2641,6 +2757,9 @@ There are several ways to tackle this problem, the most popular are:
         \hline
         \end{tabular}
     \end{table}
+
+    \medskip
+    \small For a comprehensive guide, see Arel-Bundock et al.\ (2024).
 \end{frame}
 
 \begin{frame}{Marginal effects -- practice}
@@ -2649,6 +2768,17 @@ There are several ways to tackle this problem, the most popular are:
 Now, proceed to the example
 \end{center}
 
+\end{frame}
+
+\begin{frame}[noframenumbering]{References}
+\tiny
+\begin{itemize}
+\item Arel-Bundock, V., Greifer, N., \& Heiss, A. (2024). How to Interpret Statistical Models Using marginaleffects for R and Python. \textit{Journal of Statistical Software}, 111(9), 1--32.
+\item Gelman, A. (2008). Scaling regression inputs by dividing by two standard deviations. \textit{Statistics in Medicine}, 27(15), 2865--2873.
+\item Langsrud, {\O}. (2003). ANOVA for unbalanced data: Use Type II instead of Type III sums of squares. \textit{Statistics and Computing}, 13, 163--167.
+\item Schad, D. J., Vasishth, S., Hohenstein, S., \& Kliegl, R. (2020). How to capitalize on a priori contrasts in linear (mixed) models: A tutorial. \textit{Journal of Memory and Language}, 110, 104038.
+\item Wilkinson, G. N. \& Rogers, C. E. (1973). Symbolic description of factorial models for analysis of variance. \textit{Journal of the Royal Statistical Society C}, 22(3), 392--399.
+\end{itemize}
 \end{frame}
 
 \end{document}

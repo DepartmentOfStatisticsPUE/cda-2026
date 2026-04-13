@@ -1,0 +1,475 @@
+---
+title: "Interactions and scaling of regression inputs"
+author: "Maciej Beręsewicz"
+format:
+  html:
+    embed-resources: true
+    number-sections: true
+    df-print: kable
+execute:
+  eval: true
+  warning: false
+  message: false
+---
+
+```{r setup, echo = FALSE}
+JuliaCall::julia_setup(JULIA_HOME = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/")
+knitr::opts_chunk$set(engine.path = list(
+  python = "/opt/anaconda3/bin/python3.12",
+  julia = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/"
+))
+```
+
+## Introduction
+
+This supplementary notebook covers categorical $\times$ continuous interactions,
+centering, standardisation, and Gelman's (2008) approach to scaling regression
+inputs. These techniques improve coefficient interpretability, especially in
+models with interactions.
+
+**References:**
+
+- Gelman, A. (2008). Scaling regression inputs by dividing by two standard
+  deviations. *Statistics in Medicine*, 27(15), 2865--2873.
+  [PDF](https://sites.stat.columbia.edu/gelman/research/published/standardizing7.pdf)
+
+## Data
+
+::: panel-tabset
+### R
+
+```{r data-r, message=FALSE, warning=FALSE}
+library(ggplot2)
+df <- read.csv("../../data/polish-jvs.csv", colClasses = c("character", "factor", rep("character", 4), "numeric"))
+nace_counts <- as.data.frame(table(df$nace_division))
+names(nace_counts) <- c("nace_division", "n_firms")
+df <- merge(df, nace_counts, by = "nace_division")
+df$n_firms <- as.numeric(df$n_firms) / 1000  ## in thousands for readable coefficients
+head(df[, c("nace_division", "size", "n_firms", "vacancies")])
+```
+
+### Python
+
+```{python data-py}
+import pandas as pd
+import numpy as np
+import statsmodels.formula.api as smf
+import matplotlib.pyplot as plt
+
+df = pd.read_csv("../../data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
+nace_counts = df.groupby("nace_division").size().reset_index(name="n_firms")
+df = df.merge(nace_counts, on="nace_division")
+df["n_firms"] = df["n_firms"] / 1000  ## in thousands for readable coefficients
+print(df[["nace_division", "size", "n_firms", "vacancies"]].head())
+```
+
+### Julia
+
+```{julia data-jl}
+using CSV, DataFrames, GLM, Statistics
+
+df = CSV.read("../../data/polish-jvs.csv", DataFrame,
+              types = Dict(:id => String, :woj=> String, :public=> String,
+                           :size => String, :nace_division => String, :nace => String))
+nace_counts = combine(groupby(df, :nace_division), nrow => :n_firms)
+df = leftjoin(df, nace_counts, on = :nace_division)
+df.n_firms = df.n_firms ./ 1000  ## in thousands for readable coefficients
+first(df[:, [:nace_division, :size, :n_firms, :vacancies]], 5)
+```
+:::
+
+## Categorical $\times$ continuous interaction
+
+### Model without interaction (parallel lines)
+
+The model `vacancies ~ size + n_firms` assumes the same slope for `n_firms` across
+all size groups -- only the intercept differs. The lines are parallel.
+
+::: panel-tabset
+### R
+
+```{r model-parallel-r}
+model_par <- lm(vacancies ~ size + n_firms, data = df)
+summary(model_par)
+```
+
+### Python
+
+```{python model-parallel-py}
+model_par = smf.ols("vacancies ~ size + n_firms", data = df).fit()
+print(model_par.summary())
+```
+
+### Julia
+
+```{julia model-parallel-jl}
+model_par = lm(@formula(vacancies ~ size + n_firms), df)
+```
+:::
+
+### Model with interaction (different slopes)
+
+The model `vacancies ~ size * n_firms` allows a different slope for `n_firms` in each
+size group. The coefficient of `n_firms` is the slope for the reference group (Large).
+The interaction terms measure how much the slope differs for other groups.
+
+::: panel-tabset
+### R
+
+```{r model-interaction-r}
+model_slopes <- lm(vacancies ~ size * n_firms, data = df)
+summary(model_slopes)
+
+## Slopes by group
+b <- coef(model_slopes)
+cat("Slope for Large:", b["n_firms"], "\n")
+cat("Slope for Medium:", b["n_firms"] + b["sizeMedium:n_firms"], "\n")
+cat("Slope for Small:", b["n_firms"] + b["sizeSmall:n_firms"], "\n")
+```
+
+### Python
+
+```{python model-interaction-py}
+model_slopes = smf.ols("vacancies ~ size * n_firms", data = df).fit()
+print(model_slopes.summary())
+
+## Slopes by group
+b = model_slopes.params
+print(f"Slope for Large: {b['n_firms']:.6f}")
+print(f"Slope for Medium: {b['n_firms'] + b['size[T.Medium]:n_firms']:.6f}")
+print(f"Slope for Small: {b['n_firms'] + b['size[T.Small]:n_firms']:.6f}")
+```
+
+### Julia
+
+```{julia model-interaction-jl}
+model_slopes = lm(@formula(vacancies ~ size * n_firms), df)
+
+## Slopes by group
+b = coef(model_slopes)
+println("Slope for Large: ", b[4])
+println("Slope for Medium: ", b[4] + b[5])
+println("Slope for Small: ", b[4] + b[6])
+```
+:::
+
+### Visualising parallel vs. crossing lines
+
+::: panel-tabset
+### R
+
+```{r plot-interaction-r, fig.width=10, fig.height=4}
+df$fitted_par <- fitted(model_par)
+df$fitted_int <- fitted(model_slopes)
+
+## Use distinct n_firms values per size group for clean lines
+plot_data <- aggregate(cbind(fitted_par, fitted_int) ~ n_firms + size, data = df, FUN = mean)
+
+p1 <- ggplot(plot_data, aes(x = n_firms, y = fitted_par, color = size)) +
+  geom_line(linewidth = 1) +
+  labs(title = "Without interaction (parallel lines)",
+       y = "Fitted vacancies", x = "Number of firms in sector (thousands)") +
+  theme_minimal()
+
+p2 <- ggplot(plot_data, aes(x = n_firms, y = fitted_int, color = size)) +
+  geom_line(linewidth = 1) +
+  labs(title = "With interaction (different slopes)",
+       y = "Fitted vacancies", x = "Number of firms in sector (thousands)") +
+  theme_minimal()
+
+library(patchwork)
+p1 + p2
+```
+
+### Python
+
+```{python plot-interaction-py}
+df["fitted_par"] = model_par.fittedvalues
+df["fitted_int"] = model_slopes.fittedvalues
+
+plot_data = df.groupby(["n_firms", "size"])[["fitted_par", "fitted_int"]].mean().reset_index()
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+for name, grp in plot_data.groupby("size"):
+    axes[0].plot(grp["n_firms"], grp["fitted_par"], label=name)
+    axes[1].plot(grp["n_firms"], grp["fitted_int"], label=name)
+axes[0].set_title("Without interaction (parallel lines)")
+axes[1].set_title("With interaction (different slopes)")
+for ax in axes:
+    ax.set_xlabel("Number of firms in sector (thousands)")
+    ax.set_ylabel("Fitted vacancies")
+    ax.legend()
+plt.tight_layout()
+plt.show()
+```
+:::
+
+## Centering continuous variables
+
+### Why center?
+
+In a model with interaction `vacancies ~ size * n_firms`, the "main effect" of `size`
+is the effect **when `n_firms = 0`**. But `n_firms = 0` is outside the observed range
+(there are no sectors with zero firms), so this main effect is an extrapolation with
+no practical meaning.
+
+**Grand-mean centering** replaces `n_firms` with `n_firms - mean(n_firms)`. Now the
+main effect of `size` is the effect **at the average sector size**, which is much more
+interpretable.
+
+### Grand-mean centering
+
+::: panel-tabset
+### R
+
+```{r centering-r}
+df$n_firms_c <- df$n_firms - mean(df$n_firms)
+
+model_cent <- lm(vacancies ~ size * n_firms_c, data = df)
+summary(model_cent)
+```
+
+### Python
+
+```{python centering-py}
+df["n_firms_c"] = df["n_firms"] - df["n_firms"].mean()
+
+model_cent = smf.ols("vacancies ~ size * n_firms_c", data = df).fit()
+print(model_cent.summary())
+```
+
+### Julia
+
+```{julia centering-jl}
+df.n_firms_c = df.n_firms .- mean(df.n_firms)
+
+model_cent = lm(@formula(vacancies ~ size * n_firms_c), df)
+```
+:::
+
+### What changes and what stays the same?
+
+::: panel-tabset
+### R
+
+```{r centering-compare-r}
+## R-squared: identical
+cat("R² (uncentered):", summary(model_slopes)$r.squared, "\n")
+cat("R² (centered):  ", summary(model_cent)$r.squared, "\n")
+
+## Interaction coefficients: identical
+cat("\nInteraction coefs (uncentered):\n")
+print(coef(model_slopes)[5:6])
+cat("Interaction coefs (centered):\n")
+print(coef(model_cent)[5:6])
+
+## Main-effect coefficients: different
+cat("\nMain effects (uncentered):\n")
+print(coef(model_slopes)[1:3])
+cat("Main effects (centered):\n")
+print(coef(model_cent)[1:3])
+
+## Fitted values: identical
+cat("\nFitted values identical?", all.equal(fitted(model_slopes), fitted(model_cent)), "\n")
+```
+
+### Python
+
+```{python centering-compare-py}
+## R-squared: identical
+print(f"R² (uncentered): {model_slopes.rsquared:.6f}")
+print(f"R² (centered):   {model_cent.rsquared:.6f}")
+
+## Interaction coefficients: identical
+print(f"\nInteraction coefs (uncentered):")
+print(model_slopes.params.filter(like=":"))
+print(f"Interaction coefs (centered):")
+print(model_cent.params.filter(like=":"))
+
+## Main-effect coefficients: different
+print(f"\nMain effects (uncentered):")
+print(model_slopes.params.iloc[:3])
+print(f"Main effects (centered):")
+print(model_cent.params.iloc[:3])
+```
+
+### Julia
+
+```{julia centering-compare-jl}
+## R-squared: identical
+println("R² (uncentered): ", r2(model_slopes))
+println("R² (centered):   ", r2(model_cent))
+
+## Interaction coefficients: identical
+println("\nInteraction coefs (uncentered): ", coef(model_slopes)[5:6])
+println("Interaction coefs (centered):   ", coef(model_cent)[5:6])
+
+## Main-effect coefficients: different
+println("\nMain effects (uncentered): ", coef(model_slopes)[1:3])
+println("Main effects (centered):   ", coef(model_cent)[1:3])
+```
+:::
+
+### Standardisation (z-score)
+
+Standardising (`z-score`) additionally rescales to standard deviation units, so
+coefficients become comparable across variables with different scales.
+
+::: panel-tabset
+### R
+
+```{r standardisation-r}
+df$n_firms_s <- as.numeric(scale(df$n_firms))
+
+model_std <- lm(vacancies ~ size * n_firms_s, data = df)
+summary(model_std)
+```
+
+### Python
+
+```{python standardisation-py}
+df["n_firms_s"] = (df["n_firms"] - df["n_firms"].mean()) / df["n_firms"].std()
+
+model_std = smf.ols("vacancies ~ size * n_firms_s", data = df).fit()
+print(model_std.summary())
+```
+
+### Julia
+
+```{julia standardisation-jl}
+df.n_firms_s = (df.n_firms .- mean(df.n_firms)) ./ std(df.n_firms)
+
+model_std = lm(@formula(vacancies ~ size * n_firms_s), df)
+```
+:::
+
+## Gelman's approach: scaling by two standard deviations
+
+### The problem with standard standardisation
+
+When comparing continuous and binary predictors in the same model, dividing the
+continuous input by 1 SD does not make coefficients directly comparable:
+
+- A binary (0/1) variable like `public` has a natural 1-unit change (from 0 to 1),
+  representing its full range.
+- For a continuous variable, a 1-SD change is only a moderate shift -- roughly
+  covering 68% of the distribution.
+
+Gelman (2008) proposes a simple fix: **divide continuous inputs by 2 SD** instead
+of 1 SD. Then a 1-unit change in the rescaled continuous variable corresponds to
+moving from 1 SD below to 1 SD above the mean -- a "typical" swing that is more
+comparable in magnitude to the 0-to-1 swing of a binary predictor.
+
+### Centering binary variables by their means
+
+Gelman also recommends **centering binary inputs by their means**. Instead of
+leaving `public` as 0/1 with the intercept representing the `public = 0` group:
+
+- Replace `public` with `public - mean(public)`
+- The intercept now represents the expected value at the "average" mix of
+  public/private firms, not just at the reference level
+
+This is especially useful in models with interactions, where the "main effect"
+of a categorical variable is conditional on the other variable being at its
+reference level.
+
+### Implementation
+
+::: panel-tabset
+### R
+
+```{r gelman-r}
+## Gelman scaling: continuous by 2*SD
+df$n_firms_g <- (df$n_firms - mean(df$n_firms)) / (2 * sd(df$n_firms))
+
+## Center binary by its mean
+df$public_num <- as.numeric(df$public == "1")
+df$public_c <- df$public_num - mean(df$public_num)
+
+## Model with Gelman-scaled inputs
+model_gelman <- lm(vacancies ~ size + n_firms_g + public_c, data = df)
+summary(model_gelman)
+```
+
+### Python
+
+```{python gelman-py}
+## Gelman scaling
+df["n_firms_g"] = (df["n_firms"] - df["n_firms"].mean()) / (2 * df["n_firms"].std())
+
+## Center binary by its mean
+df["public_num"] = (df["public"] == "1").astype(float)
+df["public_c"] = df["public_num"] - df["public_num"].mean()
+
+model_gelman = smf.ols("vacancies ~ size + n_firms_g + public_c", data=df).fit()
+print(model_gelman.summary())
+```
+
+### Julia
+
+```{julia gelman-jl}
+df.n_firms_g = (df.n_firms .- mean(df.n_firms)) ./ (2 * std(df.n_firms))
+df.public_num = Float64.(df.public .== "1")
+df.public_c = df.public_num .- mean(df.public_num)
+
+model_gelman = lm(@formula(vacancies ~ size + n_firms_g + public_c), df)
+```
+:::
+
+### Comparison: coefficient magnitudes
+
+Compare the same model under three scaling approaches to see how coefficient
+comparability changes.
+
+::: panel-tabset
+### R
+
+```{r gelman-compare-r}
+## Original (no scaling)
+model_orig <- lm(vacancies ~ size + n_firms + public_num, data = df)
+
+## Standard z-score (1 SD)
+model_1sd <- lm(vacancies ~ size + n_firms_s + public_num, data = df)
+
+## Gelman (2 SD for continuous, mean-centered binary)
+model_2sd <- lm(vacancies ~ size + n_firms_g + public_c, data = df)
+
+comparison <- data.frame(
+  original = coef(model_orig),
+  z_score_1sd = coef(model_1sd),
+  gelman_2sd = coef(model_2sd)
+)
+round(comparison, 4)
+```
+
+Note how the Gelman-scaled coefficient for `n_firms_g` and `public_c` are now
+on a more comparable scale: both represent the effect of a "typical" change
+in the predictor.
+
+### Python
+
+```{python gelman-compare-py}
+model_orig = smf.ols("vacancies ~ size + n_firms + public_num", data=df).fit()
+model_1sd = smf.ols("vacancies ~ size + n_firms_s + public_num", data=df).fit()
+model_2sd = smf.ols("vacancies ~ size + n_firms_g + public_c", data=df).fit()
+
+comparison = pd.DataFrame({
+    "original": model_orig.params,
+    "z_score_1sd": model_1sd.params,
+    "gelman_2sd": model_2sd.params
+})
+print(comparison.round(4))
+```
+
+### Julia
+
+```{julia gelman-compare-jl}
+model_orig = lm(@formula(vacancies ~ size + n_firms + public_num), df)
+model_1sd = lm(@formula(vacancies ~ size + n_firms_s + public_num), df)
+model_2sd = lm(@formula(vacancies ~ size + n_firms_g + public_c), df)
+
+println("Original:    ", round.(coef(model_orig), digits=4))
+println("Z-score 1SD: ", round.(coef(model_1sd), digits=4))
+println("Gelman 2SD:  ", round.(coef(model_2sd), digits=4))
+```
+:::

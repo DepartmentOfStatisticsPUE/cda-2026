@@ -1,5 +1,5 @@
 #' ---
-#' title: Categorical variables in regression and marginal effects
+#' title: Categorical variables in regression
 #' author: Maciej Beręsewicz
 #' ---
 #' 
@@ -8,7 +8,6 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
-from marginaleffects import *
 
 
 df = pd.read_csv("../../data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
@@ -35,6 +34,24 @@ model4 = smf.ols("vacancies ~ C(woj, Sum)", data = df).fit()
 print(model4.summary())
 
 
+model_treat = smf.ols("vacancies ~ C(size, Treatment)", data=df).fit()
+print(model_treat.summary())
+
+
+## Group means
+print(df.groupby("size")["vacancies"].mean())
+
+
+model_sum_size = smf.ols("vacancies ~ C(size, Sum)", data=df).fit()
+print(model_sum_size.summary())
+
+
+## Polynomial coding requires specifying the order
+from patsy import Poly
+model_poly = smf.ols("vacancies ~ C(size, Poly)", data=df).fit()
+print(model_poly.summary())
+
+
 model_int1 = smf.ols("vacancies ~ size * public", data = df).fit()
 print(model_int1.summary())
 
@@ -43,14 +60,25 @@ print(model_int1.summary())
 cell_means = df.groupby(["size", "public"])["vacancies"].mean()
 print(cell_means)
 
+
 ## Reconstruct from coefficients
 ## Note: Python/statsmodels uses alphabetical order, so Large is the reference level
 b = model_int1.params
 print(f"Large, private: {b['Intercept']:.4f}")
+
+
 print(f"Medium, private: {b['Intercept'] + b['size[T.Medium]']:.4f}")
+
+
 print(f"Small, private: {b['Intercept'] + b['size[T.Small]']:.4f}")
+
+
 print(f"Large, public: {b['Intercept'] + b['public[T.1]']:.4f}")
+
+
 print(f"Medium, public: {b['Intercept'] + b['size[T.Medium]'] + b['public[T.1]'] + b['size[T.Medium]:public[T.1]']:.4f}")
+
+
 print(f"Small, public: {b['Intercept'] + b['size[T.Small]'] + b['public[T.1]'] + b['size[T.Small]:public[T.1]']:.4f}")
 
 
@@ -65,89 +93,63 @@ print(sm.stats.anova_lm(model_int1, typ=2))
 ## Type III
 print(sm.stats.anova_lm(model_int1, typ=3))
 
+
 ## Type III with sum contrasts
 model_int1_sum = smf.ols("vacancies ~ C(size, Sum) * C(public, Sum)", data = df).fit()
 print(sm.stats.anova_lm(model_int1_sum, typ=3))
 
 
-nace_counts = df.groupby("nace_division").size().reset_index(name="n_firms")
-df = df.merge(nace_counts, on="nace_division")
-print(df[["nace_division", "size", "n_firms", "vacancies"]].head())
+model_anova_ex = smf.ols("vacancies ~ size * public + woj", data=df).fit()
+
+## Type I: order matters
+print("Type I -- size first:")
 
 
-model_par = smf.ols("vacancies ~ size + n_firms", data = df).fit()
-print(model_par.summary())
+print(sm.stats.anova_lm(smf.ols("vacancies ~ size * public + woj", data=df).fit(), typ=1))
 
 
-model_slopes = smf.ols("vacancies ~ size * n_firms", data = df).fit()
-print(model_slopes.summary())
-
-## Slopes by group
-b = model_slopes.params
-print(f"Slope for Large: {b['n_firms']:.6f}")
-print(f"Slope for Medium: {b['n_firms'] + b['size[T.Medium]:n_firms']:.6f}")
-print(f"Slope for Small: {b['n_firms'] + b['size[T.Small]:n_firms']:.6f}")
+print("\nType I -- woj first:")
 
 
-df["n_firms_c"] = df["n_firms"] - df["n_firms"].mean()
-
-model_cent = smf.ols("vacancies ~ size * n_firms_c", data = df).fit()
-print(model_cent.summary())
+print(sm.stats.anova_lm(smf.ols("vacancies ~ woj + size * public", data=df).fit(), typ=1))
 
 
-## R-squared: identical
-print(f"R² (uncentered): {model_slopes.rsquared:.6f}")
-print(f"R² (centered):   {model_cent.rsquared:.6f}")
-
-## Interaction coefficients: identical
-print(f"\nInteraction coefs (uncentered):")
-print(model_slopes.params.filter(like=":"))
-print(f"Interaction coefs (centered):")
-print(model_cent.params.filter(like=":"))
-
-## Main-effect coefficients: different
-print(f"\nMain effects (uncentered):")
-print(model_slopes.params.iloc[:3])
-print(f"Main effects (centered):")
-print(model_cent.params.iloc[:3])
+## Type II
+print("\nType II:")
 
 
-df["n_firms_s"] = (df["n_firms"] - df["n_firms"].mean()) / df["n_firms"].std()
-
-model_std = smf.ols("vacancies ~ size * n_firms_s", data = df).fit()
-print(model_std.summary())
+print(sm.stats.anova_lm(model_anova_ex, typ=2))
 
 
-model5 = smf.ols("vacancies ~ woj*size + woj*public", data = df).fit()
-print(model5.summary())
+## Type III with sum contrasts
+model_anova_ex_sum = smf.ols("vacancies ~ C(size, Sum) * C(public, Sum) + woj", data=df).fit()
+print("\nType III (sum contrasts):")
 
 
-model5_ame = avg_slopes(model5)
-model5_ame.to_pandas().head()
+print(sm.stats.anova_lm(model_anova_ex_sum, typ=3))
 
 
-model5_mem = avg_slopes(model5, newdata="mean")
-model5_mem.to_pandas().head()
+## Add nace
+model_anova_nace = smf.ols("vacancies ~ size * public + woj + nace", data=df).fit()
+print("Type II with nace:")
 
 
-avg_slopes(model5, variables = "size", by = "public").to_pandas()
-
-
-from marginaleffects import predictions, datagrid
-pred = predictions(model5,
-                   newdata = datagrid(model5, woj = df["woj"].unique(), size = "Medium", public = "0"))
-pred.to_pandas().head()
+print(sm.stats.anova_lm(model_anova_nace, typ=2))
 
 
 ## Model A -- woj treated as numeric (wrong)
 model_a = smf.ols("vacancies ~ woj", data = df_wrong).fit()
 print(f"R-squared (numeric): {model_a.rsquared:.6f}")
+
+
 print(f"Number of parameters: {len(model_a.params)}")
 
 
 ## Model B -- woj treated as factor (correct)
 model_b = smf.ols("vacancies ~ woj", data = df).fit()
 print(f"R-squared (factor): {model_b.rsquared:.6f}")
+
+
 print(f"Number of parameters: {len(model_b.params)}")
 
 
@@ -160,30 +162,3 @@ comparison = pd.DataFrame({
     "coef": model_b.params.values
 })
 comparison.head()
-
-
-model6 = smf.ols("vacancies ~ size * public + woj", data = df).fit()
-print(f"Number of parameters: {len(model6.params)}")
-
-
-avg_slopes(model6, variables = "size").to_pandas()
-
-
-avg_slopes(model6, variables = "size", by = "public").to_pandas()
-
-
-model7 = smf.ols("vacancies ~ nace + size + public", data = df).fit()
-
-
-from marginaleffects import predictions, datagrid
-pred7 = predictions(model7,
-                    newdata = datagrid(model7, nace = df["nace"].unique(), size = "Medium", public = "0"))
-pred7_df = pred7.to_pandas().sort_values("estimate", ascending=False)
-print("Top 3:", pred7_df.head(3)[["nace", "estimate"]].to_string())
-print("Bottom 3:", pred7_df.tail(3)[["nace", "estimate"]].to_string())
-
-
-model8 = smf.ols("vacancies ~ nace * size + public", data = df).fit()
-pred8 = predictions(model8,
-                    newdata = datagrid(model8, nace = df["nace"].unique(), size = "Medium", public = "0"))
-pred8.to_pandas().sort_values("estimate", ascending=False).head(3)[["nace", "estimate"]]
