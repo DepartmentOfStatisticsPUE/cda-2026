@@ -2225,6 +2225,36 @@ The intercept $\beta_0$ equals the mean of the reference group.
 \end{frame}
 
 
+\begin{frame}{Why is $\hat{\beta}_0$ the mean of the reference level?}
+For an observation in the reference group (\texttt{woj} = \texttt{02}), \emph{all} dummies are 0, so the model collapses to:
+\[
+E(\text{vacancies} \mid \text{woj} = \texttt{02}) = \beta_0 + \beta_1 \cdot 0 + \cdots + \beta_{15} \cdot 0 = \beta_0.
+\]
+
+\medskip
+Under OLS, the fitted value for a group equals the \textbf{sample mean} of that group (the mean minimises the squared deviations within the group). Therefore:
+\[
+\hat{\beta}_0 = \bar{Y}_{\text{ref}}, \qquad \hat{\beta}_j = \bar{Y}_j - \bar{Y}_{\text{ref}}.
+\]
+
+\medskip
+\textbf{JVS data check:}
+\begin{table}[h]\centering\small
+\begin{tabular}{lcc}
+\hline
+& $\bar{Y}_j$ (sample) & Reconstructed from coefficients \\
+\hline
+\texttt{woj = 02} (ref) & 1.182 & $\hat{\beta}_0 = 1.182$ \\
+\texttt{woj = 04}       & 0.569 & $\hat{\beta}_0 + \hat{\beta}_1 = 1.182 - 0.613 = 0.569$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\medskip
+\alert{Each $\hat{\beta}_j$ is a difference in sample means.}
+\end{frame}
+
+
 \begin{frame}{What happens when coding is wrong?}
 If \texttt{woj} is treated as a \textbf{numeric} variable (02, 04, 06, \ldots, 32),
 the model becomes:

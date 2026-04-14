@@ -222,6 +222,14 @@ model4 = lm(@formula(vacancies ~ woj), df, contrasts = Dict(:woj => EffectsCodin
 ```
 :::
 
+::: {.callout-tip}
+## Practice
+
+Modify Model 3 (the releveled model) to use `woj = "14"` (Mazowieckie) as the reference
+level instead of `"30"`. Compare the new intercept with the sample mean of
+`vacancies` for `woj = "14"`. Are they equal? Why?
+:::
+
 ## Contrast coding for `size` (ordinal variable)
 
 The `size` variable has 3 levels: Large, Medium, Small. We demonstrate three
@@ -338,6 +346,14 @@ model_helm = lm(@formula(vacancies ~ size), df, contrasts = Dict(:size => Helmer
 ```
 :::
 
+::: {.callout-tip}
+## Practice
+
+Extract and compare the $R^2$ values from `model_treat`, `model_sum_size`, and
+`model_poly`. Are they identical? Justify your answer based on the column space
+of the design matrix under the three coding schemes.
+:::
+
 # Interpreting interactions between two categorical variables
 
 ## The model
@@ -437,6 +453,14 @@ println("Large, public: ", b[1] + b[4])
 println("Medium, public: ", b[1] + b[2] + b[4] + b[5])
 println("Small, public: ", b[1] + b[3] + b[4] + b[6])
 ```
+:::
+
+::: {.callout-tip}
+## Practice
+
+Fit the interaction model `vacancies ~ public * size` (variables in reverse
+order). Compare the coefficient values with `model_int1`. Are the numbers
+identical? Are the coefficient labels the same? Why might the labels differ?
 :::
 
 # ANOVA Type I, II, III
