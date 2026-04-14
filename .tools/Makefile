@@ -4,15 +4,25 @@ CODES_DIR := $(REPO_DIR)/codes
 QMD_DIR := $(CODES_DIR)/qmd
 QMD_FILES := $(wildcard $(QMD_DIR)/*.qmd)
 QMD_STEMS := $(basename $(notdir $(QMD_FILES)))
+HTML_FILES := $(QMD_FILES:.qmd=.html)
 
-.PHONY: all extract render sort notebooks readme clean publish
+.PHONY: all extract render render-all sort notebooks readme clean publish
 
 all: extract
 
 extract: render sort notebooks readme
 
-render:
-	@echo "==> Rendering .qmd files (executes code, Ripper extracts scripts)..."
+# Per-file rule: re-render only when .qmd is newer than .html
+$(QMD_DIR)/%.html: $(QMD_DIR)/%.qmd
+	@echo "  Rendering $(notdir $<) ..."
+	@cd $(QMD_DIR) && quarto render "$(notdir $<)" 2>&1 | tail -1
+
+render: $(HTML_FILES)
+	@echo "==> Render up to date."
+
+# Force re-render of every .qmd (use when filters/templates change)
+render-all:
+	@echo "==> Force-rendering all .qmd files..."
 	@cd $(QMD_DIR) && for f in *.qmd; do \
 		echo "  Rendering $$f ..."; \
 		quarto render "$$f" 2>&1 | tail -1; \
