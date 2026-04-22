@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 zaliczenie
+exercises/
 
 # Ripper extracted files (intermediate, sorted into R/python/julia by Makefile)
 codes/extracted/

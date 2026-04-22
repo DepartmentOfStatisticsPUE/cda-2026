@@ -40,28 +40,3 @@ effects(Dict(:size => sort(unique(df.size))), model5)
 effects(Dict(:woj => sort(unique(df.woj)),
              :size => ["Medium"],
              :public => ["0"]), model5)
-
-
-model6 = lm(@formula(vacancies ~ size * public + woj), df)
-
-
-println("Number of parameters: ", length(coef(model6)))
-
-
-effects(Dict(:size => sort(unique(df.size))), model6)
-
-
-model7 = lm(@formula(vacancies ~ nace + size + public), df)
-
-
-effects(Dict(:nace => sort(unique(df.nace)),
-             :size => ["Medium"],
-             :public => ["0"]), model7)
-
-
-model8 = lm(@formula(vacancies ~ nace * size + public), df)
-
-
-effects(Dict(:nace => sort(unique(df.nace)),
-             :size => ["Medium"],
-             :public => ["0"]), model8)

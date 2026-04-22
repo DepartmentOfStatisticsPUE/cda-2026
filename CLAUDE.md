@@ -8,12 +8,13 @@ Teaching repository for **Categorical Data Analysis (CDA) 2025/26** at Poznań U
 
 ## Build Pipeline
 
-All build commands run from the `.tools/` directory:
+Requires **Quarto >= 1.7.0** (needed by the Ripper extension) and Python 3 with `nbformat`. All build commands run from the `.tools/` directory:
 
 ```bash
 cd .tools && make extract    # Full pipeline: render → sort → notebooks → readme
 cd .tools && make publish    # extract + git add -A + commit + push
-cd .tools && make render     # Only quarto render (no-execute)
+cd .tools && make render     # Incremental: re-render only .qmd files newer than their .html
+cd .tools && make render-all # Force re-render every .qmd (use when filters/templates change)
 cd .tools && make sort       # Only move extracted files to codes/{R,python,julia}/
 cd .tools && make notebooks  # Only generate Jupyter notebooks from .py files
 cd .tools && make readme     # Only update readme.md download table
@@ -70,7 +71,7 @@ ripper:
 1. `quarto render *.qmd` → HTML (with executed output) + Ripper Lua filter extracts `.R`, `.py`, `.jl` files
 2. `make sort` → moves extracted files from `codes/qmd/` to `codes/{R,python,julia}/`
 3. `py_to_notebook.py` → converts `.py` scripts + `.qmd` section headers → `.ipynb`
-4. `update_readme.py` → regenerates download table in `readme.md` + `moodle-table.html`
+4. `update_readme.py` → regenerates download table in `readme.md` + `moodle-table.html` (the latter is gitignored; local convenience only)
 
 ### Key Components
 
@@ -104,7 +105,9 @@ cd homeworks && Rscript generate-all-keys.R          # Regenerate all grading ke
 cd homeworks && Rscript hw01-grading-key.R <student_id>  # Grade one student
 ```
 
-Grading keys and solutions are excluded from git (see `.gitignore`). Student submissions are `.qmd`/`.ipynb`/`.html`.
+Grading keys and solutions are excluded from git (see `.gitignore`): anything matching `homeworks/*-grading-key*`, `*-answer-key*`, `*-solution-*`, `generate-all-keys*`. Student submissions are `.qmd`/`.ipynb`/`.html`.
+
+The `zaliczenie/` directory (private gradebooks, `cda-dzienne-*.csv` / `cda-zaoczne-*.csv`) is fully gitignored. The `example-test/` directory holds the example final exam (`example-test.qmd` → html), which is public.
 
 ## Data
 
