@@ -40,7 +40,7 @@ models with interactions.
 
 ```{r data-r, message=FALSE, warning=FALSE}
 library(ggplot2)
-df <- read.csv("../../data/polish-jvs.csv", colClasses = c("character", "factor", rep("character", 4), "numeric"))
+df <- read.csv("data/polish-jvs.csv", colClasses = c("character", "factor", rep("character", 4), "numeric"))
 nace_counts <- as.data.frame(table(df$nace_division))
 names(nace_counts) <- c("nace_division", "n_firms")
 df <- merge(df, nace_counts, by = "nace_division")
@@ -56,7 +56,7 @@ import numpy as np
 import statsmodels.formula.api as smf
 import matplotlib.pyplot as plt
 
-df = pd.read_csv("../../data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
+df = pd.read_csv("data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
 nace_counts = df.groupby("nace_division").size().reset_index(name="n_firms")
 df = df.merge(nace_counts, on="nace_division")
 df["n_firms"] = df["n_firms"] / 1000  ## in thousands for readable coefficients
@@ -68,7 +68,7 @@ print(df[["nace_division", "size", "n_firms", "vacancies"]].head())
 ```{julia data-jl}
 using CSV, DataFrames, GLM, Statistics
 
-df = CSV.read("../../data/polish-jvs.csv", DataFrame,
+df = CSV.read("data/polish-jvs.csv", DataFrame,
               types = Dict(:id => String, :woj=> String, :public=> String,
                            :size => String, :nace_division => String, :nace => String))
 nace_counts = combine(groupby(df, :nace_division), nrow => :n_firms)

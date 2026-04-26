@@ -13,7 +13,7 @@ from statsmodels.graphics.mosaicplot import mosaic
 from scipy.stats import chi2_contingency, fisher_exact, chi2
 
 
-df = pd.read_csv("../../data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
+df = pd.read_csv("data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
 df.head()
 
 

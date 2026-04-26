@@ -12,7 +12,7 @@ Requires **Quarto >= 1.7.0** (needed by the Ripper extension) and Python 3 with 
 
 ```bash
 cd .tools && make extract    # Full pipeline: render → sort → notebooks → readme
-cd .tools && make publish    # extract + git add -A + commit + push
+cd .tools && make publish    # extract + git add -A + commit + push (writes to remote — confirm first)
 cd .tools && make render     # Incremental: re-render only .qmd files newer than their .html
 cd .tools && make render-all # Force re-render every .qmd (use when filters/templates change)
 cd .tools && make sort       # Only move extracted files to codes/{R,python,julia}/
@@ -37,9 +37,11 @@ All content lives in `codes/qmd/*.qmd`. These files contain R, Python, and Julia
 
 ### QMD File Structure
 
-Each `.qmd` uses the `ripper` filter in its YAML frontmatter to enable code extraction. The setup chunk hardcodes local engine paths (JuliaCall, Python, Julia) — these are author-specific and should not be changed for portability.
+Main topic files use the `ripper` filter in their YAML frontmatter to enable code extraction into standalone `.R` / `.py` / `.jl` scripts. The setup chunk hardcodes local engine paths (JuliaCall, Python, Julia) — these are author-specific and should not be changed for portability.
 
-Most topic sections use `::: panel-tabset` with `## R` / `## Python` / `## Julia` tabs to show equivalent code in all three languages. When editing a code example, update all three language tabs to keep them in sync. Not all topics have all three languages (e.g., `02-simpson-paradox` is R-only, `09-glm-lr` is currently Python-only).
+Most topic sections use `::: panel-tabset` with `## R` / `## Python` / `## Julia` tabs to show equivalent code in all three languages. When editing a code example, update all three language tabs to keep them in sync. Not all topics have all three languages — e.g., `02-simpson-paradox` has the ripper filter but only R code blocks.
+
+**"Extra material" files without the ripper filter** (`05a-optimization-methods`, `07a-interactions-scaling`, `09-glm-lr`) render to HTML and are picked up by `py_to_notebook.py` for `.ipynb` generation, but produce **no** standalone `.R`/`.py`/`.jl` scripts. If you want per-language extraction, add the `ripper` block shown in the frontmatter template below.
 
 ### New QMD Frontmatter Template
 
@@ -101,13 +103,22 @@ The `lectures/` directory holds supplementary figures referenced by QMD notebook
 ## Homework & Grading
 
 ```bash
-cd homeworks && Rscript generate-all-keys.R          # Regenerate all grading keys
-cd homeworks && Rscript hw01-grading-key.R <student_id>  # Grade one student
+cd homeworks && Rscript generate-all-keys.R              # Regenerate all answer keys (reads student IDs from zaliczenie/)
+cd homeworks && Rscript hw01-grading-key.R <student_id>  # Single-student trace for hw01
+cd homeworks && Rscript hw02-grading-key.R <student_id>  # Single-student trace for hw02
 ```
 
-Grading keys and solutions are excluded from git (see `.gitignore`): anything matching `homeworks/*-grading-key*`, `*-answer-key*`, `*-solution-*`, `generate-all-keys*`. Student submissions are `.qmd`/`.ipynb`/`.html`.
+Each homework uses a per-student `set.seed(student_id)` so each student gets a different dataset and answer key. `generate-all-keys.R` produces the consolidated `hwXX-answer-key.csv` files used by the `cda-2026-homework-eval` skill. hw02 additionally simulates a per-student CSV (`hw02-data-<id>.csv`) that students load in their submission.
 
-The `zaliczenie/` directory (private gradebooks, `cda-dzienne-*.csv` / `cda-zaoczne-*.csv`) is fully gitignored. The `example-test/` directory holds the example final exam (`example-test.qmd` → html), which is public.
+Grading keys, solutions, and per-student data are excluded from git (see `.gitignore`): anything matching `homeworks/*-grading-key*`, `*-answer-key*`, `*-solution-*`, `generate-all-keys*`, `hw*-data-*.csv`. Student submissions are `.qmd`/`.ipynb`/`.html`.
+
+The `zaliczenie/` directory (private gradebooks, `cda-dzienne-*.csv` / `cda-zaoczne-*.csv`) is fully gitignored. The `exercises/` directory is also gitignored (local scratch).
+
+The `example-test/` directory holds the example final exam (public). Render it independently — it lives outside `codes/qmd/` and is **not** part of the `.tools` pipeline:
+
+```bash
+cd example-test && quarto render example-test.qmd
+```
 
 ## Data
 

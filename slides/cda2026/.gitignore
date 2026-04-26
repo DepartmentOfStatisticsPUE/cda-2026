@@ -1,3 +1,14 @@
 .Rproj.user
 .Rhistory
 .RData
+.DS_Store
+
+# LaTeX build artefacts
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
+*.pdf

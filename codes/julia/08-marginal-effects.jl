@@ -17,7 +17,7 @@ using Statistics
 using DataFrames
 
 
-df=CSV.read("../../data/polish-jvs.csv", DataFrame,
+df=CSV.read("data/polish-jvs.csv", DataFrame,
             types = Dict(:id => String, :woj=> String, :public=> String,
                          :size => String, :nace_division => String, :nace => String));
 first(df, 5)

@@ -1,0 +1,476 @@
+---
+title: "Generalized linear models: count data"
+author: "Maciej Beręsewicz"
+format:
+  html:
+    embed-resources: true
+    table-of-contents: true
+    number-sections: true
+    df-print: kable
+editor: source
+execute:
+  eval: true
+  warning: false
+  message: false
+filters:
+  - ripper
+ripper:
+  output-dir: "extracted"
+  script-links-position: "none"
+  include-yaml: true
+---
+
+```{r setup, echo = FALSE}
+JuliaCall::julia_setup(JULIA_HOME = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/")
+knitr::opts_chunk$set(engine.path = list(
+  python = "/opt/anaconda3/bin/python3.12",
+  julia = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/"
+))
+```
+
+# Packages
+
+::: panel-tabset
+## R
+
+```{r pkg-install-r, eval = FALSE}
+install.packages("MASS")
+install.packages("AER")
+install.packages("performance")
+install.packages("marginaleffects")
+install.packages("modelsummary")
+install.packages("broom")
+install.packages("topmodels", repos = "http://R-Forge.R-project.org")
+install.packages("countreg",  repos = "http://R-Forge.R-project.org")
+```
+
+```{r pkg-load-r}
+library(MASS)
+library(AER)
+library(performance)
+library(marginaleffects)
+library(modelsummary)
+library(broom)
+library(boot)
+```
+
+## Python
+
+```{bash pkg-install-py, eval = FALSE}
+!pip install statsmodels
+!pip install marginaleffects
+```
+
+```{python pkg-load-py}
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+```
+
+## Julia
+
+```{julia pkg-install-jl, eval = FALSE}
+using Pkg
+Pkg.add(["GLM", "CSV", "DataFrames", "CategoricalArrays", "Statistics", "StatsBase"])
+```
+
+```{julia pkg-load-jl}
+using GLM
+using CSV
+using DataFrames
+using CategoricalArrays
+using Statistics
+using StatsBase
+```
+:::
+
+# Data
+
+The Polish Job Vacancy Survey (JVS): one row per firm, response variable `vacancies`.
+
+::: panel-tabset
+## R
+
+```{r data-r}
+df <- read.csv("data/polish-jvs.csv",
+               colClasses = c("character", "factor", rep("character", 4), "numeric"))
+df$size   <- factor(df$size,   levels = c("Large", "Medium", "Small"))
+df$public <- factor(df$public)
+df$nace   <- factor(df$nace)
+head(df)
+```
+
+```{r data-summary-r}
+c(mean      = mean(df$vacancies),
+  var       = var(df$vacancies),
+  prop_zero = mean(df$vacancies == 0))
+```
+
+## Python
+
+```{python data-py}
+df = pd.read_csv("data/polish-jvs.csv",
+                 dtype={"id": np.int64, "woj": str, "public": str,
+                        "size": str, "nace_division": str, "nace": str})
+df["size"] = pd.Categorical(df["size"], categories=["Large", "Medium", "Small"])
+df.head()
+```
+
+```{python data-summary-py}
+{"mean":      df["vacancies"].mean(),
+ "var":       df["vacancies"].var(),
+ "prop_zero": (df["vacancies"] == 0).mean()}
+```
+
+## Julia
+
+```{julia data-jl}
+df = CSV.read("data/polish-jvs.csv", DataFrame,
+              types = Dict(:id => String, :woj => String, :public => String,
+                           :size => String, :nace_division => String, :nace => String));
+df.size   = categorical(df.size, levels = ["Large", "Medium", "Small"]);
+df.public = categorical(df.public);
+df.nace   = categorical(df.nace);
+first(df, 5)
+```
+
+```{julia data-summary-jl}
+(mean      = mean(df.vacancies),
+ var       = var(df.vacancies),
+ prop_zero = mean(df.vacancies .== 0))
+```
+:::
+
+The mean is roughly $1.0$, the variance is roughly $96$, and about 80% of firms post zero vacancies. Variance is two orders of magnitude larger than the mean — far from a Gaussian situation.
+
+# Why not OLS? Negative predictions on a count
+
+We model `vacancies` with OLS using firm `size`, `public` status, and the NACE sector letter. Then we check: how many fitted values are negative?
+
+::: panel-tabset
+## R
+
+```{r ols-neg-r}
+ols <- lm(vacancies ~ size + public + nace, data = df)
+preds_ols <- predict(ols)
+cat("Min OLS prediction:", round(min(preds_ols), 3), "\n")
+cat("Number negative   :", sum(preds_ols < 0),
+    "out of", length(preds_ols), "\n")
+```
+
+## Python
+
+```{python ols-neg-py}
+ols = smf.ols("vacancies ~ C(size) + C(public) + C(nace)", data=df).fit()
+preds_ols = ols.predict(df)
+print("Min OLS prediction:", round(preds_ols.min(), 3))
+print("Number negative   :", int((preds_ols < 0).sum()),
+      "out of", len(preds_ols))
+```
+
+## Julia
+
+```{julia ols-neg-jl}
+ols = lm(@formula(vacancies ~ size + public + nace), df)
+preds_ols = predict(ols)
+println("Min OLS prediction: ", round(minimum(preds_ols), digits = 3))
+println("Number negative   : ", sum(preds_ols .< 0), " out of ", length(preds_ols))
+```
+:::
+
+OLS produces negative fitted means for some sub-groups — impossible for a count. The variance and distribution of residuals are also wrong: $\operatorname{Var}(Y\mid X)$ grows with $E(Y\mid X)$ for counts, so a single $\sigma^2$ misrepresents the data.
+
+# Why `log(y + c)` is the wrong fix
+
+A common workaround is to fit OLS on $\log(Y + c)$. Two problems:
+
+1. coefficients **depend on the choice of $c$**;
+2. back-transformed effects **disagree with Poisson** (the consistent estimator of multiplicative effects on the mean — Wooldridge 1999).
+
+::: panel-tabset
+## R
+
+```{r logy-r}
+fit_log_c <- function(c_val) {
+  m <- lm(log(vacancies + c_val) ~ size + public, data = df)
+  exp(coef(m))
+}
+cmp <- cbind(`c=1`     = fit_log_c(1),
+             `c=0.5`   = fit_log_c(0.5),
+             `c=0.001` = fit_log_c(0.001))
+round(cmp, 3)
+```
+
+```{r poisson-baseline-r}
+pois_simple <- glm(vacancies ~ size + public, data = df, family = poisson())
+round(exp(coef(pois_simple)), 3)
+```
+
+## Python
+
+```{python logy-py}
+def fit_log_c(c_val):
+    df["log_y"] = np.log(df["vacancies"] + c_val)
+    m = smf.ols("log_y ~ C(size) + C(public)", data=df).fit()
+    return np.exp(m.params)
+
+cmp = pd.DataFrame({"c=1":     fit_log_c(1),
+                    "c=0.5":   fit_log_c(0.5),
+                    "c=0.001": fit_log_c(0.001)})
+cmp.round(3)
+```
+
+```{python poisson-baseline-py}
+pois_simple = smf.glm("vacancies ~ C(size) + C(public)", data=df,
+                      family=sm.families.Poisson()).fit()
+np.exp(pois_simple.params).round(3)
+```
+
+## Julia
+
+```{julia logy-jl}
+function fit_log_c(c_val)
+    df.log_y = log.(df.vacancies .+ c_val)
+    m = lm(@formula(log_y ~ size + public), df)
+    return exp.(coef(m))
+end
+
+(c_1    = fit_log_c(1),
+ c_05   = fit_log_c(0.5),
+ c_0001 = fit_log_c(0.001))
+```
+
+```{julia poisson-baseline-jl}
+pois_simple = glm(@formula(vacancies ~ size + public), df, Poisson(), LogLink())
+exp.(coef(pois_simple))
+```
+:::
+
+The columns for $c=1$, $c=0.5$, $c=0.001$ disagree with each other, and none coincides with the Poisson estimates. There is no principled way to pick $c$, and back-transforming OLS on $\log(Y+c)$ gives a biased estimate of multiplicative effects on $E[Y\mid X]$ (Jensen's inequality).
+
+# Poisson regression
+
+Poisson regression with the canonical log link models
+$$
+\log E(Y_i \mid \mathbf{x}_i) = \mathbf{x}_i^\top \boldsymbol{\beta}, \qquad
+E(Y_i \mid \mathbf{x}_i) = \mu_i = \exp(\mathbf{x}_i^\top \boldsymbol{\beta}).
+$$
+
+::: panel-tabset
+## R
+
+```{r pois-r}
+pois <- glm(vacancies ~ size + public + nace, data = df,
+            family = poisson(link = "log"))
+summary(pois)
+```
+
+`exp(coef)` gives **incidence rate ratios** (IRR) — the multiplicative effect on $E[Y]$.
+
+```{r pois-irr-r}
+round(exp(coef(pois)), 3)
+```
+
+```{r pois-modelplot-r}
+modelplot(pois, exponentiate = TRUE) +
+  ggplot2::geom_vline(xintercept = 1, linetype = 2)
+```
+
+## Python
+
+```{python pois-py}
+pois = smf.glm("vacancies ~ C(size) + C(public) + C(nace)", data=df,
+               family=sm.families.Poisson()).fit()
+print(pois.summary())
+```
+
+```{python pois-irr-py}
+np.exp(pois.params).round(3)
+```
+
+## Julia
+
+```{julia pois-jl}
+pois = glm(@formula(vacancies ~ size + public + nace), df, Poisson(), LogLink())
+```
+
+```{julia pois-irr-jl}
+exp.(coef(pois))
+```
+:::
+
+**Interpretation.** For example, `sizeMedium = 0.14` means that, holding `public` and `nace` fixed, the expected number of vacancies for medium-sized firms is about 14% of that for large firms (the reference). Equivalently, `(0.14 - 1) * 100 ≈ -86%`.
+
+# Detecting overdispersion
+
+Pure Poisson assumes $\operatorname{Var}(Y\mid X) = E(Y\mid X)$. The Pearson dispersion statistic
+$$
+\hat{\phi} = \frac{1}{n - p} \sum_{i=1}^{n} \frac{(y_i - \hat{\mu}_i)^2}{\hat{\mu}_i}
+$$
+is close to 1 if Poisson is correct; $\hat{\phi} \gg 1$ signals overdispersion.
+
+::: panel-tabset
+## R
+
+```{r phi-r}
+phi <- sum(residuals(pois, type = "pearson")^2) / df.residual(pois)
+round(phi, 2)
+```
+
+Cameron–Trivedi regression test:
+
+```{r dispersiontest-r}
+AER::dispersiontest(pois, trafo = 1)
+```
+
+`performance` wraps a similar diagnostic:
+
+```{r perf-od-r}
+performance::check_overdispersion(pois)
+```
+
+## Python
+
+```{python phi-py}
+mu_hat = pois.fittedvalues
+pearson = (df["vacancies"] - mu_hat) / np.sqrt(mu_hat)
+phi_py = float((pearson ** 2).sum() / pois.df_resid)
+round(phi_py, 2)
+```
+
+## Julia
+
+```{julia phi-jl}
+mu_hat = predict(pois)
+phi_jl = sum((df.vacancies .- mu_hat) .^ 2 ./ mu_hat) / dof_residual(pois)
+round(phi_jl, digits = 2)
+```
+:::
+
+The dispersion statistic is far above 1. Pure-Poisson SEs are anti-conservative by roughly $\sqrt{\hat{\phi}}$.
+
+# Quasi-Poisson and Negative Binomial
+
+Three options share the exponential mean specification but model the variance differently.
+
+| Model         | $\operatorname{Var}(Y_i)$               | Likelihood | Dispersion estimated by  |
+|---------------|-----------------------------------------|------------|--------------------------|
+| Poisson       | $\mu_i$                                 | full       | --                       |
+| Quasi-Poisson | $\phi\, \mu_i$                          | quasi-MLE  | Pearson statistic        |
+| NB1           | $\mu_i + \mu_i / k = (1 + 1/k)\, \mu_i$ | full       | MLE for $k$              |
+| NB2           | $\mu_i + \mu_i^2 / k$                   | full       | MLE for $k$              |
+
+Quasi-Poisson and NB1 share the variance form $\operatorname{Var} = \phi\mu$ (with $\phi = 1 + 1/k$) and produce numerically similar $\hat{\boldsymbol{\beta}}$, but they are **not** the same model: the standard errors come from different assumptions.
+
+::: panel-tabset
+## R
+
+```{r qp-r}
+qp  <- glm(vacancies ~ size + public + nace, data = df,
+           family = quasipoisson(link = "log"))
+```
+
+```{r nb-r}
+nb2 <- MASS::glm.nb(vacancies ~ size + public + nace, data = df)
+nb2$theta  # this is k in our notation
+```
+
+Side-by-side comparison (IRR with SE):
+
+```{r modelsummary-r}
+modelsummary(list(Poisson       = pois,
+                  `Quasi-Poiss` = qp,
+                  NB2           = nb2),
+             exponentiate = TRUE,
+             statistic    = "({std.error})",
+             gof_omit     = "F|RMSE")
+```
+
+## Python
+
+```{python nb-py}
+nb2 = smf.negativebinomial("vacancies ~ C(size) + C(public) + C(nace)",
+                           data = df).fit(disp = False)
+print(nb2.summary())
+```
+
+`statsmodels` exposes quasi-Poisson via the `Poisson` family with `scale = "X2"`:
+
+```{python qp-py}
+qp = smf.glm("vacancies ~ C(size) + C(public) + C(nace)",
+             data = df, family = sm.families.Poisson()).fit(scale = "X2")
+qp.bse.head()
+```
+
+## Julia
+
+```{julia nb-jl}
+nb2 = negbin(@formula(vacancies ~ size + public + nace), df, LogLink())
+```
+:::
+
+# Marginal effects from a count model
+
+Coefficients are multiplicative on the log scale. To express effects on the original (count) scale we use marginal effects.
+
+::: panel-tabset
+## R
+
+Average Marginal Effect of `size`:
+
+```{r ame-r}
+avg_slopes(nb2, variables = "size")
+```
+
+`avg_slopes` differentiates $\hat\mu_i = \exp(\mathbf{x}_i^\top\hat{\boldsymbol{\beta}})$ for each observation, then averages — the right thing to do once the link is non-identity.
+
+Predicted vacancies for each NACE letter, holding `size = "Medium"` and `public = "0"`:
+
+```{r preds-by-nace-r}
+predictions(nb2,
+            newdata = datagrid(nace   = unique(df$nace),
+                               size   = "Medium",
+                               public = "0")) |>
+  as.data.frame() |>
+  subset(select = c("nace", "estimate", "conf.low", "conf.high"))
+```
+
+## Python
+
+```{python ame-py, eval = FALSE}
+from marginaleffects import avg_slopes
+avg_slopes(pois, variables = "size").to_pandas()
+```
+
+## Julia
+
+`Effects.jl` works with `GLM.jl` models; for a Poisson model it returns predictions on the response scale.
+
+```{julia eff-jl, eval = FALSE}
+using Effects
+effects(Dict(:size => ["Large", "Medium", "Small"]), pois)
+```
+:::
+
+# Exercises
+
+## Exercise 1 — Poisson vs. NB on a sub-sample
+
+Restrict the data to firms in NACE letter `C` (manufacturing). Refit the Poisson and NB2 models. Does the NB shape parameter $k$ become smaller or larger compared to the full-sample fit? What does that say about the dispersion of vacancies in this sector?
+
+## Exercise 2 — OLS vs. Poisson predictions
+
+For each combination of `size` and `public`, compute (i) the OLS-fitted mean from the model in *Why not OLS?*, and (ii) the Poisson-fitted mean from *Poisson regression*. Plot both against the empirical group means. Where do they disagree the most?
+
+## Exercise 3 — Robust SEs for Poisson
+
+Use the `sandwich` package to compute heteroskedasticity-robust SEs for the Poisson model. Compare the resulting CIs with the quasi-Poisson and NB2 CIs. Which intervals are widest? Narrowest?
+
+# Further reading
+
+- **Theory.** Cameron, A. C., & Trivedi, P. K. (2013). *Regression Analysis of Count Data* (2nd ed.). Cambridge University Press.
+- **Why not log-transform.** O'Hara, R. B., & Kotze, D. J. (2010). Do not log-transform count data. *Methods in Ecology and Evolution*, 1(2), 118–122.
+- **Logs with zeros.** Bellégo, C., Benatia, D., & Pape, L.-D. (2022). Dealing with logs and zeros in regression models. arXiv:2203.11820. Chen, J., & Roth, J. (2024). Logs with zeros? Some problems and solutions. *Quarterly Journal of Economics*, 139(2), 891–936.
+- **Quasi-likelihood for counts.** Wooldridge, J. M. (1999). Distribution-free estimation of some nonlinear panel data models. *Journal of Econometrics*, 90(1), 77–97.
+- **Diagnostics packages.** `DHARMa` (simulated residuals), `countreg` / `topmodels` (rootograms), `performance` (assumption checks).

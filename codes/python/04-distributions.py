@@ -26,7 +26,7 @@ import numpy as np
 from scipy import stats
 
 ## read data and filter 3 sections
-jvs = pd.read_csv("../../data/polish-jvs.csv")
+jvs = pd.read_csv("data/polish-jvs.csv")
 jvs3 = jvs[jvs["nace"].isin(["C", "G", "P"])]
 
 ## step 1: estimate per-entity lambdas, total rates (Lambda), and pi

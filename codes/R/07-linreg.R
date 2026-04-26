@@ -10,14 +10,14 @@ install.packages("car")
 library(car)
 
 
-df <- read.csv("../../data/polish-jvs.csv", colClasses = c("character", "factor", rep("character", 4), "numeric"))
+df <- read.csv("data/polish-jvs.csv", colClasses = c("character", "factor", rep("character", 4), "numeric"))
 head(df)
 
 
 levels(df$woj)
 
 
-df_wrong <- read.csv("../../data/polish-jvs.csv")
+df_wrong <- read.csv("data/polish-jvs.csv")
 head(df_wrong)
 
 

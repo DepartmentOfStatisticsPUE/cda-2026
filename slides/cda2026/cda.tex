@@ -2811,6 +2811,408 @@ Now, proceed to the example
 \end{itemize}
 \end{frame}
 
+\section{Generalized linear models}
+
+\subsection{Count data}
+
+\begin{frame}{Vacancies: a count with lots of zeros}
+We want to model the number of job vacancies $Y_i$ posted by firm $i$.
+
+\medskip
+\textbf{What kind of variable is $Y$?}
+\begin{itemize}
+    \justifying
+    \item Non-negative integers: $Y_i \in \{0, 1, 2, \ldots\}$.
+    \item In the JVS data: $\bar{Y} = 1.02$, \quad $s_Y^2 = 95.9$, \quad about $80\%$ of firms post zero vacancies.
+    \item Variance is $\sim 100\times$ the mean -- not a Gaussian situation.
+\end{itemize}
+
+\medskip
+\textbf{Goal.} Explain how $E[Y \mid X]$ varies with firm size, sector, ownership, region.
+
+\medskip
+\textbf{Question.} Why not just use linear regression?
+\end{frame}
+
+
+\begin{frame}{OLS problem 1: predictions can go negative}
+The OLS specification:
+\[
+Y_i = \beta_0 + \mathbf{x}_i^\top\boldsymbol{\beta} + \varepsilon_i, \qquad \varepsilon_i \sim \mathcal{N}(0,\sigma^2).
+\]
+
+\medskip
+The fitted mean $\hat{\mu}_i = \mathbf{x}_i^\top\hat{\boldsymbol{\beta}}$ lives on the entire real line.
+
+\medskip
+\textbf{Concretely.} Fit \texttt{vacancies $\sim$ size + public + nace}. For sub-groups with very low expected counts -- e.g.\ \emph{Small, private firms in a low-vacancy NACE division} -- OLS happily returns $\hat{\mu}_i < 0$.
+
+\medskip
+\alert{A negative count is impossible.} The model is fitting numbers it cannot mean.
+\end{frame}
+
+
+\begin{frame}{OLS problem 2: the variance is wrong}
+For counts, the conditional variance \emph{grows with the conditional mean}. Poisson is the canonical case:
+\[
+\operatorname{Var}(Y \mid X) = E(Y \mid X).
+\]
+
+\medskip
+OLS assumes the opposite -- a constant residual variance:
+\[
+\operatorname{Var}(\varepsilon_i) = \sigma^2 \quad \text{regardless of } \mathbf{x}_i.
+\]
+
+\medskip
+\textbf{Consequence.} Standard errors and $p$-values from OLS are systematically wrong: too small where $\mu_i$ is large, too large where $\mu_i$ is small. Inference is unreliable.
+\end{frame}
+
+
+\begin{frame}{OLS problem 3: the distribution is wrong}
+OLS assumes residuals are continuous and Gaussian.
+
+\medskip
+The residuals from a count model are:
+\begin{itemize}
+    \justifying
+    \item integer-valued,
+    \item heavily right-skewed (a few firms post 50+ vacancies),
+    \item with a large point mass at $0$ ($\sim 80\%$ of firms).
+\end{itemize}
+
+\medskip
+A Gaussian likelihood cannot describe this shape. Even when point estimates look OK, likelihood-based inference (likelihood ratio tests, AIC, prediction intervals) is invalid.
+
+\medskip
+\textbf{Three strikes for OLS} -- predictions, variance, distribution. We need a different model.
+\end{frame}
+
+
+\begin{frame}{The popular shortcut: \texttt{log(y+1)}}
+A textbook workaround. Add a constant to allow logging zeros:
+\[
+\log(Y_i + c) \;=\; \mathbf{x}_i^\top \boldsymbol{\beta} + \varepsilon_i, \qquad c \in \{1,\, 0.5,\, 0.001,\, \ldots\}.
+\]
+
+\medskip
+\textbf{Why it looks attractive:}
+\begin{itemize}
+    \justifying
+    \item Sidesteps $\log(0)$.
+    \item Predictions on the original scale, $\exp(\mathbf{x}_i^\top\hat{\boldsymbol{\beta}}) - c$, are positive.
+    \item Coefficients have a multiplicative ``elasticity'' feel.
+\end{itemize}
+
+\medskip
+\textbf{And yet} -- the next two slides show three serious problems with it.
+\end{frame}
+
+
+\begin{frame}{Why \texttt{log(y+c)} fails (1/2)}
+\textbf{Problem 1 -- the constant is arbitrary.}
+\begin{itemize}
+    \justifying
+    \item Different conventional choices ($c = 1$ vs.\ $c = 0.5$ vs.\ $c = 0.001$) give \emph{different} $\hat{\boldsymbol{\beta}}$ and different $p$-values.
+    \item There is no principled rule for picking $c$. Inference depends on a knob you cannot tune from the data.
+\end{itemize}
+
+\medskip
+\textbf{Problem 2 -- it estimates the wrong thing.}
+\begin{itemize}
+    \justifying
+    \item OLS targets $E\!\left[\log(Y+c) \mid X\right]$.
+    \item Applied work usually wants $\log E[Y \mid X]$.
+    \item By \textbf{Jensen's inequality}, the two differ. So $\exp(\hat{\beta}_j)$ is a \alert{biased} estimator of multiplicative effects on the mean.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Why \texttt{log(y+c)} fails (2/2)}
+\textbf{Problem 3 -- the zeros do not vanish.}
+\begin{itemize}
+    \justifying
+    \item Before: $\sim 80\%$ of $Y_i$ equal $0$.
+    \item After: $\sim 80\%$ of $\log(Y_i + c)$ equal $\log c$ -- still a point mass on the transformed scale.
+    \item The non-Gaussian shape and heteroskedasticity carry over.
+\end{itemize}
+
+\medskip
+\textbf{Bottom line.} \texttt{log(y+1)} relabels the problem rather than fixing it.
+
+\medskip
+\textbf{Better:} model $\log E[Y \mid X]$ directly with Poisson / NB regression -- next slide.
+
+\medskip
+\scriptsize References: O'Hara \& Kotze (2010), \textit{Methods Ecol.\ Evol.}; Bellégo, Benatia \& Pape (2022); Chen \& Roth (2024), \textit{QJE}; Wooldridge (1999), \textit{J.\ Econometrics}.
+\end{frame}
+
+
+\begin{frame}{The exponential mean model}
+The right specification for a non-negative count:
+\[
+E(Y_i \mid \mathbf{x}_i) \;=\; \mu_i \;=\; \exp(\mathbf{x}_i^\top \boldsymbol{\beta}),
+\qquad \text{i.e.} \qquad
+\log \mu_i = \mathbf{x}_i^\top \boldsymbol{\beta}.
+\]
+
+\medskip
+Two key properties:
+
+\begin{itemize}
+    \justifying
+    \item \textbf{Predictions are non-negative.} $\mu_i > 0$ for every $\boldsymbol{\beta}$, by construction.
+    \item \textbf{Coefficients are multiplicative.} A one-unit increase in $x_j$ multiplies $E[Y]$ by $\exp(\beta_j)$. For small $\beta_j$: $\exp(\beta_j) - 1 \approx \beta_j$ is a percentage change.
+\end{itemize}
+
+\medskip
+The mean specification is shared by Poisson, quasi-Poisson, NB1, and NB2 -- they differ only in their \emph{variance} structure. We turn to that next.
+\end{frame}
+
+
+\begin{frame}{Count data -- standard distributions}
+    \begin{itemize}
+    \justifying
+        \item The standard distribution for count data is the \textbf{Poisson} distribution:
+        \[
+        P(Y = y) = \frac{\mu^{y}\, \mathrm{e}^{-\mu}}{y!}, \quad y = 0, 1, 2, \ldots,
+        \]
+        with $E(Y) = \mu$ and $\operatorname{Var}(Y) = \mu$ (equidispersion).
+        \item An alternative is the \textbf{Negative Binomial} (NB; mean parameterisation):
+        \[
+        P(Y = y) = \binom{y + k - 1}{y}\left(\frac{\mu}{\mu + k}\right)^{y}\left(\frac{k}{\mu + k}\right)^{k}, \quad y = 0, 1, 2, \ldots,
+        \]
+        with $E(Y) = \mu$ and $\operatorname{Var}(Y) = \mu + \mu^2/k$. The shape parameter $k$ controls overdispersion: $k \to \infty$ recovers the Poisson; small $k$ means more dispersion. (Some texts and \texttt{MASS::glm.nb} call this parameter $\theta$.)
+        \item Other options: Geometric (NB with $k = 1$), Tweedie, zero-inflated, and hurdle distributions.
+    \end{itemize}
+\end{frame}
+
+
+\begin{frame}{Count data -- more on the negative binomial}
+The negative binomial (type 2) is a \textbf{gamma mixture of Poisson distributions}: $Y \mid \lambda \sim \text{Poisson}(\lambda)$ and $\lambda \sim \text{Gamma}(k,\, k/\mu)$ marginally yields
+\[
+P(Y = y) = \frac{\Gamma(y + k)}{\Gamma(k)\, y!} \cdot \frac{\mu^{y}\, k^{k}}{(\mu + k)^{y + k}}, \quad y = 0, 1, 2, \ldots,
+\]
+with mean $\mu$, shape $k$, and $\Gamma(\cdot)$ the gamma function.
+
+\begin{itemize}
+\justifying
+    \item For \textbf{fixed} $k$, the model is a standard GLM (the natural parameter $\log\frac{\mu}{\mu+k}$ depends only on $\beta$).
+    \item When $k$ is \textbf{estimated from the data}, the model technically falls outside the strict GLM framework. In practice, MLE is computed by alternating: hold $k$ fixed and update $\boldsymbol{\beta}$ via the GLM iteratively reweighted least squares (IRLS); then update $k$ from the score equation.
+    \item Implemented in R as \texttt{MASS::glm.nb}; in Python as \texttt{statsmodels.discrete.NegativeBinomial}; in Julia via \texttt{GLM.jl} with \texttt{NegativeBinomial(k)} and a separate update for $k$.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{The Poisson assumption: equidispersion}
+    \begin{itemize}
+    \justifying
+    \item The Poisson distribution imposes $E(Y) = \operatorname{Var}(Y)$ -- \textbf{equidispersion}.
+    \item In economic applications we usually see $\operatorname{Var}(Y) > E(Y)$ -- \textbf{overdispersion}.
+    \item Less commonly, we see $\operatorname{Var}(Y) < E(Y)$ -- \textbf{underdispersion}.
+    \item For the JVS data, the marginal mean and variance of \texttt{vacancies} differ by two orders of magnitude:
+\end{itemize}
+
+\begin{table}[ht]
+\centering
+\caption{Mean and variance of the number of vacancies (JVS)}
+\begin{tabular}{rr}
+  \hline
+  Mean & Variance \\
+  \hline
+  $1.02$ & $95.92$ \\
+  \hline
+\end{tabular}
+\end{table}
+
+\smallskip
+\textbf{Implication.} A pure Poisson likelihood will produce SEs that are too small by a factor of roughly $\sqrt{\hat{\phi}} \approx \sqrt{95.92 / 1.02} \approx 9.7$ -- inference is severely anti-conservative unless we account for overdispersion.
+\end{frame}
+
+\begin{frame}{Count data -- where does overdispersion come from?}
+Overdispersion typically reflects a failure of one of the Poisson assumptions:
+
+\begin{itemize}
+\justifying
+    \item observations are \textbf{correlated} (e.g.\ clustered within firms, regions, or time);
+    \item the event rate \textbf{is not constant} across units;
+    \item rate variation is driven by \textbf{unobserved} or omitted predictors (latent heterogeneity).
+\end{itemize}
+
+\medskip
+\textbf{Testing for overdispersion:}
+\begin{itemize}
+    \item R: \texttt{AER::dispersiontest()} (Cameron--Trivedi regression test); \texttt{performance::check\_overdispersion()}.
+    \item Python: compare Pearson dispersion $\hat{\phi}$ to $1$, or fit a \texttt{NegativeBinomial} model and test whether $\alpha = 0$ (\texttt{statsmodels}).
+    \item Julia: compute $\hat{\phi}$ manually from Pearson residuals; \texttt{GLM.jl} returns deviance and Pearson $\chi^2$.
+\end{itemize}
+
+\medskip
+{\scriptsize Cameron, A.\,C.\ \& Trivedi, P.\,K.\ (1990). Regression-based tests for overdispersion in the Poisson model. \textit{Journal of Econometrics}, 46, 347--364.}
+
+\end{frame}
+
+
+\begin{frame}{Count data -- Poisson and NB regression}
+    \begin{itemize}
+    \justifying
+        \item Poisson and NB regression both use the \textbf{log link}:
+        \begin{equation}
+            E(Y_{i} \mid \mathbf{x}_{i}) = \mu_{i} = \exp\!\left(\mathbf{x}_{i}^{\top} \boldsymbol{\beta}\right).
+        \end{equation}
+        \item To accommodate overdispersion ($\operatorname{Var}(Y) > E(Y)$), three options share the same conditional mean but differ in the assumed mean--variance relationship:
+        \begin{itemize}
+            \item \textbf{Quasi-Poisson} (QMLE, no full likelihood): $\operatorname{Var}(Y_i) = \phi\, \mu_i$ (linear). Estimate $\phi$ from Pearson residuals.
+            \item \textbf{NB type 1} (NB1): $\operatorname{Var}(Y_i) = \mu_i + \mu_i / k = (1 + 1/k)\, \mu_i$ -- linear. Full likelihood; $k$ estimated by MLE.
+            \item \textbf{NB type 2} (NB2): $\operatorname{Var}(Y_i) = \mu_i + \mu_i^2 / k$ -- quadratic in $\mu_i$. Full likelihood.
+        \end{itemize}
+        \item Quasi-Poisson and NB1 share a variance structure ($\operatorname{Var} = \phi\mu$ with $\phi = 1 + 1/k$) and yield numerically similar $\hat{\boldsymbol{\beta}}$, but the SEs are computed under different assumptions -- they are \textbf{not the same model}.
+        \item \textbf{Pearson dispersion estimator} (used for quasi-Poisson and as a diagnostic):
+        \[
+        \hat{\phi} = \frac{1}{n - p}\sum_{i=1}^{n} \frac{(y_{i} - \hat{\mu}_{i})^{2}}{\hat{\mu}_{i}},
+        \]
+        with $n - p$ degrees of freedom. Values $\hat{\phi} \gg 1$ indicate overdispersion.
+    \end{itemize}
+\end{frame}
+
+
+
+
+\begin{frame}{Count data -- fitting in practice}
+\textbf{In R:}
+\begin{itemize}
+\justifying
+    \item \texttt{glm(y \textasciitilde{} ..., family = poisson)} -- Poisson MLE; default \texttt{link = "log"}.
+    \item \texttt{glm(y \textasciitilde{} ..., family = quasipoisson)} -- same $\hat{\boldsymbol{\beta}}$ as Poisson, with $\hat{\phi}$ inflating SEs.
+    \item \texttt{glm(y \textasciitilde{} ..., family = MASS::negative.binomial(k))} -- NB with \emph{fixed} $k$ (not estimated). \texttt{negative.binomial(1)} is the geometric.
+    \item \texttt{MASS::glm.nb(y \textasciitilde{} ...)} -- NB2 with $k$ \emph{estimated} from the data.
+\end{itemize}
+
+\medskip
+\textbf{Python (\texttt{statsmodels}):}
+\begin{itemize}
+    \item \texttt{smf.glm(..., family=sm.families.Poisson())}
+    \item \texttt{smf.glm(..., family=sm.families.NegativeBinomial(alpha=...))} -- $\alpha = 1/k$, fixed.
+    \item \texttt{smf.negativebinomial(...).fit()} -- NB2 with $\alpha$ estimated.
+\end{itemize}
+
+\medskip
+\textbf{Julia (\texttt{GLM.jl}):}
+\begin{itemize}
+    \item \texttt{glm(@formula(...), df, Poisson(), LogLink())}
+    \item \texttt{negbin(@formula(...), df, LogLink())} -- estimates $k$.
+\end{itemize}
+\end{frame}
+
+
+
+% \begin{frame}{Poisson regression -- warm-up}
+
+% Please do the following exercise:
+
+% \begin{enumerate}
+%     \item Download the file \texttt{beers-glm-agg.csv} about beer consumption by single-person households in 2011 [file can be found on the \underline{moodle} platform, section \underline{Generalized linear models}].
+%     \item Read the data into software of preference.
+%     \item Fit Poisson regression where dependent variable is \textbf{beers} and independent variable is \textbf{klm}.
+%     \item What you can tell about the consumption of beer between levels of \textbf{klm} variable (remember that this variable is a categorical variable)? 
+% \end{enumerate}
+
+% \end{frame}
+
+
+\begin{frame}{Poisson regression -- plan for the lecture}
+
+Is the model ok? but what do we mean by that? 
+    \begin{itemize}
+        \item How to detect and deal with overdispersion?
+        \item How to visually assess the model?
+        \item How to check which model (i.e. distribution) is better?
+        \item How to report results using tables and plots?
+    \end{itemize}
+    
+    \vspace{0.5cm}
+    
+    R Packages
+    \begin{itemize}
+    \item \texttt{car} -- \texttt{Anova} function to verify contribution of a given variable (not only the individual factor level).
+    \item \texttt{boot} -- package distributed with R, function: \texttt{glm.diag.plots} which resembles \texttt{plot.lm} 
+    \item \texttt{performance} -- \url{https://easystats.github.io/performance/}
+    \item \texttt{sjPlot} -- \url{https://strengejacke.github.io/sjPlot/}
+    \item \texttt{countreg::rootogram} -- \url{https://rdrr.io/rforge/countreg/}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Poisson vs Negative Binomial}
+
+
+\begin{quote}
+(...) I'll also add that by default one should almost always use negative binomial models over the Poisson because the assumption of equidispersion is rarely actually met, but you anyway have to check which dispersion issues are present in the model first before deciding on which to use.
+
+Reference
+
+Hilbe, J. M. (2011). Negative binomial regression (2nd ed). Cambridge University Press.
+\end{quote}
+
+Source: Shawn Hemelstrand
+
+\url{https://stats.stackexchange.com/questions/653727/when-to-use-negative-binomial-and-poisson-regression}
+\end{frame}
+
+
+\begin{frame}{Poisson vs Negative Binomial}
+
+
+\begin{quote}
+Poisson regression can be reframed a quasi-maximum likelihood (QMLE) model. That means as long as the relationship between the predictors and the outcome mean is correctly specified, the QMLE estimate of the coefficients is consistent, whether or not the outcome is actually Poisson distributed (including whether or not the outcome is over- or under-dispersed). 
+\end{quote}
+
+\begin{quote}
+In contrast, the negative binomial (NB) model requires strong assumptions. If the outcome distribution is not negative binomial (e.g., it does not specifically follow the NB distribution or the dispersion is not accurately captured by the implied mean-variance relationship of the NB model, including if there is under-dispersion) the estimate isn't even consistent. 
+\end{quote}
+
+Source: Noah Greifer
+
+\url{https://stats.stackexchange.com/questions/653727/when-to-use-negative-binomial-and-poisson-regression}
+\end{frame}
+
+\begin{frame}{Poisson vs Negative Binomial}
+\begin{center}
+\includegraphics[width=\textwidth]{figs/jeff1.png}  
+\end{center}
+\end{frame}
+
+\begin{frame}{Poisson vs Negative Binomial}
+\begin{center}
+\includegraphics[width=0.8\textwidth]{figs/jeff2.png}  
+\end{center}
+\end{frame}
+
+
+\begin{frame}{Count data -- further reading}
+    \begin{itemize}
+        \item \textbf{More distributions} -- see package \texttt{VGAM} which implements a high number of discrete distributions (over 30).
+        \item \textbf{Diagnostics} -- diagnostics for count regression models is crucial, see \texttt{DHARMa} package.
+        \item \textbf{Robust standard errors} -- see \texttt{sandwich} package.
+        \item \textbf{Variable selection} -- see \texttt{glmnet} package (LASSO and its extensions)
+        \item \textbf{(Outlier) Robust inference} -- see \texttt{robustbase}, \texttt{robust} packages.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Count data -- practice}
+
+\begin{center}
+Now, proceed to the example of Poisson and NB regression. 
+\end{center}
+
+
+\end{frame}
+
+
 \end{document}
+
+
+
+
 
 

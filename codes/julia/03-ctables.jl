@@ -17,7 +17,7 @@ using CSV
 using FreqTables
 
 
-df=CSV.read("../../data/polish-jvs.csv", DataFrame, 
+df=CSV.read("data/polish-jvs.csv", DataFrame, 
             types = Dict(:id => Int64, :woj=> String, :public=> String, 
                          :size => String, :nace_division => String, :nace => String));
 first(df, 5)

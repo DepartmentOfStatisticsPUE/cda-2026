@@ -10,7 +10,7 @@ install.packages("vcd")
 library(vcd)
 
 
-df <- read.csv("../../data/polish-jvs.csv", colClasses = c(rep("character", 6), "numeric"))
+df <- read.csv("data/polish-jvs.csv", colClasses = c(rep("character", 6), "numeric"))
 head(df)
 
 

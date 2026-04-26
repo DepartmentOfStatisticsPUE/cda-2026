@@ -2444,7 +2444,7 @@ window.Quarto = {
 <div class="tab-content">
 <div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;../../data/polish-jvs.csv&quot;</span>, <span class="at">colClasses =</span> <span class="fu">c</span>(<span class="st">&quot;character&quot;</span>, <span class="st">&quot;factor&quot;</span>, <span class="fu">rep</span>(<span class="st">&quot;character&quot;</span>, <span class="dv">4</span>), <span class="st">&quot;numeric&quot;</span>))</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;data/polish-jvs.csv&quot;</span>, <span class="at">colClasses =</span> <span class="fu">c</span>(<span class="st">&quot;character&quot;</span>, <span class="st">&quot;factor&quot;</span>, <span class="fu">rep</span>(<span class="st">&quot;character&quot;</span>, <span class="dv">4</span>), <span class="st">&quot;numeric&quot;</span>))</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div class="kable-table">
@@ -2523,7 +2523,7 @@ window.Quarto = {
 </div>
 <div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">&quot;../../data/polish-jvs.csv&quot;</span>, dtype<span class="op">=</span>{<span class="st">&quot;id&quot;</span>: np.int64, <span class="st">&quot;woj&quot;</span>:<span class="bu">str</span>, <span class="st">&quot;public&quot;</span>:<span class="bu">str</span>,<span class="st">&quot;size&quot;</span>: <span class="bu">str</span>, <span class="st">&quot;nace_division&quot;</span>: <span class="bu">str</span>, <span class="st">&quot;nace&quot;</span>: <span class="bu">str</span>})</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">&quot;data/polish-jvs.csv&quot;</span>, dtype<span class="op">=</span>{<span class="st">&quot;id&quot;</span>: np.int64, <span class="st">&quot;woj&quot;</span>:<span class="bu">str</span>, <span class="st">&quot;public&quot;</span>:<span class="bu">str</span>,<span class="st">&quot;size&quot;</span>: <span class="bu">str</span>, <span class="st">&quot;nace_division&quot;</span>: <span class="bu">str</span>, <span class="st">&quot;nace&quot;</span>: <span class="bu">str</span>})</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>df.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>       id woj public    size nace nace_division  vacancies
@@ -2537,7 +2537,7 @@ window.Quarto = {
 </div>
 <div id="tabset-2-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-3-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>df<span class="op">=</span>CSV.<span class="fu">read</span>(<span class="st">&quot;../../data/polish-jvs.csv&quot;</span>, DataFrame,</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>df<span class="op">=</span>CSV.<span class="fu">read</span>(<span class="st">&quot;data/polish-jvs.csv&quot;</span>, DataFrame,</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>            types <span class="op">=</span> <span class="fu">Dict</span>(<span class="op">:</span>id <span class="op">=&gt;</span> <span class="dt">String</span>, <span class="op">:</span>woj<span class="op">=&gt;</span> <span class="dt">String</span>, <span class="op">:</span>public<span class="op">=&gt;</span> <span class="dt">String</span>,</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>                         <span class="op">:</span>size <span class="op">=&gt;</span> <span class="dt">String</span>, <span class="op">:</span>nace_division <span class="op">=&gt;</span> <span class="dt">String</span>, <span class="op">:</span>nace <span class="op">=&gt;</span> <span class="dt">String</span>));</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="fu">first</span>(df, <span class="fl">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -2745,8 +2745,8 @@ Type: response</code></pre>
 Dep. Variable:              vacancies   R-squared:                       0.017
 Model:                            OLS   Adj. R-squared:                  0.016
 Method:                 Least Squares   F-statistic:                     15.43
-Date:                Wed, 22 Apr 2026   Prob (F-statistic):          2.09e-161
-Time:                        08:17:52   Log-Likelihood:            -2.1223e+05
+Date:                Sun, 26 Apr 2026   Prob (F-statistic):          2.09e-161
+Time:                        12:40:02   Log-Likelihood:            -2.1223e+05
 No. Observations:               57480   AIC:                         4.246e+05
 Df Residuals:                   57416   BIC:                         4.252e+05
 Df Model:                          63                                         
@@ -3140,9 +3140,9 @@ Type: response</code></pre>
 <p>The code for this document can be found here:</p>
 <ul>
 <li><a href="08-marginal-effects.py">08-marginal-effects.py</a></li>
+<li><a href="08-marginal-effects.sh">08-marginal-effects.sh</a></li>
 <li><a href="08-marginal-effects.R">08-marginal-effects.R</a></li>
 <li><a href="08-marginal-effects.jl">08-marginal-effects.jl</a></li>
-<li><a href="08-marginal-effects.sh">08-marginal-effects.sh</a></li>
 </ul>
 </section>
 

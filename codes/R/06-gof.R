@@ -28,7 +28,7 @@ fitdist(x, "nbinom")
 fitdist(x, "nbinom") |> plot()
 
 
-cat(x, sep = "\n", file = "../../data/nb_sim.txt")
+cat(x, sep = "\n", file = "data/nb_sim.txt")
 
 
 gof_nb <- goodfit(x, "nbinomial")

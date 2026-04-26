@@ -16,7 +16,7 @@ x = st.nbinom(n = 2, p = 2/(2+3)).rvs(N)
 np.mean(x)
 
 
-x = np.loadtxt("../../data/nb_sim.txt", dtype = np.int64)
+x = np.loadtxt("data/nb_sim.txt", dtype = np.int64)
 np.mean(x)
 
 

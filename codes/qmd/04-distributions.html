@@ -2664,7 +2664,7 @@ window.Quarto = {
 <div id="tabset-6-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-6-1-tab">
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="do">## read data and filter 3 sections</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>jvs <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;../../data/polish-jvs.csv&quot;</span>)</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>jvs <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;data/polish-jvs.csv&quot;</span>)</span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>jvs3 <span class="ot">&lt;-</span> jvs[jvs<span class="sc">$</span>nace <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;C&quot;</span>, <span class="st">&quot;G&quot;</span>, <span class="st">&quot;P&quot;</span>), ]</span>
 <span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="do">## step 1: estimate per-entity lambdas, total rates (Lambda), and pi</span></span>
@@ -2748,7 +2748,7 @@ P     1805  1804.665</code></pre>
 <span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy <span class="im">import</span> stats</span>
 <span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a><span class="co">## read data and filter 3 sections</span></span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>jvs <span class="op">=</span> pd.read_csv(<span class="st">&quot;../../data/polish-jvs.csv&quot;</span>)</span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>jvs <span class="op">=</span> pd.read_csv(<span class="st">&quot;data/polish-jvs.csv&quot;</span>)</span>
 <span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>jvs3 <span class="op">=</span> jvs[jvs[<span class="st">&quot;nace&quot;</span>].isin([<span class="st">&quot;C&quot;</span>, <span class="st">&quot;G&quot;</span>, <span class="st">&quot;P&quot;</span>])]</span>
 <span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a><span class="co">## step 1: estimate per-entity lambdas, total rates (Lambda), and pi</span></span>
@@ -2815,7 +2815,7 @@ P     1805  1804.665</code></pre>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb60"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">CSV</span>, <span class="bu">DataFrames</span>, <span class="bu">Distributions</span>, <span class="bu">Random</span>, <span class="bu">Statistics</span></span>
 <span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a><span class="co">## read data and filter 3 sections</span></span>
-<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>jvs <span class="op">=</span> CSV.<span class="fu">read</span>(<span class="st">&quot;../../data/polish-jvs.csv&quot;</span>, DataFrame)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>jvs <span class="op">=</span> CSV.<span class="fu">read</span>(<span class="st">&quot;data/polish-jvs.csv&quot;</span>, DataFrame)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>57480×7 DataFrame
    Row │ id        woj    public  size     nace     nace_division  vacancies
@@ -3047,9 +3047,9 @@ P     1805  1804.665</code></pre>
 <h1 data-number="1"><span class="header-section-number">1</span> Script files</h1>
 <p>The code for this document can be found here:</p>
 <ul>
+<li><a href="04-distributions.jl">04-distributions.jl</a></li>
 <li><a href="04-distributions.py">04-distributions.py</a></li>
 <li><a href="04-distributions.R">04-distributions.R</a></li>
-<li><a href="04-distributions.jl">04-distributions.jl</a></li>
 </ul>
 </section>
 

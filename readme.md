@@ -10,7 +10,8 @@
 6. Goodness of fit - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/06-gof.html)
 7. Linear regression - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/07-linreg.html)
 8. Marginal effects - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/08-marginal-effects.html)
-9. GLM: Logistic regression - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/09-glm-lr.html)
+9. GLM: Count data - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/09-glm-count.html)
+10. GLM: Logistic regression - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/10-glm-lr.html)
 
 
 ## Extra materials
@@ -36,7 +37,8 @@
 | 8 | Linear regression | [.R](codes/R/07-linreg.R) | [.py](codes/python/07-linreg.py) | [.jl](codes/julia/07-linreg.jl) | [.ipynb](codes/notebooks/07-linreg.ipynb) |
 | 9 | Interactions and scaling | -- | -- | -- | [.ipynb](codes/notebooks/07a-interactions-scaling.ipynb) |
 | 10 | Marginal effects | [.R](codes/R/08-marginal-effects.R) | [.py](codes/python/08-marginal-effects.py) | [.jl](codes/julia/08-marginal-effects.jl) | [.ipynb](codes/notebooks/08-marginal-effects.ipynb) |
-| 11 | GLM: Logistic regression | -- | -- | -- | [.ipynb](codes/notebooks/09-glm-lr.ipynb) |
+| 11 | GLM: Count data | [.R](codes/R/09-glm-count.R) | [.py](codes/python/09-glm-count.py) | [.jl](codes/julia/09-glm-count.jl) | [.ipynb](codes/notebooks/09-glm-count.ipynb) |
+| 12 | GLM: Logistic regression | -- | -- | -- | [.ipynb](codes/notebooks/10-glm-lr.ipynb) |
 
 ## Problem sets
 
@@ -45,7 +47,7 @@ Submit solutions as a **single HTML file** via **Moodle**.
 | # | Topic | HTML | QMD | Jupyter | Deadline |
 |---|-------|------|-----|---------|----------|
 | 1 | Vacancy analysis (categorical data, distributions, MLE) | [html](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/homeworks/hw01-problem-set.html) | [qmd](homeworks/hw01-problem-set.qmd) | [ipynb](homeworks/hw01-problem-set.ipynb) | 2026-03-31 23:59 |
-| 2 | TBA | -- | -- | -- | TBA |
+| 2 | Retail store analysis (GOF, linear regression, marginal effects) | [html](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/homeworks/hw02-problem-set.html) | [qmd](homeworks/hw02-problem-set.qmd) | -- | TBA |
 | 3 | TBA | -- | -- | -- | TBA |
 
 ## Example final test

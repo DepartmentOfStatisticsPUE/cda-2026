@@ -29,7 +29,8 @@ TOPIC_ORDER = [
     "07-linreg",
     "07a-interactions-scaling",
     "08-marginal-effects",
-    "09-glm-lr",
+    "09-glm-count",
+    "10-glm-lr",
 ]
 
 TOPIC_NAMES = {
@@ -43,7 +44,8 @@ TOPIC_NAMES = {
     "07-linreg": "Linear regression",
     "07a-interactions-scaling": "Interactions and scaling",
     "08-marginal-effects": "Marginal effects",
-    "09-glm-lr": "GLM: Logistic regression",
+    "09-glm-count": "GLM: Count data",
+    "10-glm-lr": "GLM: Logistic regression",
 }
 
 

@@ -28,7 +28,7 @@ rand(Poisson(1.5),10)
 using CSV, DataFrames, Distributions, Random, Statistics
 
 ## read data and filter 3 sections
-jvs = CSV.read("../../data/polish-jvs.csv", DataFrame)
+jvs = CSV.read("data/polish-jvs.csv", DataFrame)
 
 
 jvs3 = filter(r -> r.nace in ["C", "G", "P"], jvs)

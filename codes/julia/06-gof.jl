@@ -23,7 +23,7 @@ x = rand(NegativeBinomial(2, 2/(2+3)), n);
 mean(x)
 
 
-x = readdlm("../../data/nb_sim.txt", Int);
+x = readdlm("data/nb_sim.txt", Int);
 x = vec(x);
 mean(x)
 

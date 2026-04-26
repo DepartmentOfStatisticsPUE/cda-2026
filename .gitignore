@@ -16,3 +16,9 @@ homeworks/*-grading-key*
 homeworks/*-answer-key*
 homeworks/*-solution-*
 homeworks/generate-all-keys*
+homeworks/hw*-data-*.csv
+/.quarto/
+**/*.quarto_ipynb
+
+# OS metadata
+**/.DS_Store

@@ -12,7 +12,7 @@ library(marginaleffects)
 library(car)
 
 
-df <- read.csv("../../data/polish-jvs.csv", colClasses = c("character", "factor", rep("character", 4), "numeric"))
+df <- read.csv("data/polish-jvs.csv", colClasses = c("character", "factor", rep("character", 4), "numeric"))
 head(df)
 
 

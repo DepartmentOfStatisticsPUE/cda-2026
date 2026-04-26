@@ -79,7 +79,7 @@ Read in the dataset for the lecture and specify column classes (types).
 ## R
 
 ```{r}
-df <- read.csv("../../data/polish-jvs.csv", colClasses = c("character", "factor", rep("character", 4), "numeric"))
+df <- read.csv("data/polish-jvs.csv", colClasses = c("character", "factor", rep("character", 4), "numeric"))
 head(df)
 ```
 
@@ -92,28 +92,28 @@ levels(df$woj)
 Read in the dataset but without specifying classes/types, so `woj` is treated as a numeric variable.
 
 ```{r}
-df_wrong <- read.csv("../../data/polish-jvs.csv")
+df_wrong <- read.csv("data/polish-jvs.csv")
 head(df_wrong)
 ```
 
 ## Python
 
 ```{python}
-df = pd.read_csv("../../data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
+df = pd.read_csv("data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
 df.head()
 ```
 
 Read in the dataset but without specifying classes/types, so `woj` is treated as a numeric variable.
 
 ```{python}
-df_wrong = pd.read_csv("../../data/polish-jvs.csv")
+df_wrong = pd.read_csv("data/polish-jvs.csv")
 df_wrong.head()
 ```
 
 ## Julia
 
 ```{julia}
-df=CSV.read("../../data/polish-jvs.csv", DataFrame,
+df=CSV.read("data/polish-jvs.csv", DataFrame,
             types = Dict(:id => String, :woj=> String, :public=> String,
                          :size => String, :nace_division => String, :nace => String));
 first(df, 5)
@@ -122,7 +122,7 @@ first(df, 5)
 Read in the dataset but without specifying classes/types, so `woj` is treated as a numeric variable.
 
 ```{julia}
-df_wrong=CSV.read("../../data/polish-jvs.csv", DataFrame);
+df_wrong=CSV.read("data/polish-jvs.csv", DataFrame);
 first(df_wrong, 5)
 ```
 :::

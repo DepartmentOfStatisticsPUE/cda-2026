@@ -364,7 +364,7 @@ Using the `polish-jvs.csv` dataset, consider 3 NACE sections: **C** (manufacturi
 
 ```{r}
 ## read data and filter 3 sections
-jvs <- read.csv("../../data/polish-jvs.csv")
+jvs <- read.csv("data/polish-jvs.csv")
 jvs3 <- jvs[jvs$nace %in% c("C", "G", "P"), ]
 
 ## step 1: estimate per-entity lambdas, total rates (Lambda), and pi
@@ -424,7 +424,7 @@ import numpy as np
 from scipy import stats
 
 ## read data and filter 3 sections
-jvs = pd.read_csv("../../data/polish-jvs.csv")
+jvs = pd.read_csv("data/polish-jvs.csv")
 jvs3 = jvs[jvs["nace"].isin(["C", "G", "P"])]
 
 ## step 1: estimate per-entity lambdas, total rates (Lambda), and pi
@@ -471,7 +471,7 @@ print("Multinomial means:", dict(zip(pi_hat.index, mult_draws.mean(axis=0).round
 using CSV, DataFrames, Distributions, Random, Statistics
 
 ## read data and filter 3 sections
-jvs = CSV.read("../../data/polish-jvs.csv", DataFrame)
+jvs = CSV.read("data/polish-jvs.csv", DataFrame)
 jvs3 = filter(r -> r.nace in ["C", "G", "P"], jvs)
 
 ## step 1: estimate per-entity lambdas, total rates (Lambda), and pi

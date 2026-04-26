@@ -10,11 +10,11 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
 
-df = pd.read_csv("../../data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
+df = pd.read_csv("data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
 df.head()
 
 
-df_wrong = pd.read_csv("../../data/polish-jvs.csv")
+df_wrong = pd.read_csv("data/polish-jvs.csv")
 df_wrong.head()
 
 
