@@ -1,6 +1,6 @@
 #' ---
-#' title: Generalized linear models: count data
-#' author: Maciej Beręsewicz
+#' title: "Generalized linear models: count data"
+#' author: "Maciej Beręsewicz"
 #' ---
 #' 
 

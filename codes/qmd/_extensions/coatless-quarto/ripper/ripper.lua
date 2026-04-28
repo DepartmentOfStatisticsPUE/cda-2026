@@ -125,7 +125,8 @@ end
 -- @param value string|nil The metadata value (skipped if nil)
 local function add_meta_line(lines, comment, field_name, value)
   if value then
-    table.insert(lines, comment .. " " .. field_name .. ": " .. value)
+    local quoted = '"' .. value:gsub('\\', '\\\\'):gsub('"', '\\"') .. '"'
+    table.insert(lines, comment .. " " .. field_name .. ": " .. quoted)
   end
 end
 

@@ -41,7 +41,7 @@ Main topic files use the `ripper` filter in their YAML frontmatter to enable cod
 
 Most topic sections use `::: panel-tabset` with `## R` / `## Python` / `## Julia` tabs to show equivalent code in all three languages. When editing a code example, update all three language tabs to keep them in sync. Not all topics have all three languages — e.g., `02-simpson-paradox` has the ripper filter but only R code blocks.
 
-**"Extra material" files without the ripper filter** (`05a-optimization-methods`, `07a-interactions-scaling`, `09-glm-lr`) render to HTML and are picked up by `py_to_notebook.py` for `.ipynb` generation, but produce **no** standalone `.R`/`.py`/`.jl` scripts. If you want per-language extraction, add the `ripper` block shown in the frontmatter template below.
+**"Extra material" files without the ripper filter** (`05a-optimization-methods`, `07a-interactions-scaling`, `10-glm-lr`) render to HTML and are picked up by `py_to_notebook.py` for `.ipynb` generation, but produce **no** standalone `.R`/`.py`/`.jl` scripts. If you want per-language extraction, add the `ripper` block shown in the frontmatter template below.
 
 ### New QMD Frontmatter Template
 
@@ -123,6 +123,8 @@ cd example-test && quarto render example-test.qmd
 ## Data
 
 Single main dataset: `data/polish-jvs.csv` — Polish job vacancy survey (~57K rows). Used across all topic notebooks.
+
+The top-level `_quarto.yml` sets `execute-dir: project`, so qmd files reference the dataset as `data/polish-jvs.csv` (relative to the project root) rather than `../../data/polish-jvs.csv` (relative to the qmd's own directory). Use the project-rooted path in new qmd files.
 
 ## Packages
 

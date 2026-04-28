@@ -1,0 +1,483 @@
+---
+title: "Problem Set 2: Retail store analysis"
+author: "Categorical Data Analysis 2025/26"
+format:
+  html:
+    embed-resources: true
+    number-sections: true
+    df-print: kable
+---
+
+## Instructions
+
+- Use the **numeric prefix of your university email** as the seed --- e.g. `12345` from `12345@student.ue.poznan.pl`. Every student works with a **unique simulated dataset**.
+- You may use **R, Python, or Julia** (pick one and use it consistently for the analysis tabs).
+- **Total: 10 points. Deadline: TBA.**
+
+::: {.callout-warning}
+## Submission requirements
+
+1. Submit a **single self-contained HTML file** via **Moodle**.
+2. The file name must follow the pattern: `hw02-<id>.html` (e.g., `hw02-12345.html`).
+3. The file **must contain**:
+   - Your **student identifier** (the numeric prefix of your email) clearly stated at the top.
+   - All **code** used to produce the answers (visible in the document).
+   - All **outputs** (numbers, tables, plots) rendered inline.
+   - Written answers to interpretation questions.
+4. **How to produce the HTML file:**
+   - **R users**: Save this file as `hw02-<id>.qmd`, fill in the R blocks (delete Python/Julia blocks), and render with `quarto render hw02-<id>.qmd`.
+   - **Python users**: Use the `.ipynb` version provided (convert from this qmd if needed). Fill in the Python cells and export: *File → Download as → HTML*.
+   - **Julia users**: Fill in the Julia blocks in the qmd and render with `quarto render` using the Julia engine.
+5. **Before submitting**, verify that the HTML file opens in a browser and shows all outputs correctly.
+6. Submissions that do not contain visible code and outputs will **not be graded**.
+
+**All students must run the R setup block in Step 0 to generate the personalised dataset CSV.** Python and Julia users load that CSV in their own analysis blocks.
+:::
+
+## Step 0: simulate your retail-store dataset
+
+Replace `XXXXX` with the numeric prefix of your email. The R block below generates a personalised retail-store dataset and writes it to `hw02-data-<id>.csv` in the working directory. **All users (R/Python/Julia) must run this R block once.**
+
+```{r, setup, eval = FALSE}
+## Replace XXXXX with the numeric prefix of your university email
+STUDENT_ID <- XXXXX
+set.seed(STUDENT_ID)
+
+N <- 1500
+size <- factor(
+  sample(c("Small", "Medium", "Large"), N, replace = TRUE,
+         prob = c(0.5, 0.3, 0.2)),
+  levels = c("Small", "Medium", "Large")
+)
+region <- factor(sample(c("North", "South", "East", "West"), N, replace = TRUE),
+                 levels = c("North", "South", "East", "West"))
+loyalty_program <- rbinom(N, 1, 0.4)
+experience_years <- runif(N, 0, 20)
+
+size_eff   <- c(Small = 0, Medium = 5, Large = 12)[as.character(size)]
+region_eff <- c(North = 0, South = 3, East = -2, West = 1)[as.character(region)]
+
+monthly_revenue <- 20 + size_eff + region_eff +
+  2   * loyalty_program +
+  0.5 * experience_years +
+  0.3 * loyalty_program * experience_years +
+  rnorm(N, 0, 5)
+
+mu_c <- exp(0.8 + 0.2 * (size == "Large") - 0.1 * (size == "Small"))
+complaints <- rnbinom(N, mu = mu_c, size = 2)
+
+retail <- data.frame(
+  store_id = 1:N, size, region, loyalty_program,
+  experience_years, complaints, monthly_revenue
+)
+
+write.csv(retail, paste0("hw02-data-", STUDENT_ID, ".csv"), row.names = FALSE)
+cat("Simulated", nrow(retail), "rows for student", STUDENT_ID, "\n")
+str(retail)
+```
+
+Load the CSV in the language you will use for the analysis:
+
+::: panel-tabset
+### R
+
+```{r, eval=FALSE}
+library(MASS)
+library(marginaleffects)
+retail <- read.csv(paste0("hw02-data-", STUDENT_ID, ".csv"))
+retail$size   <- factor(retail$size,   levels = c("Small", "Medium", "Large"))
+retail$region <- factor(retail$region, levels = c("North", "South", "East", "West"))
+```
+
+### Python
+
+```{python, eval=FALSE}
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from scipy import stats
+import marginaleffects as me
+
+STUDENT_ID = XXXXX
+retail = pd.read_csv(f"hw02-data-{STUDENT_ID}.csv")
+retail["size"]   = pd.Categorical(retail["size"],
+                                  categories=["Small", "Medium", "Large"])
+retail["region"] = pd.Categorical(retail["region"],
+                                  categories=["North", "South", "East", "West"])
+```
+
+### Julia
+
+```{julia, eval=FALSE}
+using CSV, DataFrames, GLM, Distributions, StatsBase, Effects, CategoricalArrays
+
+STUDENT_ID = XXXXX
+retail = CSV.read("hw02-data-$(STUDENT_ID).csv", DataFrame)
+retail.size   = categorical(retail.size;
+                            levels = ["Small", "Medium", "Large"])
+retail.region = categorical(retail.region;
+                            levels = ["North", "South", "East", "West"])
+```
+:::
+
+**My student identifier:** *XXXXX*
+
+**Number of rows:** *...*
+
+
+## Part A: Goodness of fit (3 points)
+
+### a) Dispersion diagnostics (1 pt)
+
+Compute the sample mean, variance, and dispersion index ($D = s^2 / \bar{x}$) of the `complaints` variable. What does the value of $D$ suggest about the adequacy of a Poisson model?
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+
+```
+
+#### Julia
+
+```{julia}
+## Your code here (Julia)
+
+```
+:::
+
+**Answer:**
+
+- Mean: *...*
+- Variance: *...*
+- Dispersion index: *...*
+
+
+### b) Poisson $\chi^2$ goodness-of-fit test (1 pt)
+
+Fit a Poisson distribution to `complaints` by MLE (closed-form $\hat\lambda = \bar x$). Build an observed-vs-expected frequency table using categories `{0, 1, 2, 3, 4+}` and compute the Pearson $\chi^2$ statistic, degrees of freedom (remember to subtract one for the estimated parameter), and the p-value.
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+
+```
+
+#### Julia
+
+```{julia}
+## Your code here (Julia)
+
+```
+:::
+
+**Answer:**
+
+- $\hat\lambda$: *...*
+- $\chi^2$ statistic: *...*
+- Degrees of freedom: *...*
+- p-value: *...*
+- Decision at $\alpha = 0.05$: *reject / do not reject Poisson*
+
+
+### c) Negative binomial model + AIC (1 pt)
+
+Fit an intercept-only Negative Binomial model to `complaints`. Report the AIC of both the Poisson and the Negative Binomial models. Which model is preferred?
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+## Hint: fitdistr, fitdistrplus
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+
+```
+
+#### Julia
+
+```{julia}
+## Your code here (Julia)
+
+```
+:::
+
+**Answer:**
+
+- Poisson AIC: *...*
+- Negative Binomial AIC: *...*
+- Preferred model: *...*
+
+
+## Part B: Linear regression (4 points)
+
+### a) Additive model, treatment contrasts (1 pt)
+
+Fit the linear model
+$$ \texttt{monthly\_revenue} \sim \texttt{size} + \texttt{region} + \texttt{loyalty\_program} + \texttt{experience\_years}. $$
+Use **treatment contrasts** (the default) with `Small` as the reference level for `size`. Report the model's $R^2$ and the coefficient on `sizeMedium`.
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+## Hint: smf.ols(...).fit()
+
+```
+
+#### Julia
+
+```{julia}
+## Your code here (Julia)
+## Hint: lm(@formula(...), retail)
+
+```
+:::
+
+**Answer:**
+
+- $R^2$: *...*
+- `sizeMedium` coefficient: *...*
+
+
+### b) Sum contrasts for `size` (1 pt)
+
+Refit the same additive model but with `size` coded using **sum contrasts** — `contr.sum` in R, `C(size, Sum)` in Python, `EffectsCoding(base = "Large")` in Julia (the `base` argument makes `Large` the reference that gets $-1$, matching R / Python conventions). Report the intercept and the coefficient on the first sum-coded level (`size1` in R, corresponding to `Small`).
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+
+```
+
+#### Julia
+
+```{julia}
+## Your code here (Julia)
+
+```
+:::
+
+**Answer:**
+
+- Intercept (sum contrasts): *...*
+- `size1` coefficient: *...*
+
+
+### c) Relevel `region` to "West" (1 pt)
+
+Using the original treatment contrasts, relevel `region` so that `"West"` is the reference. Refit the additive model and report the coefficient on `regionNorth`.
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+## Hint: relevel
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+## Hint: C()
+
+```
+
+#### Julia
+
+```{julia}
+## Your code here (Julia)
+## Hint: contrasts = Dict(...)
+
+```
+:::
+
+**Answer:**
+
+- `regionNorth` coefficient (West ref): *...*
+
+
+### d) Interaction model (1 pt)
+
+Fit the model
+$$ \texttt{monthly\_revenue} \sim \texttt{size} + \texttt{region} + \texttt{loyalty\_program} \times \texttt{experience\_years}. $$
+Report the coefficient of the interaction term `loyalty_program:experience_years`.
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+
+```
+
+#### Julia
+
+```{julia}
+## Your code here (Julia)
+
+```
+:::
+
+**Answer:**
+
+- `loyalty_program:experience_years` coefficient: *...*
+
+
+## Part C: Marginal effects (3 points)
+
+Use the **interaction model from Part B(d)** throughout Part C. Use `marginaleffects` in R and Python, or `Effects.jl` in Julia.
+
+### a) Overall AME of `experience_years` (1 pt)
+
+Compute the **Average Marginal Effect** of `experience_years` on `monthly_revenue`, averaging across every row of your dataset.
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+## Hint: avg_slopes()
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+## Hint: me.avg_slopes()
+
+```
+
+#### Julia
+
+```{julia}
+## Your code here (Julia)
+## Hint: effects()
+
+```
+:::
+
+**Answer:** AME of `experience_years`: *...*
+
+
+### b) AME stratified by `loyalty_program` (1 pt)
+
+Compute the AME of `experience_years` **separately** for stores with `loyalty_program = 0` and `loyalty_program = 1`. What does the comparison tell you about the interaction?
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+## Hint: avg_slopes()
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+
+```
+
+#### Julia
+
+```{julia}
+## Your code here (Julia)
+
+```
+:::
+
+**Answer:**
+
+- AME of `experience_years` at `loyalty_program = 0`: *...*
+- AME of `experience_years` at `loyalty_program = 1`: *...*
+
+
+### c) Prediction at representative values (MERV) (1 pt)
+
+Compute the predicted `monthly_revenue` for a store with `size = "Small"`, `region = "North"`, `loyalty_program = 0`, `experience_years = 10`.
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+## Hint: predictions()
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+
+```
+
+#### Julia
+
+```{julia}
+## Your code here (Julia)
+
+```
+:::
+
+**Answer:** Predicted `monthly_revenue`: *...*
+
+
+## Interpretation (required, manually reviewed)
+
+Based on the interaction coefficient from B(d) and the stratified AMEs from C(b), explain in 2--3 sentences whether loyalty-programme membership **amplifies**, **dampens**, or **does not change** the effect of experience on monthly revenue. Quote specific numbers from your answers.
+
+**Answer:** *Write your interpretation here...*
