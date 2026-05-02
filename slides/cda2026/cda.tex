@@ -2870,7 +2870,7 @@ OLS assumes the opposite -- a constant residual variance:
 
 
 \begin{frame}{OLS problem 3: the distribution is wrong}
-OLS assumes residuals are continuous and Gaussian.
+Likelihood-based inference (exact $t/F$, LR tests, AIC, prediction intervals) assumes the Gaussian likelihood -- which doesn't describe count residuals.
 
 \medskip
 The residuals from a count model are:
@@ -2882,7 +2882,7 @@ The residuals from a count model are:
 \end{itemize}
 
 \medskip
-A Gaussian likelihood cannot describe this shape. Even when point estimates look OK, likelihood-based inference (likelihood ratio tests, AIC, prediction intervals) is invalid.
+OLS point estimates remain consistent for the linear approximation to $E[Y \mid X]$, and Wald CIs from robust (HC) SEs stay asymptotically valid -- but the likelihood-based machinery (LR, AIC, normal-theory prediction intervals) is misspecified.
 
 \medskip
 \textbf{Three strikes for OLS} -- predictions, variance, distribution. We need a different model.
@@ -3207,6 +3207,384 @@ Now, proceed to the example of Poisson and NB regression.
 
 
 \end{frame}
+
+\subsection{Binary outcomes}
+
+\begin{frame}{Has vacancy: a binary outcome}
+We want to model whether firm $i$ posts at least one job vacancy.
+Define $Y_i = \mathbb{1}\{\texttt{vacancies}_i > 0\}$, so $Y_i \in \{0, 1\}$.
+
+\medskip
+\textbf{What kind of variable is $Y$?}
+\begin{itemize}
+    \justifying
+    \item Bernoulli: $\pi_i = P(Y_i = 1 \mid \mathbf{x}_i)$, with $\operatorname{Var}(Y_i \mid \mathbf{x}_i) = \pi_i(1-\pi_i)$.
+    \item In the JVS data: about $12\%$ of firms post at least one vacancy.
+    \item No values outside $\{0,1\}$ -- not a Gaussian situation.
+\end{itemize}
+
+\medskip
+\textbf{Goal.} Explain how $\pi_i = E[Y_i \mid \mathbf{x}_i]$ varies with firm size, sector, ownership, region.
+
+\medskip
+\textbf{Question.} Why not just use linear regression?
+\end{frame}
+
+
+\begin{frame}{LPM problem 1: predictions can leave $[0,1]$}
+The linear probability model (LPM):
+\[
+P(Y_i = 1 \mid \mathbf{x}_i) = \beta_0 + \mathbf{x}_i^\top\bbeta.
+\]
+
+\medskip
+The right-hand side lives on the entire real line; nothing prevents $\hat{\pi}_i < 0$ or $\hat{\pi}_i > 1$.
+
+\medskip
+\textbf{Concretely.} Fit \texttt{has\_vacancy $\sim$ size + public + nace}. For sub-groups with very low (or very high) base rates, OLS happily returns $\hat{\pi}_i$ outside $[0,1]$.
+
+\medskip
+\alert{Probabilities outside $[0,1]$ are not probabilities.} The model is fitting numbers it cannot mean.
+\end{frame}
+
+
+\begin{frame}{LPM problem 2: heteroskedasticity is built in}
+For a Bernoulli outcome, the conditional variance is determined by the conditional mean:
+\[
+\operatorname{Var}(Y_i \mid \mathbf{x}_i) = \pi_i(1 - \pi_i).
+\]
+
+\medskip
+This is non-constant and tied to $\mathbf{x}_i$ through $\pi_i$ -- LPM violates OLS's homoskedasticity assumption \emph{by construction}.
+
+\medskip
+\textbf{Consequence.} Standard errors and $p$-values from OLS are wrong unless we use robust (HC) SEs. Even then, the LPM target is only a linear approximation to a non-linear $\pi(\mathbf{x})$.
+\end{frame}
+
+
+\begin{frame}{LPM problem 3: the distribution is wrong}
+Likelihood-based inference (exact $t/F$, LR tests, AIC, prediction intervals) assumes the Gaussian likelihood -- which doesn't describe binary residuals.
+
+\medskip
+The residuals from a binary model take only \emph{two values} for each $\mathbf{x}_i$:
+\[
+\varepsilon_i =
+\begin{cases}
+\phantom{-}1 - \hat{\pi}_i & \text{if } y_i = 1, \\[2pt]
+-\hat{\pi}_i               & \text{if } y_i = 0.
+\end{cases}
+\]
+
+\medskip
+OLS point estimates remain consistent for the linear approximation to $\pi(\mathbf{x})$, and Wald CIs from robust (HC) SEs stay asymptotically valid -- but the likelihood-based machinery (LR, AIC, normal-theory prediction intervals) is misspecified.
+
+\medskip
+\textbf{Three strikes for OLS} -- range, variance, distribution. We need a different model.
+
+\medskip
+{\scriptsize \textit{Note.} The LPM is still used in applied econometrics for its interpretive simplicity (coefficients $=$ marginal effects on probability) -- but only with heteroskedasticity-robust SEs, and rarely for prediction.}
+\end{frame}
+
+
+\begin{frame}{Odds and log odds}
+     \begin{itemize}
+         \item For a binary response where $\pi = \Pr(\text{success})$, the odds of success are
+         \begin{equation}
+             \text{odds} = \frac{\pi}{1-\pi}.
+         \end{equation}
+         \item Taking logs, the log-odds (logit) vary symmetrically around 0:
+         \begin{equation}
+             \logit(\pi) = \log\left(\frac{\pi}{1-\pi}\right).
+         \end{equation}
+         \item Log odds
+         \begin{itemize}
+             \item Symmetric around $\pi = 0.5$; $\logit(\pi) = -\logit(1-\pi)$
+             \item The logit transformation of probability provides the basis for logistic regression
+         \end{itemize}
+     \end{itemize}
+ \end{frame}
+
+ \begin{frame}{Odds ratios}
+
+ \begin{itemize}
+     \item For two groups with probabilities of success $\pi_1,\pi_2$, the odds ratio (denoted $\theta$) is the ratio of the two groups' odds:
+     \begin{equation}
+         \theta = \frac{\text{odds}_{1}}{\text{odds}_{2}} = \frac{\pi_{1}/(1-\pi_{1})}{\pi_{2}/(1-\pi_{2})}.
+     \end{equation}
+     \item In a $2\times 2$ table with joint cell probabilities $\pi_{ij}$ (row $i$ = group, column $j$ = outcome; $j{=}1$ success, $j{=}2$ failure), this equals the cross-product: $\theta = \pi_{11}\pi_{22}/(\pi_{12}\pi_{21})$.
+     \item $\theta = 1$ -- independence, no association.
+     \item More convenient is the log odds ratio $\psi = \log(\theta)$, symmetric around 0:
+     \begin{equation}
+         \psi = \log(\theta) = \logit(\pi_{1}) - \logit(\pi_{2}).
+     \end{equation}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Odds and odds ratio -- example}
+    \begin{itemize}
+        \item Consider the following example based on the data from the lecture
+        \begin{table}
+            \centering
+            \begin{tabular}{lrr}
+            \hline
+                      & No vacancy & Has vacancy \\
+            \hline
+            Public    & 17{,}639   & 2{,}615     \\
+            Private   & 32{,}912   & 4{,}314     \\
+            \hline
+            \end{tabular}
+        \end{table}
+    \item Let $\pi_{\text{Pub}}$ denote the probability that a~public entity has a~vacancy, and $\pi_{\text{Pri}}$ the same for a~private entity.
+    \item Then we can calculate the odds as follows:
+    $$
+    \text{odds}_{\text{Pub}} = \frac{\pi_{\text{Pub}}}{1 - \pi_{\text{Pub}}} = \frac{2{,}615/20{,}254}{17{,}639/20{,}254} = 0.148, \quad \text{odds}_{\text{Pri}} = 0.131.
+    $$
+    \item The odds ratio is
+    $$
+    \theta = \frac{\text{odds}_{\text{Pub}}}{\text{odds}_{\text{Pri}}} = \frac{0.148}{0.131} = 1.13, \quad \theta^{-1} = 0.87.
+    $$
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Odds and odds ratio -- interpretation}
+    \begin{itemize}
+        \item Public: the odds of having at least one vacancy are about $0.148$ (roughly $1{:}6.7$).
+        \item Private: the odds of having at least one vacancy are about $0.131$ (roughly $1{:}7.6$).
+        \item Public vs.\ Private: the odds are about $13\%$ higher for public entities than for private ones ($\theta = 1.13$).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Odds and odds ratio -- general rule of interpretation}
+    \begin{itemize}
+        \item If $\theta = 1$, the odds of having a~vacancy are the same for public and private entities -- no association.
+        \item If $\theta > 1$, the odds of having a~vacancy are higher for public than for private entities -- positive association.
+        \item If $\theta < 1$, the odds of having a~vacancy are lower for public than for private entities -- negative association.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Logistic regression: the logit specification}
+Model the log-odds as a linear function of covariates:
+\[
+\logit(\pi_i) = \log\!\frac{\pi_i}{1 - \pi_i} = \beta_0 + \mathbf{x}_i^\top\bbeta.
+\]
+
+\medskip
+\textbf{Why the logit?}
+\begin{itemize}
+    \justifying
+    \item Maps $\pi_i \in (0,1)$ to $\eta_i \in (-\infty, \infty)$ -- the right scale for a linear predictor.
+    \item Solving for $\pi_i$ gives the inverse-logit (logistic CDF):
+    \[
+    \pi_i = \frac{\exp(\beta_0 + \mathbf{x}_i^\top\bbeta)}{1 + \exp(\beta_0 + \mathbf{x}_i^\top\bbeta)} \;=\; \Lambda(\beta_0 + \mathbf{x}_i^\top\bbeta).
+    \]
+    \item Predictions $\hat{\pi}_i \in (0,1)$ \emph{by construction} -- fixing LPM's problem~1.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Coefficients as log odds ratios}
+A one-unit increase in $X_j$ (others fixed) shifts the linear predictor by $\beta_j$. Since $\eta_i = \logit(\pi_i)$, this is a change in log-odds:
+\[
+\beta_j \;=\; \logit(\pi_{+}) - \logit(\pi_{-}) \;=\; \log\!\frac{\pi_+/(1-\pi_+)}{\pi_-/(1-\pi_-)} \;=\; \log\theta_j,
+\]
+where $\pi_-, \pi_+$ are success probabilities at $X_j = x$ and $X_j = x+1$.
+
+\medskip
+\textbf{Two reading modes:}
+\begin{itemize}
+    \justifying
+    \item $\hat{\beta}_j$ -- log odds ratio for a unit change in $X_j$.
+    \item $\exp(\hat{\beta}_j)$ -- odds ratio. E.g.\ $\exp(\hat{\beta}_j) = 1.13 \Rightarrow$ odds are $13\%$ higher.
+\end{itemize}
+
+\medskip
+The OR machinery from earlier slides is exactly what every logistic-regression coefficient measures.
+\end{frame}
+
+
+\begin{frame}{Other links: probit and cloglog}
+A binary GLM uses a link $g$ such that $g(\pi_i) = \beta_0 + \mathbf{x}_i^\top\bbeta$:
+
+\begin{itemize}
+    \justifying
+    \item \textbf{logit:} $g(\pi) = \log\frac{\pi}{1-\pi}$, so $\pi = \Lambda(\eta) = \dfrac{e^\eta}{1+e^\eta}$.
+    \item \textbf{probit:} $g(\pi) = \Phi^{-1}(\pi)$, so $\pi = \Phi(\eta)$, where $\Phi$ is the standard normal CDF.
+    \item \textbf{cloglog:} $g(\pi) = \log(-\log(1-\pi))$, so $\pi = 1 - \exp(-\exp(\eta))$. Asymmetric -- typically used when the positive (or negative) outcome is rare.
+\end{itemize}
+
+\medskip
+Logit and probit produce very similar fitted probabilities (probit coefficients $\approx \beta^{\text{logit}}/1.6$); the choice rarely matters for predictions but does matter for interpretation -- only the logit gives log-odds-ratio coefficients.
+\end{frame}
+
+
+\begin{frame}{Estimation by maximum likelihood}
+With $Y_i \mid \mathbf{x}_i \sim \text{Bernoulli}(\pi_i)$ and $\pi_i = \Lambda(\eta_i)$, the log-likelihood is
+\[
+\ell(\bbeta) = \sum_{i=1}^n \left[\, y_i\, \eta_i - \log(1 + e^{\eta_i}) \,\right], \qquad \eta_i = \beta_0 + \mathbf{x}_i^\top\bbeta.
+\]
+
+\medskip
+\textbf{Properties:}
+\begin{itemize}
+    \justifying
+    \item Concave in $\bbeta$ -- a unique global maximum (when it exists; complete separation is the failure case).
+    \item No closed form. Solved by Newton--Raphson / iteratively reweighted least squares (IRLS), the standard fitting routine for GLMs.
+    \item Inference: Wald, likelihood-ratio, and score tests -- asymptotically equivalent under regularity.
+\end{itemize}
+
+\medskip
+\textbf{Implementations.} R: \texttt{glm(..., family = binomial)}; Python: \texttt{statsmodels.Logit}; Julia: \texttt{glm(..., Bernoulli(), LogitLink())}.
+\end{frame}
+
+\begin{frame}{Marginal effects for logistic regression}
+    \begin{itemize}
+        \item Coefficients $\beta_j$ in logistic, probit or cloglog models live on the link scale (log-odds, $z$-score, etc.) -- they do not directly give changes in $P(Y=1)$.
+        \item \textbf{Marginal effects} translate $\beta_j$ to the probability scale.
+        \item By the chain rule, $\partial \pi_i/\partial x_{ij} = g(\eta_i)\,\beta_j$, where $\eta_i = \beta_0 + \mathbf{x}_i^\top\bbeta$ and $g(\cdot)$ is the density associated with the chosen link: logistic for logit, standard normal for probit. We interpret results in terms of densities multiplied by the estimated $\beta$.
+    \end{itemize}
+\end{frame}
+
+
+\begin{frame}{Marginal effects for logistic regression}
+\begin{itemize}
+    \item Let $p(\mathbf{x}_i) = P(Y_i = 1 \mid \mathbf{x}_i) = G(\beta_0 + \mathbf{x}_i^\top\bbeta)$, where $G(\cdot)$ is the inverse link (logistic CDF, normal CDF, or other), satisfying $0 < G(z) < 1$ for all real $z$.
+    \item Then the marginal effect of the $j$-th covariate is
+
+    $$
+    \frac{\partial p(\mathbf{x}_i)}{\partial x_{ij}} = g\!\left(\beta_0 + \mathbf{x}_i^\top\bbeta\right)\beta_j, \quad \text{where } g(z) \equiv \frac{dG}{dz}(z).
+    $$
+    \item $g(z)$ for logit is $\exp(z)/[1+\exp(z)]^2$, the PDF of the standard logistic distribution.
+    \item $g(z)$ for probit is $\phi(z)$, the PDF of the standard normal distribution.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Three flavors of marginal effect}
+The marginal effect $g(\eta_i)\,\beta_j$ depends on $\eta_i$ -- so it varies across observations. Three common ways to summarise:
+
+\begin{itemize}
+    \justifying
+    \item \textbf{Average marginal effect (AME):} average over the sample,
+    \[
+    \widehat{\text{AME}}_j = \frac{1}{n}\sum_{i=1}^n g(\hat{\eta}_i)\,\hat{\beta}_j.
+    \]
+    Default in \texttt{marginaleffects}, \texttt{statsmodels}, Stata's \texttt{margins, dydx(*)}.
+    \item \textbf{Marginal effect at the mean (MEM):} evaluate at $\bar{\mathbf{x}}$,
+    $\widehat{\text{MEM}}_j = g(\hat{\beta}_0 + \bar{\mathbf{x}}^\top\hat{\bbeta})\,\hat{\beta}_j$. Older default; ill-defined when $\bar{\mathbf{x}}$ averages dummies.
+    \item \textbf{Marginal effect at representative values (MER):} evaluate at user-chosen $\mathbf{x}^\star$. Useful for counterfactuals and group comparisons.
+\end{itemize}
+
+\medskip
+For most reporting, the AME is the default choice.
+\end{frame}
+
+
+\begin{frame}[fragile]{Marginal effects: example}
+Logistic regression \texttt{has\_vacancy $\sim$ public}.
+
+\smallskip
+\textbf{Coefficients (link scale):}
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrr}
+\hline
+                                     & Estimate & Std.\ Error & $\exp(\hat{\beta})$ \\
+\hline
+$\hat{\beta}_0$ (Private baseline)   & $-2.034$ & $0.017$     & --                   \\
+$\hat{\beta}_1$ (Public, log OR)     & $\phantom{-}0.122$  & $0.027$     & $1.130$              \\
+\hline
+\end{tabular}
+\end{table}
+Log-odds for public are $0.122$ above private; equivalently, odds are $13\%$ higher.
+
+\medskip
+\textbf{Average marginal effect (probability scale):}
+\begin{table}[ht]
+\centering
+\begin{tabular}{llrrrr}
+\hline
+Term   & Contrast & Estimate & Std.\ Error & Statistic & p-value   \\
+\hline
+public & $1 - 0$  & $0.0132$ & $0.0029$    & $4.59$    & $<\!0.001$ \\
+\hline
+\end{tabular}
+\end{table}
+Public firms are about $1.3$ p.p.\ more likely to post at least one vacancy -- noticeable next to a baseline rate of $\sim\!12\%$.
+\end{frame}
+
+
+\begin{frame}{Goodness of fit and model comparison}
+\textbf{Likelihood-based:}
+\begin{itemize}
+    \justifying
+    \item \textbf{Deviance:} $D = 2\!\left[\ell(\text{saturated}) - \ell(\hat{\bbeta})\right]$. For nested models, $D_{\text{reduced}} - D_{\text{full}} \sim \chi^2_{\Delta p}$ asymptotically -- the LR test.
+    \item \textbf{AIC / BIC:} for non-nested model comparison; lower is better.
+    \item \textbf{Pseudo-$R^2$} (McFadden, Cox--Snell, Nagelkerke, Tjur): \emph{not} OLS's $R^2$. Useful only for ranking models on the same data.
+\end{itemize}
+
+\medskip
+\textbf{Hosmer--Lemeshow test:} bin observations by $\hat{\pi}_i$, compare observed vs.\ expected counts in each bin via $\chi^2$. Sensitive to bin choice; modern alternatives prefer calibration plots.
+\end{frame}
+
+
+\begin{frame}{Discrimination and calibration}
+\textbf{Discrimination -- can the model separate $Y=1$ from $Y=0$?}
+\begin{itemize}
+    \justifying
+    \item Pick a threshold $c$, predict $\hat{Y}_i = \mathbb{1}\{\hat{\pi}_i > c\}$ -- yields a confusion matrix.
+    \item \textbf{ROC curve:} TPR vs.\ FPR over all $c$. \textbf{AUC} = area under it; $0.5$ = random, $1$ = perfect.
+\end{itemize}
+
+\medskip
+\textbf{Calibration -- are predicted probabilities at the right level?}
+\begin{itemize}
+    \justifying
+    \item Plot observed proportion vs.\ $\hat{\pi}_i$ (deciles or smooth).
+    \item A well-calibrated model lies on the $45^\circ$ line.
+\end{itemize}
+
+\medskip
+A model can have high AUC (good ranking) yet be poorly calibrated (wrong levels) -- always check both.
+\end{frame}
+
+
+\begin{frame}{Logistic regression -- in practice}
+\textbf{R}
+\begin{itemize}
+    \justifying
+    \item \texttt{glm(y \textasciitilde{} ..., family = binomial)} -- default link is \texttt{logit}.
+    \item Alternative links: \texttt{binomial("probit")}, \texttt{binomial("cloglog")}.
+    \item \texttt{marginaleffects::avg\_slopes()} -- AMEs with delta-method SEs.
+    \item \texttt{performance::performance()} -- pseudo-$R^2$, AUC, calibration checks.
+    \item \texttt{pROC} / \texttt{ROCR} -- ROC curves and AUC.
+    \item \texttt{DHARMa} -- residual diagnostics for binomial GLMs.
+\end{itemize}
+
+\medskip
+\textbf{Python (\texttt{statsmodels}):}
+\begin{itemize}
+    \justifying
+    \item \texttt{smf.logit(formula, data).fit()} -- Bernoulli/logit MLE.
+    \item Equivalently: \texttt{smf.glm(..., family=sm.families.Binomial())}.
+    \item \texttt{result.get\_margeff(at='overall').summary()} -- AMEs.
+\end{itemize}
+
+\medskip
+\textbf{Julia (\texttt{GLM.jl}):}
+\begin{itemize}
+    \justifying
+    \item \texttt{glm(@formula(...), df, Bernoulli(), LogitLink())}.
+    \item \texttt{Effects.jl} for marginal effects.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Logistic regression -- practice}
+\begin{center}
+Now, proceed to the example of logistic regression.
+\end{center}
+\end{frame}
+
 
 
 \end{document}
