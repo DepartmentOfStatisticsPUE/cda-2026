@@ -1,16 +1,23 @@
 ---
-title: "Generalized linear regression: logistic regression"
-format: 
+title: "Generalized linear models: logistic regression"
+author: "Maciej Beręsewicz"
+format:
   html:
-    self-contained: true
+    embed-resources: true
     table-of-contents: true
     number-sections: true
     df-print: kable
 editor: source
-execute: 
+execute:
   eval: true
   warning: false
   message: false
+filters:
+  - ripper
+ripper:
+  output-dir: "extracted"
+  script-links-position: "none"
+  include-yaml: true
 ---
 
 ```{r setup, echo = FALSE}
@@ -21,223 +28,615 @@ knitr::opts_chunk$set(engine.path = list(
 ))
 ```
 
-## Setup
+# Packages
 
 ::: panel-tabset
 ## R
 
-Install packages if necessary.
-
-```{r, eval = FALSE}
+```{r pkg-install-r, eval = FALSE}
 install.packages("marginaleffects")
 install.packages("modelsummary")
+install.packages("performance")
+install.packages("pROC")
 install.packages("car")
 install.packages("broom")
 ```
 
-```{r}
+```{r pkg-load-r}
 library(marginaleffects)
 library(modelsummary)
-library(car)
+library(performance)
+library(pROC)
 library(broom)
 ```
 
-Read in the dataset for the lecture and specify column classes (types).
+## Python
 
-```{r}
-df <- read.csv("data/polish-jvs.csv", colClasses = c("character", "factor", rep("character", 4), "numeric"))
+```{bash pkg-install-py, eval = FALSE}
+!pip install statsmodels scikit-learn
+```
+
+```{python pkg-load-py}
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from sklearn.metrics import roc_auc_score, roc_curve
+```
+
+## Julia
+
+```{julia pkg-install-jl, eval = FALSE}
+using Pkg
+Pkg.add(["GLM", "CSV", "DataFrames", "CategoricalArrays", "Statistics", "StatsBase", "Effects"])
+```
+
+```{julia pkg-load-jl}
+using GLM
+using CSV
+using DataFrames
+using CategoricalArrays
+using Statistics
+using StatsBase
+```
+:::
+
+# Data
+
+The Polish Job Vacancy Survey (JVS): one row per firm. We model whether a firm posts at least one vacancy:
+$$
+\text{has\_vacancy}_i = \mathbf{1}\{\text{vacancies}_i > 0\}, \qquad Y_i \in \{0, 1\}.
+$$
+
+::: panel-tabset
+## R
+
+```{r data-r}
+df <- read.csv("data/polish-jvs.csv",
+               colClasses = c("character", "factor", rep("character", 4), "numeric"))
+df$size        <- factor(df$size,   levels = c("Large", "Medium", "Small"))
+df$public      <- factor(df$public)
+df$nace        <- factor(df$nace)
+df$has_vacancy <- as.integer(df$vacancies > 0)
 head(df)
 ```
 
+```{r data-summary-r}
+c(n         = nrow(df),
+  prop_yes  = mean(df$has_vacancy),
+  prop_pub  = mean(df$public == "1"))
+```
+
 ## Python
 
-Load modules
-
-```{bash, eval = F}
-!pip install statsmodels 
-```
-
-```{python}
-import pandas as pd
-import numpy as np
-import statsmodels.api as sm
-import statsmodels.formula.api as smf
-```
-
-Read in the dataset for the lecture and specify column classes (types).
-
-```{python}
-df = pd.read_csv("data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
+```{python data-py}
+df = pd.read_csv("data/polish-jvs.csv",
+                 dtype={"id": np.int64, "woj": str, "public": str,
+                        "size": str, "nace_division": str, "nace": str})
+df["size"]        = pd.Categorical(df["size"], categories = ["Large", "Medium", "Small"])
+df["has_vacancy"] = (df["vacancies"] > 0).astype(int)
 df.head()
 ```
 
+```{python data-summary-py}
+{"n":        len(df),
+ "prop_yes": df["has_vacancy"].mean(),
+ "prop_pub": (df["public"] == "1").mean()}
+```
+
 ## Julia
 
-```{julia, eval = F}
-using Pkg
-Pkg.add(["Effects", "StatsBase", "CSV", "CategoricalArrays", "GLM"])
-```
-
-Load packages
-
-```{julia}
-using Effects
-using StatsBase
-using CSV
-using CategoricalArrays
-using GLM
-using Statistics
-using DataFrames
-```
-
-Read in the dataset for the lecture and specify column classes (types).
-
-```{julia}
-df=CSV.read("data/polish-jvs.csv", DataFrame, 
-            types = Dict(:id => Int64, :woj=> String, :public=> String, 
-                         :size => String, :nace_division => String, :nace => String));
+```{julia data-jl}
+df = CSV.read("data/polish-jvs.csv", DataFrame,
+              types = Dict(:id => String, :woj => String, :public => String,
+                           :size => String, :nace_division => String, :nace => String));
+df.size        = categorical(df.size, levels = ["Large", "Medium", "Small"]);
+df.public      = categorical(df.public);
+df.nace        = categorical(df.nace);
+df.has_vacancy = ifelse.(df.vacancies .> 0, 1, 0);
 first(df, 5)
 ```
+
+```{julia data-summary-jl}
+(n        = nrow(df),
+ prop_yes = mean(df.has_vacancy),
+ prop_pub = mean(df.public .== "1"))
+```
 :::
 
-## Example 1 -- individual data
+About 12% of firms post at least one vacancy.
 
-Create new variable
+# Why not LPM?
 
+The **linear probability model** (LPM) fits $P(Y_i = 1 \mid \mathbf{x}_i) = \beta_0 + \mathbf{x}_i^\top\boldsymbol{\beta}$ by OLS. Three issues:
+
+1. fitted probabilities can fall outside $[0, 1]$;
+2. residual variance is intrinsically heteroskedastic ($\operatorname{Var}(Y\mid X) = \pi(1-\pi)$);
+3. the Gaussian likelihood is misspecified, so likelihood-based inference (LR tests, AIC, normal-theory prediction intervals) does not apply.
+
+Point estimates remain consistent for the **linear approximation** to $\pi(\mathbf{x})$; robust (HC) SEs give asymptotically valid Wald CIs. But the constant marginal-effect assumption and out-of-range predictions are not repairable without changing the model.
+
+::: panel-tabset
+## R
+
+```{r lpm-r}
+lpm <- lm(has_vacancy ~ size + public + nace, data = df)
+preds_lpm <- predict(lpm)
+c(min      = round(min(preds_lpm), 4),
+  max      = round(max(preds_lpm), 4),
+  n_below0 = sum(preds_lpm < 0),
+  n_above1 = sum(preds_lpm > 1))
+```
+
+## Python
+
+```{python lpm-py}
+lpm = smf.ols("has_vacancy ~ C(size) + C(public) + C(nace)", data = df).fit()
+preds_lpm = lpm.predict(df)
+{"min":      round(preds_lpm.min(), 4),
+ "max":      round(preds_lpm.max(), 4),
+ "n_below0": int((preds_lpm < 0).sum()),
+ "n_above1": int((preds_lpm > 1).sum())}
+```
+
+## Julia
+
+```{julia lpm-jl}
+lpm = lm(@formula(has_vacancy ~ size + public + nace), df)
+preds_lpm = predict(lpm)
+(min      = round(minimum(preds_lpm), digits = 4),
+ max      = round(maximum(preds_lpm), digits = 4),
+ n_below0 = sum(preds_lpm .< 0),
+ n_above1 = sum(preds_lpm .> 1))
+```
+:::
+
+LPM produces fitted probabilities outside $[0,1]$ for sub-groups with very low base rates.
+
+# Odds, log-odds, and odds ratios
+
+For a binary response with $\pi = \Pr(Y = 1)$:
 $$
-\text{Has vacancies} = 
-\begin{cases}
-1 & \text{if has at least one vacancy},\\
-0 & \text{otherwise}
-\end{cases}
+\text{odds} = \frac{\pi}{1-\pi}, \qquad \operatorname{logit}(\pi) = \log\frac{\pi}{1-\pi}.
+$$
+
+For two groups with success probabilities $\pi_1, \pi_2$, the **odds ratio** is
+$$
+\theta \;=\; \frac{\pi_1/(1-\pi_1)}{\pi_2/(1-\pi_2)}, \qquad \log \theta \;=\; \operatorname{logit}(\pi_1) - \operatorname{logit}(\pi_2).
+$$
+
+Compute it from the 2×2 cross-tabulation `public × has_vacancy`:
+
+::: panel-tabset
+## R
+
+```{r or-r}
+tab <- table(public = df$public, has_vacancy = df$has_vacancy)
+tab
+odds_pub  <- tab["1", "1"] / tab["1", "0"]
+odds_priv <- tab["0", "1"] / tab["0", "0"]
+c(odds_public  = round(odds_pub,  4),
+  odds_private = round(odds_priv, 4),
+  OR           = round(odds_pub / odds_priv, 4),
+  log_OR       = round(log(odds_pub / odds_priv), 4))
+```
+
+## Python
+
+```{python or-py}
+tab = pd.crosstab(df["public"], df["has_vacancy"])
+tab
+```
+
+```{python or-stats-py}
+odds_pub  = tab.loc["1", 1] / tab.loc["1", 0]
+odds_priv = tab.loc["0", 1] / tab.loc["0", 0]
+{"odds_public":  round(odds_pub,  4),
+ "odds_private": round(odds_priv, 4),
+ "OR":           round(odds_pub / odds_priv, 4),
+ "log_OR":       round(np.log(odds_pub / odds_priv), 4)}
+```
+
+## Julia
+
+```{julia or-jl}
+tab = combine(groupby(df, [:public, :has_vacancy]), nrow => :n)
+unstack(tab, :public, :has_vacancy, :n)
+```
+
+```{julia or-stats-jl}
+n11 = sum((df.public .== "1") .& (df.has_vacancy .== 1));
+n10 = sum((df.public .== "1") .& (df.has_vacancy .== 0));
+n01 = sum((df.public .== "0") .& (df.has_vacancy .== 1));
+n00 = sum((df.public .== "0") .& (df.has_vacancy .== 0));
+odds_pub  = n11 / n10;
+odds_priv = n01 / n00;
+(odds_public  = round(odds_pub,  digits = 4),
+ odds_private = round(odds_priv, digits = 4),
+ OR           = round(odds_pub / odds_priv, digits = 4),
+ log_OR       = round(log(odds_pub / odds_priv), digits = 4))
+```
+:::
+
+The OR is about $1.13$: the odds of having a vacancy are roughly $13\%$ higher for public firms than for private ones. The log-OR ($\approx 0.12$) is exactly what a logistic regression on `public` recovers as $\hat{\beta}_1$.
+
+# Logistic regression: fit and interpret
+
+Logistic regression specifies
+$$
+\operatorname{logit}(\pi_i) = \beta_0 + \mathbf{x}_i^\top\boldsymbol{\beta}, \qquad
+\pi_i = \frac{\exp(\beta_0 + \mathbf{x}_i^\top\boldsymbol{\beta})}{1 + \exp(\beta_0 + \mathbf{x}_i^\top\boldsymbol{\beta})}.
 $$
 
 ::: panel-tabset
 ## R
 
-```{r}
-df$has_vacancy <- df$vacancies > 0
-df$size <- factor(df$size, c("Large", "Medium", "Small"))
+```{r fit-public-r}
+m1 <- glm(has_vacancy ~ public, data = df, family = binomial(link = "logit"))
+summary(m1)
 ```
 
-Consider the following model
-
-```{r}
-model1 <- glm(formula = has_vacancy ~ public, 
-              data = df,
-              family = binomial())
-summary(model1)
+```{r m1-or-r}
+round(exp(coef(m1)), 4)
 ```
 
-Alternativelly, we may use `modelsummary` package and the same function
+The exponentiated coefficient on `public1` matches the OR computed from the 2×2 table.
 
-```{r}
-modelsummary(model1, exponentiate = T, conf_level = 0.05, 
-             statistic  = NULL,
-             estimate  = "{estimate} [{conf.low}, {conf.high}]")
+```{r fit-full-r}
+m_full <- glm(has_vacancy ~ public + size + nace, data = df,
+              family = binomial(link = "logit"))
+summary(m_full)
 ```
 
-Let's write down this model
+`modelsummary` with `exponentiate = TRUE` prints odds ratios with CIs:
 
+```{r modelsummary-r}
+modelsummary(list(`logit (public)` = m1,
+                  `logit (full)`   = m_full),
+             exponentiate = TRUE,
+             statistic    = "({std.error})",
+             gof_omit     = "F|RMSE")
+```
+
+```{r anova-r}
+car::Anova(m_full, type = 2) |> broom::tidy()
+```
+
+## Python
+
+```{python fit-public-py}
+m1 = smf.glm("has_vacancy ~ C(public)", data = df,
+             family = sm.families.Binomial()).fit()
+print(m1.summary())
+```
+
+```{python m1-or-py}
+np.exp(m1.params).round(4)
+```
+
+```{python fit-full-py}
+m_full = smf.glm("has_vacancy ~ C(public) + C(size) + C(nace)", data = df,
+                 family = sm.families.Binomial()).fit()
+print(m_full.summary())
+```
+
+## Julia
+
+```{julia fit-public-jl}
+m1 = glm(@formula(has_vacancy ~ public), df, Bernoulli(), LogitLink())
+```
+
+```{julia m1-or-jl}
+exp.(coef(m1))
+```
+
+```{julia fit-full-jl}
+m_full = glm(@formula(has_vacancy ~ public + size + nace), df,
+             Bernoulli(), LogitLink())
+```
+:::
+
+**Interpretation.** A unit change in $X_j$ (others fixed) shifts the log-odds by $\beta_j$:
 $$
-\operatorname{Pr}(\text { Has vacancy }=1 \mid \text { public })=\frac{\exp (-2.03+0.12 \times \text { public })}{1+\exp (-2.03+0.12 \times \text { public })}
-$$ In order to interpret results of logistic regression we should
-calculate odds ratio which can be done by just using
-$\exp(\mathbf{\beta})$
+\beta_j = \operatorname{logit}(\pi_+) - \operatorname{logit}(\pi_-) = \log \theta_j.
+$$
+So $\hat{\beta}_j$ is the log odds ratio, and $\exp(\hat{\beta}_j)$ is the odds ratio.
 
-```{r}
-exp(coef(model1))
-```
+# Other links: probit and cloglog
 
-Interpretation of `1.13`:
+The link $g$ in $g(\pi_i) = \beta_0 + \mathbf{x}_i^\top\boldsymbol{\beta}$ does not have to be the logit:
 
--   probability that a\~*public* entity is 1.13 higher than the
-    probability that a\~private entity has a\~vacancy.
--   another interpretation: for 100 private entities with vacancies, we
-    will have 113 public entities with vacancies
+- **logit**: $g(\pi) = \log\frac{\pi}{1-\pi}$.
+- **probit**: $g(\pi) = \Phi^{-1}(\pi)$.
+- **cloglog**: $g(\pi) = \log(-\log(1-\pi))$ — asymmetric, used when the positive (or negative) outcome is rare.
 
-## Python
-
-```{python}
-df["has_vacancy"] = np.where(df["vacancies"] > 0, True, False)
-df["public"]=df["public"].astype("category")
-mod1 = smf.glm(formula="has_vacancy ~ public", data=df, family=sm.families.Binomial()).fit()
-print(mod1.summary())
-```
-
-## Julia
-
-```{julia}
-df.has_vacancy = ifelse.(df.vacancies .> 0, true, false);
-m1 = glm(@formula(has_vacancy ~ public), df, Binomial())
-```
-:::
-
-## Example 2 -- aggregated data
-
-We show that it is possible to use aggregated data for logistic
-regression.
+Logit and probit produce nearly identical fitted probabilities (probit coefficients are about $\beta^{\text{logit}}/1.6$); only the logit gives log-odds-ratio coefficients.
 
 ::: panel-tabset
 ## R
 
-```{r}
-df_aggregated <- aggregate(vacancies ~ has_vacancy + public, data = df, FUN = length) |>
-  reshape(data = _, direction = "wide", idvar = c("public"), timevar = "has_vacancy", sep = "_")
+```{r probit-r}
+m_logit   <- glm(has_vacancy ~ public + size + nace, data = df,
+                 family = binomial(link = "logit"))
+m_probit  <- glm(has_vacancy ~ public + size + nace, data = df,
+                 family = binomial(link = "probit"))
+m_cloglog <- glm(has_vacancy ~ public + size + nace, data = df,
+                 family = binomial(link = "cloglog"))
 
-df_aggregated
+# Coefficients side-by-side (link scale)
+modelsummary(list(logit   = m_logit,
+                  probit  = m_probit,
+                  cloglog = m_cloglog),
+             statistic = "({std.error})",
+             gof_omit  = "F|RMSE")
 ```
 
-```{r}
-model2 <- glm(formula = cbind(vacancies_TRUE, vacancies_FALSE) ~ public,
-              data = df_aggregated, 
-              family = binomial())
-summary(model2)
+```{r ratio-logit-probit-r}
+round(coef(m_logit) / coef(m_probit), 3)
 ```
 
 ## Python
 
+```{python probit-py}
+m_logit  = smf.glm("has_vacancy ~ C(public) + C(size) + C(nace)", data = df,
+                   family = sm.families.Binomial(sm.families.links.Logit())).fit()
+m_probit = smf.glm("has_vacancy ~ C(public) + C(size) + C(nace)", data = df,
+                   family = sm.families.Binomial(sm.families.links.Probit())).fit()
+ratio = (m_logit.params / m_probit.params).round(3)
+print(ratio)
+```
+
 ## Julia
+
+```{julia probit-jl}
+m_logit  = glm(@formula(has_vacancy ~ public + size + nace), df,
+               Bernoulli(), LogitLink())
+m_probit = glm(@formula(has_vacancy ~ public + size + nace), df,
+               Bernoulli(), ProbitLink())
+round.(coef(m_logit) ./ coef(m_probit), digits = 3)
+```
 :::
 
-## Example 3 -- more variables
+The logit-to-probit coefficient ratio is close to $1.6$, as expected.
+
+# Marginal effects
+
+Coefficients live on the link scale. To express effects on the **probability scale**, differentiate $\pi_i = G(\beta_0 + \mathbf{x}_i^\top\boldsymbol{\beta})$:
+$$
+\frac{\partial \pi_i}{\partial x_{ij}} \;=\; g(\hat{\eta}_i)\,\hat{\beta}_j,
+$$
+where $g$ is the inverse-link density. Three flavors:
+
+- **AME** (average marginal effect): average of $g(\hat{\eta}_i)\hat{\beta}_j$ over the sample;
+- **MEM** (at the mean): $g(\hat{\beta}_0 + \bar{\mathbf{x}}^\top\hat{\boldsymbol{\beta}})\hat{\beta}_j$;
+- **MER** (at representative values): evaluated at user-chosen $\mathbf{x}^\star$.
+
+The AME is the default in `marginaleffects`, `statsmodels`, and Stata's `margins`.
 
 ::: panel-tabset
 ## R
 
-Consider the following model
-
-```{r}
-model3 <- glm(formula = has_vacancy ~ public + size + nace, 
-              data = df,
-              family = binomial())
-summary(model3)
+```{r ame-r}
+avg_slopes(m_full)
 ```
 
-Now, the interpretation becomes more complex, so it is better to look at
-plots.
+`marginaleffects` differentiates $\pi$ for each observation, then averages — the right thing to do when the link is non-identity.
 
-```{r}
-modelplot(model3, exponentiate = T) 
+```{r mem-r}
+slopes(m_full, newdata = "mean")
 ```
 
-Additionally we can check whether a\~given variable as a whole is
-"significant" using `car::Anova(type=2)`
-
-```{r}
-car::Anova(model3, type = 2) |> broom::tidy()
+```{r mer-r}
+predictions(m_full,
+            newdata = datagrid(public = c("0", "1"),
+                               size   = "Medium",
+                               nace   = "C")) |>
+  as.data.frame() |>
+  subset(select = c("public", "size", "nace", "estimate", "conf.low", "conf.high"))
 ```
 
 ## Python
 
-```{python}
-mod3 = smf.glm(formula="has_vacancy ~ public + size + nace", data=df, family=sm.families.Binomial()).fit()
-print(mod3.summary())
+```{python ame-py}
+mfx = m_full.get_margeff(at = "overall", method = "dydx")
+print(mfx.summary())
+```
+
+```{python mem-py}
+mfx_mean = m_full.get_margeff(at = "mean", method = "dydx")
+print(mfx_mean.summary())
 ```
 
 ## Julia
 
-```{julia}
-m3 = glm(@formula(has_vacancy ~ public + size + nace), df, Binomial())
+`Effects.jl` provides predicted probabilities at user-chosen design points; for AME you can differentiate manually:
+
+```{julia ame-jl}
+pi_hat = predict(m_full)
+g_hat  = pi_hat .* (1 .- pi_hat)         # logistic density g(eta) = pi*(1-pi)
+beta   = coef(m_full)
+ame_public = mean(g_hat) * beta[2]
+round(ame_public, digits = 4)
 ```
 :::
+
+The AME for `public` is about $0.013$ — public firms are roughly $1.3$ percentage points more likely to post a vacancy, against a baseline rate of $\sim 12\%$.
+
+# Goodness of fit and discrimination
+
+Fit, discrimination, and calibration can all disagree: a model can have low deviance but poor AUC, or high AUC but bad calibration. Always look at multiple summaries.
+
+::: panel-tabset
+## R
+
+Likelihood-based summaries:
+
+```{r gof-r}
+c(deviance     = round(deviance(m_full), 1),
+  AIC          = round(AIC(m_full), 1),
+  BIC          = round(BIC(m_full), 1),
+  null_dev     = round(m_full$null.deviance, 1),
+  df_residual  = m_full$df.residual)
+```
+
+McFadden pseudo-$R^2$ and friends via `performance`:
+
+```{r perf-r2-r}
+performance::r2_mcfadden(m_full)
+performance::r2_tjur(m_full)
+```
+
+LR test against a reduced model (drop `nace`):
+
+```{r lr-r}
+m_red <- glm(has_vacancy ~ public + size, data = df,
+             family = binomial(link = "logit"))
+anova(m_red, m_full, test = "LRT")
+```
+
+ROC and AUC:
+
+```{r auc-r}
+df$pi_hat <- predict(m_full, type = "response")
+roc_obj <- pROC::roc(df$has_vacancy, df$pi_hat, quiet = TRUE)
+auc(roc_obj)
+plot(roc_obj, main = "ROC for full logistic model")
+```
+
+Calibration plot (deciles of $\hat{\pi}$ vs.\ observed proportion):
+
+```{r calib-r}
+df$bin <- cut(df$pi_hat,
+              breaks = quantile(df$pi_hat, probs = seq(0, 1, by = 0.1)),
+              include.lowest = TRUE)
+calib <- aggregate(cbind(pi_hat, has_vacancy) ~ bin, data = df, FUN = mean)
+plot(calib$pi_hat, calib$has_vacancy,
+     xlim = c(0, max(calib$pi_hat) * 1.05),
+     ylim = c(0, max(calib$has_vacancy) * 1.05),
+     xlab = "Predicted probability (decile mean)",
+     ylab = "Observed proportion",
+     pch  = 19)
+abline(0, 1, lty = 2)
+```
+
+## Python
+
+```{python gof-py}
+{"deviance":     round(m_full.deviance, 1),
+ "AIC":          round(m_full.aic, 1),
+ "BIC":          round(m_full.bic_llf, 1),
+ "null_dev":     round(m_full.null_deviance, 1),
+ "df_residual":  int(m_full.df_resid)}
+```
+
+```{python lr-py}
+m_red = smf.glm("has_vacancy ~ C(public) + C(size)", data = df,
+                family = sm.families.Binomial()).fit()
+LR = 2 * (m_full.llf - m_red.llf)
+df_diff = int(m_red.df_resid - m_full.df_resid)
+from scipy import stats
+{"LR_stat": round(LR, 2),
+ "df":      df_diff,
+ "p_value": stats.chi2.sf(LR, df_diff)}
+```
+
+```{python auc-py}
+pi_hat = m_full.predict(df)
+auc = roc_auc_score(df["has_vacancy"], pi_hat)
+round(auc, 4)
+```
+
+## Julia
+
+```{julia gof-jl}
+(deviance    = round(deviance(m_full), digits = 1),
+ aic         = round(aic(m_full), digits = 1),
+ bic         = round(bic(m_full), digits = 1),
+ df_residual = dof_residual(m_full))
+```
+:::
+
+A high AUC means the model **ranks** observations well; calibration tells whether the predicted probabilities are on the right level. They can come apart, so check both.
+
+# Aggregated data
+
+Logistic regression accepts grouped/aggregated counts as a `cbind(successes, failures)` response in R or `freq_weights` / explicit count columns in Python. The point estimates are identical to fitting on individual data.
+
+::: panel-tabset
+## R
+
+```{r agg-r}
+agg <- aggregate(cbind(yes = has_vacancy, n = 1) ~ public + size,
+                 data = df, FUN = sum)
+agg$no <- agg$n - agg$yes
+head(agg)
+```
+
+```{r agg-fit-r}
+m_agg <- glm(cbind(yes, no) ~ public + size, data = agg,
+             family = binomial(link = "logit"))
+round(coef(m_agg), 4)
+```
+
+```{r agg-vs-individual-r}
+m_ind <- glm(has_vacancy ~ public + size, data = df,
+             family = binomial(link = "logit"))
+round(coef(m_ind), 4)
+```
+
+## Python
+
+```{python agg-py}
+agg = (df.groupby(["public", "size"], observed = True)["has_vacancy"]
+         .agg(yes = "sum", n = "size")
+         .reset_index())
+agg["no"] = agg["n"] - agg["yes"]
+agg
+```
+
+```{python agg-fit-py}
+m_agg = smf.glm("yes + no ~ C(public) + C(size)", data = agg,
+                family = sm.families.Binomial()).fit()
+m_agg.params.round(4)
+```
+
+## Julia
+
+```{julia agg-jl}
+agg = combine(groupby(df, [:public, :size]),
+              :has_vacancy => sum => :yes,
+              nrow => :n);
+agg.no = agg.n .- agg.yes;
+first(agg, 6)
+```
+:::
+
+The two routes give identical $\hat{\boldsymbol{\beta}}$.
+
+# Exercises
+
+## Exercise 1 — link choice
+
+Fit the same `has_vacancy ~ public + size + nace` model with logit, probit, and cloglog links. Compare:
+
+1. fitted probabilities (scatter `logit` vs. `probit`);
+2. AICs;
+3. ROC AUC.
+
+Does any link clearly dominate?
+
+## Exercise 2 — calibration after adding NACE division
+
+Refit the full model adding `nace_division` (the 2-digit code) on top of `nace`. Does AUC improve? Does calibration improve at the high-$\hat{\pi}$ end?
+
+## Exercise 3 — separation diagnostic
+
+For each NACE letter, compute the proportion of firms with `has_vacancy = 1`. Are there sectors with $0\%$ or $100\%$ vacancies? In a logistic regression with `nace` as a predictor, what would you expect to happen to the corresponding coefficient and its SE?
+
+# Further reading
+
+- **Theory.** Agresti, A. (2013). *Categorical Data Analysis* (3rd ed.). Wiley. Hosmer, D. W., Lemeshow, S., & Sturdivant, R. X. (2013). *Applied Logistic Regression* (3rd ed.). Wiley.
+- **Marginal effects.** Arel-Bundock, V. (2024). *Marginal and Conditional Effects in R*. <https://marginaleffects.com/>.
+- **LPM, robust SEs.** Wooldridge, J. M. (2010). *Econometric Analysis of Cross Section and Panel Data* (2nd ed.). MIT Press, ch. 15.
+- **Diagnostics.** `DHARMa` (simulated residuals for binomial GLMs), `pROC`, `performance` (calibration, pseudo-$R^2$), `marginaleffects` (AME, MEM, MER).
+- **Calibration.** Steyerberg, E. W. (2019). *Clinical Prediction Models* (2nd ed.). Springer, ch. 15.

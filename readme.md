@@ -38,7 +38,7 @@
 | 9 | Interactions and scaling | -- | -- | -- | [.ipynb](codes/notebooks/07a-interactions-scaling.ipynb) |
 | 10 | Marginal effects | [.R](codes/R/08-marginal-effects.R) | [.py](codes/python/08-marginal-effects.py) | [.jl](codes/julia/08-marginal-effects.jl) | [.ipynb](codes/notebooks/08-marginal-effects.ipynb) |
 | 11 | GLM: Count data | [.R](codes/R/09-glm-count.R) | [.py](codes/python/09-glm-count.py) | [.jl](codes/julia/09-glm-count.jl) | [.ipynb](codes/notebooks/09-glm-count.ipynb) |
-| 12 | GLM: Logistic regression | -- | -- | -- | [.ipynb](codes/notebooks/10-glm-lr.ipynb) |
+| 12 | GLM: Logistic regression | [.R](codes/R/10-glm-lr.R) | [.py](codes/python/10-glm-lr.py) | [.jl](codes/julia/10-glm-lr.jl) | [.ipynb](codes/notebooks/10-glm-lr.ipynb) |
 
 ## Problem sets
 
