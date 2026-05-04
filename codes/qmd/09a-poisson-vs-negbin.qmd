@@ -88,8 +88,15 @@ nb2  <- MASS::glm.nb(vacancies ~ size + public + nace, data = df)
 ```{python}
 pois = smf.glm("vacancies ~ C(size) + C(public) + C(nace)", data=df,
                family=sm.families.Poisson()).fit()
-nb2 = smf.negativebinomial("vacancies ~ C(size) + C(public) + C(nace)",
-                           data=df).fit(disp=False)
+
+## Iterative NB2 via GLM: estimate alpha from Poisson residuals, then refit
+alpha_hat = ((pois.resid_pearson ** 2).sum() / pois.df_resid - 1) / pois.fittedvalues.mean()
+for _ in range(25):
+    nb2 = smf.glm("vacancies ~ C(size) + C(public) + C(nace)", data=df,
+                  family=sm.families.NegativeBinomial(alpha=alpha_hat)).fit()
+    alpha_hat = ((nb2.resid_pearson ** 2).sum() / nb2.df_resid - 1) / nb2.fittedvalues.mean()
+
+print(f"Estimated alpha (1/k): {alpha_hat:.4f}")
 ```
 :::
 
@@ -152,11 +159,12 @@ round(se_compare, 4)
 ```{python}
 pois_robust = smf.glm("vacancies ~ C(size) + C(public) + C(nace)", data=df,
                       family=sm.families.Poisson()).fit(cov_type="HC0")
+idx = pois.bse.index[:5]
 pd.DataFrame({
-    "Poisson_naive":  pois.bse.head(),
-    "Poisson_robust": pois_robust.bse.head(),
-    "NB2":           nb2.bse.head()
-}).round(4)
+    "Poisson_naive":  pois.bse[idx].values,
+    "Poisson_robust": pois_robust.bse[idx].values,
+    "NB2":           nb2.bse[idx].values
+}, index=idx).round(4)
 ```
 :::
 
@@ -181,11 +189,12 @@ round(coef_compare, 5)
 ### Python
 
 ```{python}
+idx = pois.params.index[:5]
 pd.DataFrame({
-    "Poisson": pois.params.head(),
-    "NB2":     nb2.params.head(),
-    "Diff":    (pois.params - nb2.params).head()
-}).round(5)
+    "Poisson": pois.params[idx].values,
+    "NB2":     nb2.params[idx].values,
+    "Diff":    (pois.params[idx] - nb2.params[idx]).values
+}, index=idx).round(5)
 ```
 :::
 

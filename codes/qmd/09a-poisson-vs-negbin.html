@@ -2463,8 +2463,18 @@ window.Quarto = {
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>pois <span class="op">=</span> smf.glm(<span class="st">&quot;vacancies ~ C(size) + C(public) + C(nace)&quot;</span>, data<span class="op">=</span>df,</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>               family<span class="op">=</span>sm.families.Poisson()).fit()</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>nb2 <span class="op">=</span> smf.negativebinomial(<span class="st">&quot;vacancies ~ C(size) + C(public) + C(nace)&quot;</span>,</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                           data<span class="op">=</span>df).fit(disp<span class="op">=</span><span class="va">False</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">## Iterative NB2 via GLM: estimate alpha from Poisson residuals, then refit</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>alpha_hat <span class="op">=</span> ((pois.resid_pearson <span class="op">**</span> <span class="dv">2</span>).<span class="bu">sum</span>() <span class="op">/</span> pois.df_resid <span class="op">-</span> <span class="dv">1</span>) <span class="op">/</span> pois.fittedvalues.mean()</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">25</span>):</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    nb2 <span class="op">=</span> smf.glm(<span class="st">&quot;vacancies ~ C(size) + C(public) + C(nace)&quot;</span>, data<span class="op">=</span>df,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                  family<span class="op">=</span>sm.families.NegativeBinomial(alpha<span class="op">=</span>alpha_hat)).fit()</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    alpha_hat <span class="op">=</span> ((nb2.resid_pearson <span class="op">**</span> <span class="dv">2</span>).<span class="bu">sum</span>() <span class="op">/</span> nb2.df_resid <span class="op">-</span> <span class="dv">1</span>) <span class="op">/</span> nb2.fittedvalues.mean()</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Estimated alpha (1/k): </span><span class="sc">{</span>alpha_hat<span class="sc">:.4f}</span><span class="ss">&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Estimated alpha (1/k): 5.8695</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -2528,16 +2538,16 @@ E(Y_i \mid \mathbf{x}_i) = \exp(\mathbf{x}_i^\top \boldsymbol{\beta}).
 <div class="tab-content">
 <div id="tabset-4-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-4-1-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>pois_robust <span class="ot">&lt;-</span> <span class="fu">coeftest</span>(pois, <span class="at">vcov =</span> sandwich<span class="sc">::</span><span class="fu">vcovHC</span>(pois, <span class="at">type =</span> <span class="st">&quot;HC0&quot;</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>pois_robust <span class="ot">&lt;-</span> <span class="fu">coeftest</span>(pois, <span class="at">vcov =</span> sandwich<span class="sc">::</span><span class="fu">vcovHC</span>(pois, <span class="at">type =</span> <span class="st">&quot;HC0&quot;</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Compare the three sets of standard errors:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>se_compare <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Poisson_naive  =</span> <span class="fu">summary</span>(pois)<span class="sc">$</span>coefficients[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="st">&quot;Std. Error&quot;</span>],</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Poisson_robust =</span> pois_robust[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="st">&quot;Std. Error&quot;</span>],</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">NB2            =</span> <span class="fu">summary</span>(nb2)<span class="sc">$</span>coefficients[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="st">&quot;Std. Error&quot;</span>]</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(se_compare, <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>se_compare <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Poisson_naive  =</span> <span class="fu">summary</span>(pois)<span class="sc">$</span>coefficients[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="st">&quot;Std. Error&quot;</span>],</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Poisson_robust =</span> pois_robust[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="st">&quot;Std. Error&quot;</span>],</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">NB2            =</span> <span class="fu">summary</span>(nb2)<span class="sc">$</span>coefficients[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="st">&quot;Std. Error&quot;</span>]</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(se_compare, <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div class="kable-table">
 <table class="caption-top table table-sm table-striped small">
@@ -2588,20 +2598,21 @@ E(Y_i \mid \mathbf{x}_i) = \exp(\mathbf{x}_i^\top \boldsymbol{\beta}).
 </div>
 <div id="tabset-4-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-2-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>pois_robust <span class="op">=</span> smf.glm(<span class="st">&quot;vacancies ~ C(size) + C(public) + C(nace)&quot;</span>, data<span class="op">=</span>df,</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>                      family<span class="op">=</span>sm.families.Poisson()).fit(cov_type<span class="op">=</span><span class="st">&quot;HC0&quot;</span>)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>pd.DataFrame({</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Poisson_naive&quot;</span>:  pois.bse.head(),</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Poisson_robust&quot;</span>: pois_robust.bse.head(),</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;NB2&quot;</span>:           nb2.bse.head()</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>}).<span class="bu">round</span>(<span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>pois_robust <span class="op">=</span> smf.glm(<span class="st">&quot;vacancies ~ C(size) + C(public) + C(nace)&quot;</span>, data<span class="op">=</span>df,</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>                      family<span class="op">=</span>sm.families.Poisson()).fit(cov_type<span class="op">=</span><span class="st">&quot;HC0&quot;</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>idx <span class="op">=</span> pois.bse.index[:<span class="dv">5</span>]</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>pd.DataFrame({</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Poisson_naive&quot;</span>:  pois.bse[idx].values,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Poisson_robust&quot;</span>: pois_robust.bse[idx].values,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;NB2&quot;</span>:           nb2.bse[idx].values</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>}, index<span class="op">=</span>idx).<span class="bu">round</span>(<span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>                   Poisson_naive  Poisson_robust  NB2
-Intercept                 0.0826          0.1963  NaN
-C(size)[T.Medium]         0.0169          0.1084  NaN
-C(size)[T.Small]          0.0316          0.0999  NaN
-C(public)[T.1]            0.0151          0.2093  NaN
-C(nace)[T.B]              0.1100          0.3832  NaN</code></pre>
+<pre><code>                   Poisson_naive  Poisson_robust     NB2
+Intercept                 0.0826          0.1963  0.1106
+C(size)[T.Medium]         0.0169          0.1084  0.0334
+C(size)[T.Small]          0.0316          0.0999  0.0459
+C(public)[T.1]            0.0151          0.2093  0.0487
+C(nace)[T.B]              0.1100          0.3832  0.1852</code></pre>
 </div>
 </div>
 </div>
@@ -2617,12 +2628,12 @@ C(nace)[T.B]              0.1100          0.3832  NaN</code></pre>
 <div class="tab-content">
 <div id="tabset-5-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-5-1-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>coef_compare <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Poisson =</span> <span class="fu">coef</span>(pois)[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>],</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">NB2     =</span> <span class="fu">coef</span>(nb2)[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>],</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Diff    =</span> <span class="fu">coef</span>(pois)[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>] <span class="sc">-</span> <span class="fu">coef</span>(nb2)[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(coef_compare, <span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>coef_compare <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Poisson =</span> <span class="fu">coef</span>(pois)[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>],</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">NB2     =</span> <span class="fu">coef</span>(nb2)[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>],</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Diff    =</span> <span class="fu">coef</span>(pois)[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>] <span class="sc">-</span> <span class="fu">coef</span>(nb2)[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(coef_compare, <span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div class="kable-table">
 <table class="caption-top table table-sm table-striped small">
@@ -2673,22 +2684,19 @@ C(nace)[T.B]              0.1100          0.3832  NaN</code></pre>
 </div>
 <div id="tabset-5-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-2-tab">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>pd.DataFrame({</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Poisson&quot;</span>: pois.params.head(),</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;NB2&quot;</span>:     nb2.params.head(),</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Diff&quot;</span>:    (pois.params <span class="op">-</span> nb2.params).head()</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>}).<span class="bu">round</span>(<span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>idx <span class="op">=</span> pois.params.index[:<span class="dv">5</span>]</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>pd.DataFrame({</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Poisson&quot;</span>: pois.params[idx].values,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;NB2&quot;</span>:     nb2.params[idx].values,</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Diff&quot;</span>:    (pois.params[idx] <span class="op">-</span> nb2.params[idx]).values</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>}, index<span class="op">=</span>idx).<span class="bu">round</span>(<span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>                   Poisson      NB2  Diff
-C(nace)[T.B]       1.44042  1.44042  -0.0
-C(nace)[T.C]           NaN      NaN  -0.0
-C(nace)[T.D]           NaN      NaN  -0.0
-C(nace)[T.E]           NaN      NaN  -0.0
-C(nace)[T.F]           NaN      NaN  -0.0
-C(public)[T.1]     0.11930  0.11930   NaN
-C(size)[T.Medium] -1.98300 -1.98300   NaN
-C(size)[T.Small]  -3.19144 -3.19144   NaN
-Intercept         -1.52875 -1.52875   NaN</code></pre>
+<pre><code>                   Poisson      NB2     Diff
+Intercept         -1.52875 -0.98447 -0.54428
+C(size)[T.Medium] -1.98300 -1.89038 -0.09262
+C(size)[T.Small]  -3.19144 -3.11576 -0.07568
+C(public)[T.1]     0.11930 -0.19323  0.31252
+C(nace)[T.B]       1.44042  0.82079  0.61963</code></pre>
 </div>
 </div>
 </div>
