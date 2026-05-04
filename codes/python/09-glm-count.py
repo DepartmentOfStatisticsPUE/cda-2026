@@ -77,6 +77,8 @@ qp = smf.glm("vacancies ~ C(size) + C(public) + C(nace)",
 qp.bse.head()
 
 
+## NB2 GLM log-likelihood is conditional on estimated alpha;
+## valid for LR test once alpha has converged
 lr_stat = 2 * (nb2.llf - pois.llf)
 from scipy.stats import chi2
 lr_pval = chi2.sf(lr_stat, df=1)
