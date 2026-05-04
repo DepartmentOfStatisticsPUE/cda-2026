@@ -61,9 +61,15 @@ phi_py = float((pearson ** 2).sum() / pois.df_resid)
 round(phi_py, 2)
 
 
-nb2 = smf.negativebinomial("vacancies ~ C(size) + C(public) + C(nace)",
-                           data = df).fit(disp = False)
+## Iterative NB2 via GLM: estimate alpha from Poisson residuals, then refit
+alpha_hat = ((pois.resid_pearson ** 2).sum() / pois.df_resid - 1) / pois.fittedvalues.mean()
+for _ in range(25):
+    nb2 = smf.glm("vacancies ~ C(size) + C(public) + C(nace)", data=df,
+                  family=sm.families.NegativeBinomial(alpha=alpha_hat)).fit()
+    alpha_hat = ((nb2.resid_pearson ** 2).sum() / nb2.df_resid - 1) / nb2.fittedvalues.mean()
+
 print(nb2.summary())
+print(f"\nEstimated alpha (1/k): {alpha_hat:.4f}")
 
 
 qp = smf.glm("vacancies ~ C(size) + C(public) + C(nace)",
