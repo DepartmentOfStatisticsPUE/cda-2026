@@ -1,0 +1,204 @@
+---
+title: "Poisson QMLE vs. Negative Binomial"
+author: "Maciej Beręsewicz"
+format:
+  html:
+    embed-resources: true
+    table-of-contents: true
+    number-sections: true
+    df-print: kable
+editor: source
+execute:
+  eval: true
+  warning: false
+  message: false
+---
+
+```{r setup, echo = FALSE}
+knitr::opts_chunk$set(engine.path = list(
+  python = "/opt/anaconda3/bin/python3.12"
+))
+```
+
+## Introduction
+
+The likelihood ratio test and AIC/BIC favour NB2 over Poisson when overdispersion is present. But **rejecting the Poisson distribution does not invalidate Poisson as a mean estimator**. This notebook explains when each model is appropriate.
+
+The key insight comes from Wooldridge (1999, 2010): Poisson regression with robust standard errors is a *quasi-maximum likelihood estimator* (QMLE) that is consistent for $\boldsymbol{\beta}$ under minimal assumptions.
+
+## Setup
+
+::: panel-tabset
+### R
+
+```{r}
+library(MASS)
+library(lmtest)
+library(sandwich)
+library(modelsummary)
+```
+
+### Python
+
+```{python}
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from scipy.stats import chi2
+```
+:::
+
+## Data
+
+::: panel-tabset
+### R
+
+```{r}
+df <- read.csv("data/polish-jvs.csv",
+               colClasses = c("character", "factor", rep("character", 4), "numeric"))
+df$size   <- factor(df$size,   levels = c("Large", "Medium", "Small"))
+df$public <- factor(df$public)
+df$nace   <- factor(df$nace)
+```
+
+### Python
+
+```{python}
+df = pd.read_csv("data/polish-jvs.csv",
+                 dtype={"id": np.int64, "woj": str, "public": str,
+                        "size": str, "nace_division": str, "nace": str})
+df["size"] = pd.Categorical(df["size"], categories=["Large", "Medium", "Small"])
+```
+:::
+
+## Fit both models
+
+::: panel-tabset
+### R
+
+```{r}
+pois <- glm(vacancies ~ size + public + nace, data = df,
+            family = poisson(link = "log"))
+nb2  <- MASS::glm.nb(vacancies ~ size + public + nace, data = df)
+```
+
+### Python
+
+```{python}
+pois = smf.glm("vacancies ~ C(size) + C(public) + C(nace)", data=df,
+               family=sm.families.Poisson()).fit()
+nb2 = smf.negativebinomial("vacancies ~ C(size) + C(public) + C(nace)",
+                           data=df).fit(disp=False)
+```
+:::
+
+## The core argument: what are you estimating?
+
+### If your goal is the conditional mean $E(Y \mid X)$
+
+Poisson QMLE is consistent for $\boldsymbol{\beta}$ as long as the mean function is correctly specified:
+$$
+E(Y_i \mid \mathbf{x}_i) = \exp(\mathbf{x}_i^\top \boldsymbol{\beta}).
+$$
+
+This holds **regardless of whether the data are truly Poisson**. Overdispersion does not bias $\hat{\boldsymbol{\beta}}$ — it only inflates the naïve SEs. Robust (sandwich) SEs correct this.
+
+Wooldridge's analogy: *Poisson QMLE is to the exponential mean what OLS is to the linear mean — a robust workhorse requiring no distributional assumptions beyond the first moment.*
+
+### If your goal involves the full distribution
+
+When you need $P(Y = k \mid X)$, quantiles, or simulation, the NB2 model captures the variance structure and provides a proper likelihood for all moments. Here the LR test and AIC/BIC are the right model selection tools.
+
+### Decision table
+
+| Goal | Recommended model |
+|------|-------------------|
+| Estimate effects on $E(Y \mid X)$ | Poisson + robust SEs |
+| Full distributional inference ($P(Y=k)$, quantiles) | NB2 (or other explicit distribution) |
+| Quick robustness check of SEs | Quasi-Poisson |
+
+## Why not always use NB2?
+
+Standard NB2 MLE assumes the quadratic variance function:
+$$
+\operatorname{Var}(Y \mid X) = \mu + \mu^2 / k.
+$$
+
+If this specific mean–variance relationship fails, NB2 MLE can be **inconsistent for the mean parameters**. Poisson QMLE avoids this risk entirely — it only requires correct specification of $E(Y \mid X)$.
+
+## Empirical comparison: robust SEs vs. NB2 SEs
+
+::: panel-tabset
+### R
+
+```{r}
+pois_robust <- coeftest(pois, vcov = sandwich::vcovHC(pois, type = "HC0"))
+```
+
+Compare the three sets of standard errors:
+
+```{r}
+se_compare <- data.frame(
+  Poisson_naive  = summary(pois)$coefficients[1:5, "Std. Error"],
+  Poisson_robust = pois_robust[1:5, "Std. Error"],
+  NB2            = summary(nb2)$coefficients[1:5, "Std. Error"]
+)
+round(se_compare, 4)
+```
+
+### Python
+
+```{python}
+pois_robust = smf.glm("vacancies ~ C(size) + C(public) + C(nace)", data=df,
+                      family=sm.families.Poisson()).fit(cov_type="HC0")
+pd.DataFrame({
+    "Poisson_naive":  pois.bse.head(),
+    "Poisson_robust": pois_robust.bse.head(),
+    "NB2":           nb2.bse.head()
+}).round(4)
+```
+:::
+
+The robust SEs are larger than naïve Poisson SEs (correcting for overdispersion) and typically close to the NB2 SEs. Both approaches give similar inference for the conditional mean, but Poisson + robust SEs achieves this **without assuming a specific variance function**.
+
+## Point estimates are (nearly) identical
+
+The $\hat{\boldsymbol{\beta}}$ from Poisson and NB2 should be very close when both models specify the same mean function:
+
+::: panel-tabset
+### R
+
+```{r}
+coef_compare <- data.frame(
+  Poisson = coef(pois)[1:5],
+  NB2     = coef(nb2)[1:5],
+  Diff    = coef(pois)[1:5] - coef(nb2)[1:5]
+)
+round(coef_compare, 5)
+```
+
+### Python
+
+```{python}
+pd.DataFrame({
+    "Poisson": pois.params.head(),
+    "NB2":     nb2.params.head(),
+    "Diff":    (pois.params - nb2.params).head()
+}).round(5)
+```
+:::
+
+
+## Summary
+
+- Rejecting equidispersion ($\hat\phi \gg 1$) tells you the data are *not Poisson-distributed*. It does **not** tell you that Poisson regression gives wrong $\hat{\boldsymbol{\beta}}$.
+- If $E(Y \mid X) = \exp(\mathbf{x}^\top\boldsymbol{\beta})$ is correct, Poisson QMLE with robust SEs consistently estimates $\boldsymbol{\beta}$ — no matter how overdispersed the data are.
+- Use NB2 when you need distributional predictions. Use Poisson + robust SEs when you only need effects on the mean.
+- Do **not** choose NB2 over Poisson solely because a dispersion test is significant.
+
+## References
+
+- Wooldridge, J. M. (1999). Distribution-free estimation of some nonlinear panel data models. *Journal of Econometrics*, 90(1), 77–97.
+- Wooldridge, J. M. (2010). *Econometric Analysis of Cross Section and Panel Data* (2nd ed.), Chapter 18. MIT Press.
+- Cameron, A. C., & Trivedi, P. K. (2013). *Regression Analysis of Count Data* (2nd ed.). Cambridge University Press.

@@ -6,21 +6,18 @@
 
 install.packages("MASS")
 install.packages("AER")
+install.packages("lmtest")
 install.packages("performance")
 install.packages("marginaleffects")
 install.packages("modelsummary")
-install.packages("broom")
-install.packages("topmodels", repos = "http://R-Forge.R-project.org")
-install.packages("countreg",  repos = "http://R-Forge.R-project.org")
 
 
 library(MASS)
 library(AER)
+library(lmtest)
 library(performance)
 library(marginaleffects)
 library(modelsummary)
-library(broom)
-library(boot)
 
 
 df <- read.csv("data/polish-jvs.csv",
@@ -95,6 +92,22 @@ modelsummary(list(Poisson       = pois,
              exponentiate = TRUE,
              statistic    = "({std.error})",
              gof_omit     = "F|RMSE")
+
+
+lr_stat <- 2 * (logLik(nb2) - logLik(pois))
+lr_pval <- pchisq(as.numeric(lr_stat), df = 1, lower.tail = FALSE)
+cat("LR statistic:", round(as.numeric(lr_stat), 1), "\n")
+cat("p-value     :", format.pval(lr_pval), "\n")
+
+
+lmtest::lrtest(pois, nb2)
+
+
+data.frame(
+  Model = c("Poisson", "NB2"),
+  AIC   = round(c(AIC(pois), AIC(nb2)), 1),
+  BIC   = round(c(BIC(pois), BIC(nb2)), 1)
+)
 
 
 avg_slopes(nb2, variables = "size")

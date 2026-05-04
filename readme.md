@@ -18,6 +18,7 @@
 
 - Optimization methods for MLE - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/05a-optimization-methods.html)
 - Interactions and scaling - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/07a-interactions-scaling.html)
+- Poisson QMLE vs. Negative Binomial - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/09a-poisson-vs-negbin.html)
 
 ## Case study
 

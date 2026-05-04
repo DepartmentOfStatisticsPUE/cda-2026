@@ -71,5 +71,19 @@ qp = smf.glm("vacancies ~ C(size) + C(public) + C(nace)",
 qp.bse.head()
 
 
+lr_stat = 2 * (nb2.llf - pois.llf)
+from scipy.stats import chi2
+lr_pval = chi2.sf(lr_stat, df=1)
+print(f"LR statistic: {lr_stat:.1f}")
+print(f"p-value     : {lr_pval:.2e}")
+
+
+pd.DataFrame({
+    "Model": ["Poisson", "NB2"],
+    "AIC":   [round(pois.aic, 1), round(nb2.aic, 1)],
+    "BIC":   [round(pois.bic, 1), round(nb2.bic, 1)]
+})
+
+
 from marginaleffects import avg_slopes
 avg_slopes(pois, variables = "size").to_pandas()

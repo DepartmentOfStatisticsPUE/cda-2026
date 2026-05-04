@@ -36,28 +36,26 @@ knitr::opts_chunk$set(engine.path = list(
 ```{r pkg-install-r, eval = FALSE}
 install.packages("MASS")
 install.packages("AER")
+install.packages("lmtest")
 install.packages("performance")
 install.packages("marginaleffects")
 install.packages("modelsummary")
-install.packages("broom")
-install.packages("topmodels", repos = "http://R-Forge.R-project.org")
-install.packages("countreg",  repos = "http://R-Forge.R-project.org")
 ```
 
 ```{r pkg-load-r}
 library(MASS)
 library(AER)
+library(lmtest)
 library(performance)
 library(marginaleffects)
 library(modelsummary)
-library(broom)
-library(boot)
 ```
 
 ## Python
 
 ```{bash pkg-install-py, eval = FALSE}
 !pip install statsmodels
+!pip install scipy
 !pip install marginaleffects
 ```
 
@@ -72,7 +70,7 @@ import statsmodels.formula.api as smf
 
 ```{julia pkg-install-jl, eval = FALSE}
 using Pkg
-Pkg.add(["GLM", "CSV", "DataFrames", "CategoricalArrays", "Statistics", "StatsBase"])
+Pkg.add(["GLM", "CSV", "DataFrames", "CategoricalArrays", "Statistics", "Distributions"])
 ```
 
 ```{julia pkg-load-jl}
@@ -81,7 +79,6 @@ using CSV
 using DataFrames
 using CategoricalArrays
 using Statistics
-using StatsBase
 ```
 :::
 
@@ -410,6 +407,107 @@ nb2 = negbin(@formula(vacancies ~ size + public + nace), df, LogLink())
 ```
 :::
 
+# Model comparison: Poisson vs. Negative Binomial
+
+How do we decide whether the extra parameter in NB2 is justified? Three complementary tools:
+
+| Tool | What it answers | Requirement |
+|------|-----------------|-------------|
+| LR test | Is the improvement *significant*? | Nested models |
+| AIC / BIC | Which model fits *better*? | $\geq 2$ models (same response) |
+| Rootogram | Where does the model *fail*? | Visual diagnostic |
+
+## Likelihood ratio test
+
+Poisson is nested within NB2 (it is the limiting case as $k \to \infty$). Under $H_0\colon k = \infty$ the LR statistic $2[\ell_{\text{NB2}} - \ell_{\text{Poisson}}]$ follows a $\chi^2_1$ distribution (one extra parameter).
+
+::: panel-tabset
+## R
+
+```{r lr-test-r}
+lr_stat <- 2 * (logLik(nb2) - logLik(pois))
+lr_pval <- pchisq(as.numeric(lr_stat), df = 1, lower.tail = FALSE)
+cat("LR statistic:", round(as.numeric(lr_stat), 1), "\n")
+cat("p-value     :", format.pval(lr_pval), "\n")
+```
+
+Alternatively, `lmtest::lrtest()` automates this:
+
+```{r lrtest-r}
+lmtest::lrtest(pois, nb2)
+```
+
+## Python
+
+```{python lr-test-py}
+lr_stat = 2 * (nb2.llf - pois.llf)
+from scipy.stats import chi2
+lr_pval = chi2.sf(lr_stat, df=1)
+print(f"LR statistic: {lr_stat:.1f}")
+print(f"p-value     : {lr_pval:.2e}")
+```
+
+## Julia
+
+```{julia lr-test-jl}
+using Distributions
+lr_stat = 2 * (loglikelihood(nb2) - loglikelihood(pois))
+lr_pval = ccdf(Chisq(1), lr_stat)
+println("LR statistic: ", round(lr_stat, digits = 1))
+println("p-value     : ", lr_pval)
+```
+:::
+
+The $p$-value is essentially zero — the data strongly reject the Poisson restriction.
+
+## Information criteria
+
+AIC and BIC penalise model complexity differently. Lower values indicate better fit–parsimony trade-off. AIC penalises by $2s$; BIC penalises by $\log(n)\cdot s$, so BIC is stricter for large $n$.
+
+::: panel-tabset
+## R
+
+```{r aic-bic-r}
+data.frame(
+  Model = c("Poisson", "NB2"),
+  AIC   = round(c(AIC(pois), AIC(nb2)), 1),
+  BIC   = round(c(BIC(pois), BIC(nb2)), 1)
+)
+```
+
+## Python
+
+```{python aic-bic-py}
+pd.DataFrame({
+    "Model": ["Poisson", "NB2"],
+    "AIC":   [round(pois.aic, 1), round(nb2.aic, 1)],
+    "BIC":   [round(pois.bic, 1), round(nb2.bic, 1)]
+})
+```
+
+## Julia
+
+```{julia aic-bic-jl}
+DataFrame(
+    Model = ["Poisson", "NB2"],
+    AIC   = round.([aic(pois), aic(nb2)], digits = 1),
+    BIC   = round.([bic(pois), bic(nb2)], digits = 1)
+)
+```
+:::
+
+NB2 is preferred by both criteria — the massive improvement in log-likelihood easily offsets the one additional parameter.
+
+## Summary
+
+When overdispersion is detected ($\hat\phi \gg 1$):
+
+- The LR test rejects Poisson in favour of NB2.
+- AIC/BIC both favour NB2.
+- Quasi-Poisson gives the same point estimates as Poisson but adjusts SEs; it does **not** provide a proper likelihood, so AIC/BIC are not available.
+
+However, rejecting the Poisson *distribution* does not invalidate Poisson as a *mean estimator*. See the companion notebook **09a-poisson-vs-negbin** for a detailed discussion of when each model is appropriate.
+
 # Marginal effects from a count model
 
 Coefficients are multiplicative on the log scale. To express effects on the original (count) scale we use marginal effects.
@@ -473,4 +571,5 @@ Use the `sandwich` package to compute heteroskedasticity-robust SEs for the Pois
 - **Why not log-transform.** O'Hara, R. B., & Kotze, D. J. (2010). Do not log-transform count data. *Methods in Ecology and Evolution*, 1(2), 118–122.
 - **Logs with zeros.** Bellégo, C., Benatia, D., & Pape, L.-D. (2022). Dealing with logs and zeros in regression models. arXiv:2203.11820. Chen, J., & Roth, J. (2024). Logs with zeros? Some problems and solutions. *Quarterly Journal of Economics*, 139(2), 891–936.
 - **Quasi-likelihood for counts.** Wooldridge, J. M. (1999). Distribution-free estimation of some nonlinear panel data models. *Journal of Econometrics*, 90(1), 77–97.
+- **Poisson QMLE vs. NB.** Wooldridge, J. M. (2010). *Econometric Analysis of Cross Section and Panel Data* (2nd ed.), Chapter 18. MIT Press. — argues that Poisson with robust SEs is the preferred estimator for conditional means under minimal assumptions.
 - **Diagnostics packages.** `DHARMa` (simulated residuals), `countreg` / `topmodels` (rootograms), `performance` (assumption checks).

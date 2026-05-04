@@ -5,7 +5,7 @@
 #' 
 
 using Pkg
-Pkg.add(["GLM", "CSV", "DataFrames", "CategoricalArrays", "Statistics", "StatsBase"])
+Pkg.add(["GLM", "CSV", "DataFrames", "CategoricalArrays", "Statistics", "Distributions"])
 
 
 using GLM
@@ -13,7 +13,6 @@ using CSV
 using DataFrames
 using CategoricalArrays
 using Statistics
-using StatsBase
 
 
 df = CSV.read("data/polish-jvs.csv", DataFrame,
@@ -77,6 +76,20 @@ round(phi_jl, digits = 2)
 
 
 nb2 = negbin(@formula(vacancies ~ size + public + nace), df, LogLink())
+
+
+using Distributions
+lr_stat = 2 * (loglikelihood(nb2) - loglikelihood(pois))
+lr_pval = ccdf(Chisq(1), lr_stat)
+println("LR statistic: ", round(lr_stat, digits = 1))
+println("p-value     : ", lr_pval)
+
+
+DataFrame(
+    Model = ["Poisson", "NB2"],
+    AIC   = round.([aic(pois), aic(nb2)], digits = 1),
+    BIC   = round.([bic(pois), bic(nb2)], digits = 1)
+)
 
 
 using Effects
