@@ -1,0 +1,315 @@
+---
+title: "Rootograms for count regressions"
+author: "Maciej Beręsewicz"
+format:
+  html:
+    embed-resources: true
+    table-of-contents: true
+    number-sections: true
+    df-print: kable
+editor: source
+execute:
+  eval: true
+  warning: false
+  message: false
+---
+
+```{r setup, echo = FALSE}
+knitr::opts_chunk$set(engine.path = list(
+  python = "/opt/anaconda3/bin/python3.12"
+))
+```
+
+## Introduction
+
+A **rootogram** (Tukey, 1977; Kleiber & Zeileis, 2016) is a graphical
+goodness-of-fit display for count models. For each observed count $k$
+it compares
+
+- the **observed frequency** $n_k = \#\{i : y_i = k\}$,
+- the **expected frequency** under the fitted model
+  $\hat n_k = \sum_{i=1}^{n} \hat P(Y_i = k \mid \mathbf{x}_i;\hat{\boldsymbol\theta})$.
+
+In a **hanging** rootogram the bar of height $\sqrt{n_k}$ hangs from
+the curve $\sqrt{\hat n_k}$, so its bottom sits at
+$\sqrt{\hat n_k} - \sqrt{n_k}$. The square-root scale stretches the
+tails so small frequencies are still visible. Reading the picture is
+easy:
+
+- bar bottom on the zero line → model fits this count perfectly,
+- bar bottom **below** zero → model **under-predicts** that count
+  (the data have more cases than expected),
+- bar bottom **above** zero → model **over-predicts**.
+
+In R rootograms are available via the `topmodels` package
+(successor to `countreg`) and accept any fitted count model
+(`glm`, `glm.nb`, `hurdle`, `zeroinfl`, …). In Python there is no
+mainstream package that does this, so we write a small helper that
+reproduces what `topmodels::rootogram` shows.
+
+## Setup
+
+::: panel-tabset
+### R
+
+```{r}
+## install.packages("topmodels", repos = "https://R-Forge.R-project.org")
+#remotes::install_svn("svn://R-Forge.R-project.org/svnroot/topmodels/pkg/topmodels")
+
+library(topmodels)
+library(MASS)
+library(here)
+```
+
+### Python
+
+```{python}
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from scipy.stats import poisson, nbinom
+import matplotlib.pyplot as plt
+```
+:::
+
+## Data
+
+We reuse the Polish Job Vacancy Survey (`vacancies` per company), the
+same dataset as in lecture 9.
+
+::: panel-tabset
+### R
+
+```{r}
+df <- read.csv(here("data/polish-jvs.csv"),
+               colClasses = c("character", "factor", rep("character", 4), "numeric"))
+df$size   <- factor(df$size,   levels = c("Large", "Medium", "Small"))
+df$public <- factor(df$public)
+df$nace   <- factor(df$nace)
+```
+
+### Python
+
+```{python}
+from pathlib import Path
+csv_path = Path("data/polish-jvs.csv")
+if not csv_path.exists():
+    csv_path = Path("../../data/polish-jvs.csv")
+
+df = pd.read_csv(csv_path,
+                 dtype={"id": np.int64, "woj": str, "public": str,
+                        "size": str, "nace_division": str, "nace": str})
+df["size"] = pd.Categorical(df["size"], categories=["Large", "Medium", "Small"])
+```
+:::
+
+## Fit Poisson and Negative Binomial models
+
+::: panel-tabset
+### R
+
+```{r}
+pois <- glm(vacancies ~ size + public + nace, data = df,
+            family = poisson(link = "log"))
+nb2  <- MASS::glm.nb(vacancies ~ size + public + nace, data = df)
+```
+
+### Python
+
+```{python}
+pois = smf.glm("vacancies ~ C(size) + C(public) + C(nace)", data=df,
+               family=sm.families.Poisson()).fit()
+
+# Joint MLE for NB2 (matches MASS::glm.nb)
+start = np.append(pois.params.values, 1.0)
+nb2 = smf.negativebinomial("vacancies ~ C(size) + C(public) + C(nace)",
+                           data=df).fit(start_params=start,
+                                        method="bfgs", maxiter=500, disp=0)
+```
+:::
+
+## Rootograms
+
+We display counts up to $k = 20$. Vacancies in the JVS are very
+right-skewed (≈ 80% zeros, mean ≈ 1, max in the hundreds), so 20 is
+enough to show what matters: zeros, the small-count region, and the
+beginning of the tail.
+
+### R — `topmodels::rootogram`
+
+`topmodels::rootogram()` takes a fitted model and produces a hanging
+rootogram by default. 
+
+```{r}
+#| fig-width: 8
+#| fig-height: 4
+
+rootogram(pois, plot = TRUE, 
+          main = "Poisson", 
+          xlim = c(0,20))
+```
+
+```{r}
+#| fig-width: 8
+#| fig-height: 4
+
+rootogram(nb2, plot = TRUE, 
+          main = "Negative binomial (NB2)",
+          xlim = c(0,20))
+```
+
+### Python — manual implementation
+
+Same recipe as `topmodels`: observed counts, expected counts on the
+$\sqrt{\cdot}$ scale, bars hanging from the expected curve. The
+expected count for value $k$ is the **sum across observations** of the
+fitted PMF evaluated at $k$.
+
+For NB2, statsmodels parametrises overdispersion via $\alpha = 1/\theta$
+so $\operatorname{Var}(Y) = \mu + \alpha\mu^2$. To map to
+`scipy.stats.nbinom(n, p)` use $n = 1/\alpha$ and $p = n/(n + \mu)$.
+
+```{python}
+def rootogram(model, y, max_count=20, dist="poisson", ax=None,
+              title=None):
+    """Hanging rootogram for a fitted Poisson or NB2 GLM.
+
+    model : statsmodels results object with .predict() returning fitted means
+    y     : observed response (1d array-like of non-negative ints)
+    dist  : "poisson" or "nbinom"
+    """
+    mu = np.asarray(model.predict())
+    y  = np.asarray(y)
+    ks = np.arange(max_count + 1)
+
+    observed = np.array([(y == k).sum() for k in ks], dtype=float)
+
+    if dist == "poisson":
+        expected = np.array([poisson.pmf(k, mu).sum() for k in ks])
+    elif dist == "nbinom":
+        alpha = float(model.params["alpha"])
+        n = 1.0 / alpha
+        p = n / (n + mu)
+        expected = np.array([nbinom.pmf(k, n, p).sum() for k in ks])
+    else:
+        raise ValueError("dist must be 'poisson' or 'nbinom'")
+
+    obs_root = np.sqrt(observed)
+    exp_root = np.sqrt(expected)
+
+    if ax is None:
+        _, ax = plt.subplots(figsize=(8, 4))
+
+    ax.bar(ks, obs_root, bottom=exp_root - obs_root, width=0.7,
+           color="lightgray", edgecolor="black", label="observed")
+    ax.plot(ks, exp_root, "ro-", linewidth=1.5, markersize=4,
+            label=r"$\sqrt{\mathrm{expected}}$")
+    ax.axhline(0, color="black", linewidth=0.8)
+    ax.set_xlabel("count")
+    ax.set_ylabel(r"$\sqrt{\mathrm{frequency}}$")
+    ax.set_xticks(ks[::2])
+    if title:
+        ax.set_title(title)
+    ax.legend(loc="upper right")
+    return ax
+```
+
+```{python}
+#| fig-width: 8
+#| fig-height: 4
+fig, ax = plt.subplots(figsize=(8, 4))
+rootogram(pois, df["vacancies"], dist="poisson", ax=ax, title="Poisson")
+plt.show()
+```
+
+```{python}
+#| fig-width: 8
+#| fig-height: 4
+fig, ax = plt.subplots(figsize=(8, 4))
+rootogram(nb2, df["vacancies"], dist="nbinom", ax=ax,
+          title="Negative binomial (NB2)")
+plt.show()
+```
+
+## Numerical comparison
+
+The picture is also visible in the raw observed/expected counts.
+
+::: panel-tabset
+### R
+
+```{r}
+ks <- 0:10
+obs <- as.numeric(table(factor(df$vacancies, levels = ks)))
+
+mu_p <- predict(pois, type = "response")
+exp_p <- sapply(ks, function(k) sum(dpois(k, lambda = mu_p)))
+
+mu_n  <- predict(nb2, type = "response")
+theta <- nb2$theta
+exp_n <- sapply(ks, function(k) sum(dnbinom(k, mu = mu_n, size = theta)))
+
+round(data.frame(k = ks,
+                 observed   = obs,
+                 exp_pois   = exp_p,
+                 exp_nb2    = exp_n,
+                 diff_pois  = obs - exp_p,
+                 diff_nb2   = obs - exp_n), 1)
+```
+
+### Python
+
+```{python}
+ks = np.arange(11)
+obs = np.array([(df["vacancies"] == k).sum() for k in ks], dtype=float)
+
+mu_p  = pois.predict()
+exp_p = np.array([poisson.pmf(k, mu_p).sum() for k in ks])
+
+alpha = float(nb2.params["alpha"])
+n_par = 1.0 / alpha
+mu_n  = nb2.predict()
+p_par = n_par / (n_par + mu_n)
+exp_n = np.array([nbinom.pmf(k, n_par, p_par).sum() for k in ks])
+
+pd.DataFrame({"k": ks,
+              "observed":  obs,
+              "exp_pois":  exp_p,
+              "exp_nb2":   exp_n,
+              "diff_pois": obs - exp_p,
+              "diff_nb2":  obs - exp_n}).round(1)
+```
+:::
+
+## What the rootograms tell us
+
+Both models have the same mean structure (Poisson QMLE and NB2 give
+nearly identical $\hat{\boldsymbol\beta}$, see notebook 09a), but they
+imply different distributions:
+
+- **Poisson** badly **under-predicts the zeros** (bars dip well below
+  the line at $k = 0$) and **over-predicts** the small positive counts
+  ($k = 1, 2, 3$). This is the signature of overdispersion: the
+  Poisson variance $\operatorname{Var}(Y) = \mu$ is too small, so mass
+  gets concentrated near $\mu$ instead of being spread over zeros and
+  the long tail.
+- **NB2** has $\operatorname{Var}(Y) = \mu + \mu^2/\theta$. The extra
+  variance lets it match the zeros and the right tail. Bar bottoms sit
+  much closer to the zero line.
+
+Conclusion (consistent with notebook 09a): use **NB2** (or another
+distribution with extra variance) when you need the **distribution**
+of $Y$ — for example to predict the proportion of firms with zero
+vacancies, or to simulate from the fitted model. For the **mean**
+$E(Y \mid X)$ alone, Poisson with robust standard errors is enough.
+
+## References
+
+- Tukey, J. W. (1977). *Exploratory Data Analysis*. Addison-Wesley.
+- Kleiber, C., & Zeileis, A. (2016). Visualizing count data
+  regressions using rootograms. *The American Statistician*, 70(3),
+  296–303. <https://doi.org/10.1080/00031305.2016.1173590>
+- Zeileis, A., Lang, M. N., & Stauffer, R. (2024). *topmodels:
+  Infrastructure for Forecasting and Assessment of Probabilistic
+  Models*. R package, <https://topmodels.R-Forge.R-project.org/>.
