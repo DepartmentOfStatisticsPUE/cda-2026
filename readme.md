@@ -19,10 +19,14 @@
 - Optimization methods for MLE - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/05a-optimization-methods.html)
 - Interactions and scaling - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/07a-interactions-scaling.html)
 - Poisson QMLE vs. Negative Binomial - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/09a-poisson-vs-negbin.html)
+- Rootograms for count regressions - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/09b-rootograms.html)
 
 ## Case study
 
-[TBA]
+School-absence analysis (count + binary regression in one 90-min slot) --
+[html](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/case-study/case-study.html),
+[qmd](case-study/case-study.qmd),
+[data](case-study/school-absence-for-lecture.xlsx).
 
 ## Code files for download
 
@@ -40,6 +44,7 @@
 | 10 | Marginal effects | [.R](codes/R/08-marginal-effects.R) | [.py](codes/python/08-marginal-effects.py) | [.jl](codes/julia/08-marginal-effects.jl) | [.ipynb](codes/notebooks/08-marginal-effects.ipynb) |
 | 11 | GLM: Count data | [.R](codes/R/09-glm-count.R) | [.py](codes/python/09-glm-count.py) | [.jl](codes/julia/09-glm-count.jl) | [.ipynb](codes/notebooks/09-glm-count.ipynb) |
 | 12 | GLM: Logistic regression | [.R](codes/R/10-glm-lr.R) | [.py](codes/python/10-glm-lr.py) | [.jl](codes/julia/10-glm-lr.jl) | [.ipynb](codes/notebooks/10-glm-lr.ipynb) |
+| 13 | Case study (school absence) | -- | -- | -- | [.qmd](case-study/case-study.qmd) |
 
 ## Problem sets
 
