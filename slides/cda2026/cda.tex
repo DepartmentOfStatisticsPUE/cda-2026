@@ -3585,6 +3585,417 @@ Now, proceed to the example of logistic regression.
 \end{center}
 \end{frame}
 
+\section{Classification and regression trees}
+
+\subsection{Motivation}
+
+\begin{frame}{Beyond GLM: questions a tree can answer}
+We have just modelled two outcomes from the JVS data:
+\begin{itemize}
+    \justifying
+    \item \texttt{vacancies} -- a count (Poisson / NB regression, \S 11.1).
+    \item \texttt{has\_vacancy} = $\mathbb{I}(\texttt{vacancies} > 0)$ -- a binary outcome (logistic regression, \S 11.2).
+\end{itemize}
+
+\medskip
+\textbf{What is hard for a GLM here?}
+\begin{itemize}
+    \justifying
+    \item Strongly non-linear effects of firm \texttt{size}, sector, region.
+    \item High-order interactions (e.g.\ \texttt{size} $\times$ \texttt{nace} $\times$ \texttt{woj}) -- writing them out explodes the design matrix.
+    \item Many small categories: \texttt{nace\_division} has $\approx 90$ levels, most rarely populated.
+\end{itemize}
+
+\medskip
+\textbf{Question.} Is there a model that picks the relevant variables, interactions, and cut-points \emph{automatically} from the data?
+\end{frame}
+
+
+\begin{frame}{A different modelling philosophy}
+Breiman (2001, \textit{Statistical Science}) called this the \emph{two cultures}:
+\begin{itemize}
+    \justifying
+    \item \textbf{Data-modelling culture} -- assume $Y \mid X \sim$ (some distribution) with a link and a linear predictor; estimate parameters; do inference. (OLS, GLM.)
+    \item \textbf{Algorithmic culture} -- treat $f(X) = E[Y \mid X]$ as an unknown function; learn it from the data with as few parametric assumptions as possible. (Trees, random forests, boosting, neural nets, $\ldots$)
+\end{itemize}
+
+\medskip
+\textbf{What does a tree assume?}
+\begin{itemize}
+    \justifying
+    \item \emph{No} link function, \emph{no} variance function, \emph{no} parametric form for $E[Y \mid X]$.
+    \item Approximate $f(X)$ by a \textbf{piecewise constant} function on a partition of the predictor space into rectangular regions $R_1, \ldots, R_M$:
+    \[
+        \hat f(\bx) \;=\; \sum_{m=1}^{M} \hat c_m \,\mathbb{I}(\bx \in R_m).
+    \]
+    \item For \textbf{regression}, $\hat c_m = \bar y_{R_m}$; for \textbf{classification}, $\hat c_m$ is the class-probability vector / majority class in $R_m$.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{One picture vs.\ one regression table}
+\textbf{Logistic regression} of \texttt{has\_vacancy}:
+\[
+\logit \Pr(Y=1 \mid \bx) = \beta_0 + \beta_1 \,\texttt{size}_M + \beta_2 \,\texttt{size}_L + \beta_3 \,\texttt{public} + \ldots
+\]
+$\Rightarrow$ a \emph{table} of coefficients; effects are additive on the log-odds scale.
+
+\medskip
+\textbf{Tree} for the same outcome:
+$\Rightarrow$ a \emph{sequence of yes/no questions} -- ``is the firm large? if so, is it private?'' -- ending in a predicted probability.
+
+\medskip
+The two objects are \alert{not directly comparable}: one returns coefficients on a scale, the other returns a decision rule. The next slide shows a concrete tree on the JVS data.
+\end{frame}
+
+
+\subsection{Recursive partitioning}
+
+\begin{frame}{Toy classification tree -- \texttt{has\_vacancy} on JVS}
+\centering
+\begin{tikzpicture}[
+    >=stealth, thick,
+    every node/.style={font=\small},
+    internal/.style={draw, rectangle, rounded corners=2pt, align=center, inner sep=4pt},
+    leaf/.style={draw, rectangle, rounded corners=6pt, fill=blue!7, align=center, inner sep=4pt},
+    level 1/.style={sibling distance=55mm, level distance=14mm},
+    level 2/.style={sibling distance=32mm, level distance=14mm}
+]
+\node[internal] {\texttt{size} = Large?}
+    child {node[leaf] {Small / Medium\\$n=29\,639$\\$\hat p = 0.067$}
+        edge from parent node[above left] {no}}
+    child {node[internal] {\texttt{public} = 1?}
+        child {node[leaf] {Large, private\\$n=15\,873$\\$\hat p = 0.186$}
+            edge from parent node[above left] {no}}
+        child {node[leaf] {Large, public\\$n=11\,968$\\$\hat p = 0.166$}
+            edge from parent node[above right] {yes}}
+        edge from parent node[above right] {yes}};
+\end{tikzpicture}
+
+\medskip
+Each \textbf{leaf} reports the count $n$ and the predicted probability $\hat p = \Pr(\texttt{has\_vacancy} = 1)$. To classify a new firm, walk from the root down and read off $\hat p$.
+\end{frame}
+
+
+\begin{frame}{Same tree, regression target}
+The \emph{same partition} can be used to predict the count \texttt{vacancies}: only the leaf summary changes.
+
+\medskip
+\centering
+\begin{tikzpicture}[
+    >=stealth, thick,
+    every node/.style={font=\small},
+    internal/.style={draw, rectangle, rounded corners=2pt, align=center, inner sep=4pt},
+    leaf/.style={draw, rectangle, rounded corners=6pt, fill=orange!10, align=center, inner sep=4pt},
+    level 1/.style={sibling distance=55mm, level distance=14mm},
+    level 2/.style={sibling distance=32mm, level distance=14mm}
+]
+\node[internal] {\texttt{size} = Large?}
+    child {node[leaf] {Small / Medium\\$n=29\,639$\\$\bar y = 0.17$}
+        edge from parent node[above left] {no}}
+    child {node[internal] {\texttt{public} = 1?}
+        child {node[leaf] {Large, private\\$n=15\,873$\\$\bar y = 2.44$}
+            edge from parent node[above left] {no}}
+        child {node[leaf] {Large, public\\$n=11\,968$\\$\bar y = 1.23$}
+            edge from parent node[above right] {yes}}
+        edge from parent node[above right] {yes}};
+\end{tikzpicture}
+
+\medskip
+\textbf{Lesson.} Classification and regression trees share the \textbf{tree structure}; they differ only in (i) the \textbf{splitting criterion} and (ii) the \textbf{leaf summary}.
+\end{frame}
+
+
+\begin{frame}{How a split is chosen -- regression}
+Greedy CART. At a node with observations $\{(\bx_i, y_i)\}$, search over all variables $X_j$ and thresholds $s$ and pick the pair minimising the within-node sum of squared residuals:
+\[
+\min_{j,\,s} \;
+\underbrace{\sum_{i \,:\, x_{ij} \le s} (y_i - \bar y_L)^2}_{\text{left child}}
+\;+\;
+\underbrace{\sum_{i \,:\, x_{ij} > s} (y_i - \bar y_R)^2}_{\text{right child}},
+\]
+where $\bar y_L, \bar y_R$ are the left/right means. Repeat \textbf{recursively} on each child.
+
+\medskip
+\textbf{Why this loss?} For squared error, the best leaf prediction is the leaf mean, so the within-node SSR is the loss the leaf can actually achieve.
+
+\medskip
+\textbf{Other losses work too.} Replace SSR by \textbf{Poisson deviance} for counts, by \textbf{absolute error} for robust regression, or by a parametric model on each leaf (model-based recursive partitioning, \texttt{partykit::mob}).
+\end{frame}
+
+
+\begin{frame}{How a split is chosen -- classification}
+At a node, let $\hat p_k$ be the proportion of class $k$. Three standard \textbf{impurity measures}:
+\begin{itemize}
+    \justifying
+    \item \textbf{Misclassification:} $\;1 - \max_k \hat p_k$.
+    \item \textbf{Gini:} $\;\sum_{k=1}^{K} \hat p_k (1 - \hat p_k)\;$ (Breiman et al., 1984).
+    \item \textbf{Entropy:} $\;-\sum_{k=1}^{K} \hat p_k \log \hat p_k\;$ (Quinlan, 1986).
+\end{itemize}
+A split is chosen to minimise the weighted impurity of the two children. Two-class example ($\hat p \equiv \hat p_1$):
+
+\medskip
+\centering
+\begin{tabular}{lccc}
+\hline
+$\hat p$ & Misclass. & Gini & Entropy \\
+\hline
+$0.10$ & $0.10$ & $0.18$ & $0.33$ \\
+$0.50$ & $0.50$ & $0.50$ & $0.69$ \\
+$0.90$ & $0.10$ & $0.18$ & $0.33$ \\
+\hline
+\end{tabular}
+
+\medskip
+\justifying
+\textbf{In practice}: Gini (CART default) and entropy (C4.5) are smoother than misclassification and reward purity changes that misclassification cannot see. Misclassification is mainly used for \emph{pruning}, not for choosing splits.
+\end{frame}
+
+
+\begin{frame}{From split to tree: stopping and pruning}
+\textbf{Why not just keep splitting?} A fully grown tree has one observation per leaf -- zero training error, but it generalises poorly. We need a \emph{right-sized} tree.
+
+\medskip
+\textbf{CART recipe (Breiman et al., 1984).}
+\begin{enumerate}
+    \justifying
+    \item Grow a large tree $T_0$ (stop only when leaves are tiny or pure).
+    \item For a complexity parameter $\alpha \ge 0$, define cost-complexity
+    \[
+        R_\alpha(T) \;=\; \sum_{m=1}^{|T|} \sum_{i \in R_m} \ell(y_i, \hat y_{R_m}) \;+\; \alpha\, |T|,
+    \]
+    where $|T|$ is the number of leaves and $\ell$ is SSR (regression) or impurity (classification).
+    \item For each $\alpha$, the minimiser $T_\alpha \subseteq T_0$ is unique (weakest-link pruning).
+    \item Choose $\alpha$ by \textbf{cross-validation} -- often with the \emph{one-standard-error rule}: pick the smallest tree within $1\,\text{SE}$ of the best CV error.
+\end{enumerate}
+
+\medskip
+This is what \texttt{rpart::prune()} implements out of the box.
+\end{frame}
+
+
+\subsection{Categorical data in CART}
+
+\begin{frame}{Categorical $Y$ -- the classification tree}
+For a $K$-class response, each leaf stores the empirical class-probability vector
+\[
+    \hat \bp_m \;=\; \bigl(\hat p_{m,1}, \ldots, \hat p_{m,K}\bigr), \qquad \sum_{k} \hat p_{m,k} = 1.
+\]
+\begin{itemize}
+    \justifying
+    \item \textbf{Predicted class:} $\arg\max_k \hat p_{m,k}$ (or any rule with a custom loss / cut-off).
+    \item \textbf{Predicted probabilities:} $\hat \bp_m$ -- usable for ranking, ROC, calibration, etc.
+    \item \textbf{Ordinal $Y$.} Standard CART treats classes as unordered, so the ordering is lost. Remedies: ordinal impurity measures, or conditional inference trees (Hothorn, Hornik, Zeileis, 2006) with an ordinal score.
+\end{itemize}
+
+\medskip
+\textbf{Binary case in our example.} The leaves of the \texttt{has\_vacancy} tree two slides ago already report $\hat p_1$ -- this is exactly $\hat \bp_m$ for $K=2$.
+\end{frame}
+
+
+\begin{frame}{Categorical $X$ -- the brute-force problem}
+\textbf{Splits on a continuous $X_j$.} With $n$ distinct values there are at most $n-1$ candidate thresholds -- search is cheap.
+
+\medskip
+\textbf{Splits on an unordered factor $X_j$ with $K$ levels.} Any non-trivial split sends a subset $A \subset \{1,\ldots,K\}$ left and its complement right. The number of such splits is
+\[
+    2^{K-1} - 1.
+\]
+\begin{itemize}
+    \justifying
+    \item $K = 10$ $\Rightarrow$ $511$ candidates -- still fine.
+    \item $K = 32$ $\Rightarrow$ $\approx 2.1 \times 10^9$ -- infeasible.
+    \item JVS \texttt{nace\_division} ($K \approx 90$) $\Rightarrow$ astronomical.
+\end{itemize}
+
+\medskip
+\textbf{We need a shortcut.}
+\end{frame}
+
+
+\begin{frame}{The Breiman / Fisher shortcut}
+\textbf{Theorem} (Breiman et al., 1984, \S 4.2.2; based on Fisher, 1958).
+For a \emph{regression} response \emph{or} a \emph{binary} classification response, the optimal split of an unordered factor $X_j$ can be found in $O(K \log K)$ time:
+\begin{enumerate}
+    \justifying
+    \item Compute the within-level mean (regression) or class-1 proportion (binary classification) $\bar y_k$ for each level $k = 1, \ldots, K$.
+    \item Sort the levels so that $\bar y_{(1)} \le \bar y_{(2)} \le \ldots \le \bar y_{(K)}$.
+    \item Try only the $K - 1$ \textbf{ordered} splits along this ordering.
+\end{enumerate}
+
+\medskip
+\centering
+\begin{tikzpicture}[>=stealth, thick]
+    \draw[->] (-0.3,0) -- (8.5,0);
+    \foreach \x/\lab in {0.5/$\bar y_{(1)}$, 1.5/$\bar y_{(2)}$, 2.5/$\bar y_{(3)}$, 3.5/$\bar y_{(4)}$, 4.5/$\cdots$, 5.5/$\bar y_{(K-2)}$, 6.5/$\bar y_{(K-1)}$, 7.5/$\bar y_{(K)}$} {
+        \draw (\x,0.1) -- (\x,-0.1);
+        \node[font=\scriptsize] at (\x,-0.4) {\lab};
+    }
+    \draw[red, dashed, thick] (3.0, -0.7) -- (3.0, 0.7);
+    \node[red, font=\scriptsize] at (3.0, 0.95) {candidate split};
+\end{tikzpicture}
+
+\medskip
+\justifying
+Only $K-1$ thresholds need to be evaluated, not $2^{K-1}-1$. This is why \texttt{rpart} happily handles \texttt{nace\_division}.
+\end{frame}
+
+
+\begin{frame}{Multiclass $Y$: no exact shortcut}
+For an unordered factor $X_j$ and a $K_Y$-class response with $K_Y \ge 3$, finding the optimal subset split is \textbf{NP-hard}. Software handles this with heuristics:
+\begin{itemize}
+    \justifying
+    \item \texttt{rpart}: limits unordered factors to $\le 31$ levels by default; merges low-frequency levels.
+    \item \texttt{ranger} with \texttt{respect.unordered.factors = "partition"}: enumerates if $K$ is small, otherwise tries random subsets.
+    \item \textbf{Target / mean encoding} (LightGBM, H2O, CatBoost): replace each level by its leaf-wise target mean, computed on held-out folds to avoid leakage.
+    \item \textbf{One-hot encoding}: expand the factor into $K$ binary indicators. Simple but produces shallow splits and biases variable selection (Hothorn et al., 2006).
+    \item \textbf{Ordered encoding}: if the factor is actually ordinal (e.g.\ \texttt{size} = Small $<$ Medium $<$ Large), use it as ordered.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Selection bias warning}
+\textbf{Loh \& Shih (1997)} and \textbf{Hothorn, Hornik \& Zeileis (2006)} document a subtle problem with greedy CART: variables with \emph{more potential split points} (continuous variables, factors with many levels) are \alert{more likely to be selected} even when irrelevant.
+
+\medskip
+\textbf{Consequence.} \texttt{nace\_division} ($K \approx 90$) is at an unfair advantage over \texttt{public} ($K = 2$) in a CART variable-importance ranking.
+
+\medskip
+\textbf{Cure.} Conditional inference trees (\texttt{partykit::ctree}) separate \emph{variable selection} (a permutation test) from \emph{split selection}. The variable is chosen by a $p$-value, the threshold afterwards -- removing the bias.
+\end{frame}
+
+
+\subsection{Strengths, weaknesses, and ensembles}
+
+\begin{frame}{What single trees are good at}
+\begin{itemize}
+    \justifying
+    \item \textbf{Interpretability.} A small tree is a decision list a domain expert can read.
+    \item \textbf{Mixed-type predictors.} Continuous, binary, and unordered factor variables can sit in one model -- no manual dummy coding required.
+    \item \textbf{Invariance.} Splits depend only on the \emph{order} of values, so monotone transformations of $X$ (logs, scaling, Box--Cox) leave the tree unchanged.
+    \item \textbf{Interactions for free.} A path from root to leaf already encodes a high-order interaction.
+    \item \textbf{Missing values.} Native support via \emph{surrogate splits} (CART) or \emph{majority direction} (modern GBMs).
+    \item \textbf{No link function.} A tree fits $E[Y \mid X]$ directly on the original scale of $Y$.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{What single trees are bad at}
+\begin{itemize}
+    \justifying
+    \item \textbf{High variance.} Small perturbations of the training data can flip the top split and rearrange the entire tree below it.
+    \item \textbf{Piecewise-constant fit.} Discontinuous at every split -- bad for smoothly varying responses, and poor extrapolation.
+    \item \textbf{Greedy and myopic.} Each split is locally optimal; the overall tree need not be.
+    \item \textbf{Limited predictive accuracy.} A single tree is rarely the best off-the-shelf predictor on tabular data.
+\end{itemize}
+
+\medskip
+\textbf{The remedy: ensembles.} Average / boost many trees to drive the variance down or the bias down -- depending on the recipe.
+\end{frame}
+
+
+\begin{frame}{From one tree to many -- bagging, RF, boosting}
+\begin{itemize}
+    \justifying
+    \item \textbf{Bagging} (Breiman, 1996). Draw $B$ bootstrap samples, fit a tree on each, average their predictions (regression) or vote (classification). Reduces variance of the individual tree.
+    \item \textbf{Random forest} (Breiman, 2001). Bagging \emph{plus} a random subset of $m \le p$ candidate predictors at every split. The extra randomness \emph{decorrelates} the trees -- and the average of less-correlated trees has lower variance.
+    \item \textbf{Boosting} (Freund \& Schapire, 1997; Friedman, 2001). Build trees \emph{sequentially}: each new (shallow) tree is fit to the gradient of a loss on the running ensemble. With a small learning rate $\eta$, this is a powerful bias-reducing procedure.
+\end{itemize}
+
+\medskip
+\textbf{Trade-off.} Ensembles give up the single-tree visual interpretability in exchange for accuracy. Variable-importance plots and partial-dependence / SHAP curves replace the picture of one tree.
+\end{frame}
+
+
+\begin{frame}{Modern gradient boosting machines}
+Three engineering refinements of Friedman (2001) dominate Kaggle and tabular benchmarks:
+\begin{itemize}
+    \justifying
+    \item \textbf{XGBoost} (Chen \& Guestrin, 2016). Regularised objective, second-order Newton step, sparsity-aware splits, out-of-core training. R: \texttt{xgboost}; Python: \texttt{xgboost}; Julia: \texttt{XGBoost.jl}.
+    \item \textbf{LightGBM} (Ke et al., 2017). Histogram-based splits, leaf-wise growth, gradient-based one-side sampling. Fast on large data.
+    \item \textbf{CatBoost} (Prokhorenkova et al., 2018). \textbf{Ordered target encoding} of categorical predictors built into the algorithm -- a principled fix for the leakage problem in mean-encoded multiclass splits.
+\end{itemize}
+
+\medskip
+\textbf{For our setting.} The JVS predictors are almost all categorical (\texttt{size}, \texttt{public}, \texttt{nace}, \texttt{nace\_division}, \texttt{woj}) -- CatBoost and LightGBM are natural choices.
+\end{frame}
+
+
+\subsection{Practice and references}
+
+\begin{frame}{Trees in practice -- R}
+\begin{itemize}
+    \justifying
+    \item \textbf{Single tree:} \texttt{rpart::rpart()}, \texttt{partykit::ctree()}.
+    \item \textbf{Random forest:} \texttt{ranger::ranger()}, \texttt{randomForest::randomForest()}.
+    \item \textbf{Gradient boosting:} \texttt{gbm::gbm()}, \texttt{xgboost::xgboost()}, \texttt{lightgbm::lightgbm()}, \texttt{catboost::catboost.train()}.
+\end{itemize}
+
+\medskip
+\textbf{Python:}
+\begin{itemize}
+    \justifying
+    \item \textbf{Single tree:} \texttt{sklearn.tree.DecisionTreeRegressor / DecisionTreeClassifier}.
+    \item \textbf{Random forest:} \texttt{sklearn.ensemble.RandomForestRegressor / Classifier}.
+    \item \textbf{Gradient boosting:} \texttt{sklearn.ensemble.GradientBoosting*}, \texttt{xgboost}, \texttt{lightgbm}, \texttt{catboost}.
+\end{itemize}
+
+\medskip
+\textbf{Julia:}
+\begin{itemize}
+    \justifying
+    \item \textbf{Single tree / RF:} \texttt{DecisionTree.jl}, \texttt{MLJ.jl}.
+    \item \textbf{Gradient boosting:} \texttt{EvoTrees.jl}, \texttt{XGBoost.jl}, \texttt{LightGBM.jl}.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Diagnostics worth knowing}
+\begin{itemize}
+    \justifying
+    \item \textbf{Variable importance.} \emph{Permutation importance} (model-agnostic) is more trustworthy than the default Gini / impurity importance, which inherits the selection bias of the previous slide.
+    \item \textbf{Partial dependence plots, ALE, SHAP.} Visualise the marginal or local effect of one predictor $X_j$ on the prediction -- the analogue of marginal effects from \S 9 for a black-box model.
+    \item \textbf{Calibration plots.} Check that predicted probabilities match observed frequencies -- especially important for classification ensembles, which can be miscalibrated even when accurate.
+    \item \textbf{Out-of-bag error} (bagging / RF) and \textbf{early stopping on a validation fold} (boosting) replace the AIC / BIC machinery of GLM model selection.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Trees -- practice}
+\begin{center}
+Now, proceed to the example of regression and classification trees in R / Python / Julia.
+\end{center}
+\end{frame}
+
+
+\begin{frame}[noframenumbering,allowframebreaks]{References (CART)}
+\tiny
+\begin{itemize}
+    \item Breiman, L., Friedman, J. H., Olshen, R. A., \& Stone, C. J. (1984). \textit{Classification and Regression Trees}. Wadsworth. ISBN 9780412048418.
+    \item Morgan, J. N., \& Sonquist, J. A. (1963). Problems in the analysis of survey data, and a proposal. \textit{JASA}, 58(302), 415--434. doi:10.1080/01621459.1963.10500855.
+    \item Quinlan, J. R. (1986). Induction of decision trees. \textit{Machine Learning}, 1(1), 81--106. doi:10.1023/A:1022643204877.
+    \item Fisher, W. D. (1958). On grouping for maximum homogeneity. \textit{JASA}, 53(284), 789--798. doi:10.1080/01621459.1958.10501479.
+    \item Loh, W.-Y., \& Shih, Y.-S. (1997). Split selection methods for classification trees. \textit{Statistica Sinica}, 7, 815--840.
+    \item Hothorn, T., Hornik, K., \& Zeileis, A. (2006). Unbiased recursive partitioning: A conditional inference framework. \textit{JCGS}, 15(3), 651--674. doi:10.1198/106186006X133933.
+    \item Loh, W.-Y. (2014). Fifty years of classification and regression trees. \textit{International Statistical Review}, 82(3), 329--348. doi:10.1111/insr.12016.
+    \item Hastie, T., Tibshirani, R., \& Friedman, J. (2009). \textit{The Elements of Statistical Learning} (2nd ed.). Springer. doi:10.1007/978-0-387-84858-7.
+    \item James, G., Witten, D., Hastie, T., \& Tibshirani, R. (2021). \textit{An Introduction to Statistical Learning} (2nd ed.). Springer. doi:10.1007/978-1-0716-1418-1.
+    \item Kuhn, M., \& Johnson, K. (2013). \textit{Applied Predictive Modeling}. Springer. doi:10.1007/978-1-4614-6849-3.
+    \item Therneau, T. M., \& Atkinson, E. J. (1997, regularly updated). \textit{An Introduction to Recursive Partitioning Using the RPART Routines}. Mayo Foundation / CRAN vignette.
+    \item Breiman, L. (1996). Bagging predictors. \textit{Machine Learning}, 24(2), 123--140. doi:10.1007/BF00058655.
+    \item Breiman, L. (2001). Random forests. \textit{Machine Learning}, 45(1), 5--32. doi:10.1023/A:1010933404324.
+    \item Breiman, L. (2001). Statistical modeling: The two cultures. \textit{Statistical Science}, 16(3), 199--231. doi:10.1214/ss/1009213726.
+    \item Freund, Y., \& Schapire, R. E. (1997). A decision-theoretic generalization of on-line learning and an application to boosting. \textit{J. Comput. Syst. Sci.}, 55(1), 119--139. doi:10.1006/jcss.1997.1504.
+    \item Friedman, J. H. (2001). Greedy function approximation: A gradient boosting machine. \textit{Annals of Statistics}, 29(5), 1189--1232. doi:10.1214/aos/1013203451.
+    \item Friedman, J. H. (2002). Stochastic gradient boosting. \textit{CSDA}, 38(4), 367--378. doi:10.1016/S0167-9473(01)00065-2.
+    \item Chen, T., \& Guestrin, C. (2016). XGBoost: A scalable tree boosting system. \textit{KDD '16}, 785--794. doi:10.1145/2939672.2939785.
+    \item Ke, G., Meng, Q., Finley, T., Wang, T., Chen, W., Ma, W., Ye, Q., \& Liu, T.-Y. (2017). LightGBM: A highly efficient gradient boosting decision tree. \textit{NeurIPS 2017}, 3146--3154.
+    \item Prokhorenkova, L., Gusev, G., Vorobev, A., Dorogush, A. V., \& Gulin, A. (2018). CatBoost: unbiased boosting with categorical features. \textit{NeurIPS 2018}. arXiv:1706.09516.
+    \item Liaw, A., \& Wiener, M. (2002). Classification and regression by randomForest. \textit{R News}, 2(3), 18--22.
+    \item Wright, M. N., \& Ziegler, A. (2017). ranger: A fast implementation of random forests. \textit{Journal of Statistical Software}, 77(1), 1--17. doi:10.18637/jss.v077.i01.
+    \item Pedregosa, F., et al.\ (2011). Scikit-learn: Machine learning in Python. \textit{JMLR}, 12, 2825--2830.
+\end{itemize}
+\end{frame}
 
 
 \end{document}
