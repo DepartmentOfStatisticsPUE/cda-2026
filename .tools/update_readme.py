@@ -16,6 +16,20 @@ CODES_DIR = REPO_ROOT / "codes"
 README = REPO_ROOT / "readme.md"
 
 GITHUB_BASE = "https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main/codes"
+GITHUB_ROOT = "https://github.com/DepartmentOfStatisticsPUE/cda-2026/blob/main"
+
+# Extra rows that live outside codes/ but should appear in download tables.
+# Each entry: (display name, {column -> (label, repo-relative path) or None})
+# `label` is what the link text shows; lets us put a .qmd link under the
+# Jupyter column without it being mislabelled.
+EXTRA_ROWS = [
+    ("Case study (school absence)", {
+        "R":       None,
+        "Python":  None,
+        "Julia":   None,
+        "Jupyter": (".qmd", "case-study/case-study.qmd"),
+    }),
+]
 
 # Map QMD stem to display title (extracted from filenames)
 TOPIC_ORDER = [
@@ -31,6 +45,7 @@ TOPIC_ORDER = [
     "08-marginal-effects",
     "09-glm-count",
     "10-glm-lr",
+    "11-trees",
 ]
 
 TOPIC_NAMES = {
@@ -46,6 +61,7 @@ TOPIC_NAMES = {
     "08-marginal-effects": "Marginal effects",
     "09-glm-count": "GLM: Count data",
     "10-glm-lr": "GLM: Logistic regression",
+    "11-trees": "Classification and regression trees",
 }
 
 
@@ -70,6 +86,9 @@ def find_files():
     return results
 
 
+EXT_MAP = {"R": ".R", "Python": ".py", "Julia": ".jl", "Jupyter": ".ipynb"}
+
+
 def generate_table(files):
     """Generate markdown table."""
     lines = []
@@ -77,13 +96,26 @@ def generate_table(files):
     lines.append("| # | Topic | R | Python | Julia | Jupyter |")
     lines.append("|---|-------|---|--------|-------|---------|")
 
-    for i, stem in enumerate(TOPIC_ORDER, 1):
+    row_num = 0
+    for stem in TOPIC_ORDER:
+        row_num += 1
         name = TOPIC_NAMES.get(stem, stem)
-        row = [str(i), name]
+        row = [str(row_num), name]
         for lang in ["R", "Python", "Julia", "Jupyter"]:
             if lang in files[stem]:
-                ext_map = {"R": ".R", "Python": ".py", "Julia": ".jl", "Jupyter": ".ipynb"}
-                row.append(f"[{ext_map[lang]}]({files[stem][lang]})")
+                row.append(f"[{EXT_MAP[lang]}]({files[stem][lang]})")
+            else:
+                row.append("--")
+        lines.append("| " + " | ".join(row) + " |")
+
+    for name, cols in EXTRA_ROWS:
+        row_num += 1
+        row = [str(row_num), name]
+        for lang in ["R", "Python", "Julia", "Jupyter"]:
+            entry = cols.get(lang)
+            if entry:
+                label, path = entry
+                row.append(f"[{label}]({path})")
             else:
                 row.append("--")
         lines.append("| " + " | ".join(row) + " |")
@@ -125,16 +157,32 @@ def generate_html_table(files):
     lines.append("</thead>")
     lines.append("<tbody>")
 
-    for i, stem in enumerate(TOPIC_ORDER, 1):
+    row_num = 0
+    for stem in TOPIC_ORDER:
+        row_num += 1
         name = TOPIC_NAMES.get(stem, stem)
         lines.append("<tr>")
-        lines.append(f"  <td>{i}</td>")
+        lines.append(f"  <td>{row_num}</td>")
         lines.append(f"  <td>{name}</td>")
         for lang in ["R", "Python", "Julia", "Jupyter"]:
             if lang in files[stem]:
-                ext_map = {"R": ".R", "Python": ".py", "Julia": ".jl", "Jupyter": ".ipynb"}
                 url = f"{GITHUB_BASE}/{files[stem][lang].removeprefix('codes/')}"
-                lines.append(f'  <td><a href="{url}">{ext_map[lang]}</a></td>')
+                lines.append(f'  <td><a href="{url}">{EXT_MAP[lang]}</a></td>')
+            else:
+                lines.append("  <td>--</td>")
+        lines.append("</tr>")
+
+    for name, cols in EXTRA_ROWS:
+        row_num += 1
+        lines.append("<tr>")
+        lines.append(f"  <td>{row_num}</td>")
+        lines.append(f"  <td>{name}</td>")
+        for lang in ["R", "Python", "Julia", "Jupyter"]:
+            entry = cols.get(lang)
+            if entry:
+                label, path = entry
+                url = f"{GITHUB_ROOT}/{path}"
+                lines.append(f'  <td><a href="{url}">{label}</a></td>')
             else:
                 lines.append("  <td>--</td>")
         lines.append("</tr>")

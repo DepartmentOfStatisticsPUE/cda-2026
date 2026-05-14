@@ -1,0 +1,748 @@
+---
+title: "Classification and regression trees"
+author: "Maciej Beręsewicz"
+format:
+  html:
+    embed-resources: true
+    table-of-contents: true
+    number-sections: true
+    df-print: kable
+editor: source
+execute:
+  eval: true
+  warning: false
+  message: false
+filters:
+  - ripper
+ripper:
+  output-dir: "extracted"
+  script-links-position: "none"
+  include-yaml: true
+---
+
+```{r setup, echo = FALSE}
+JuliaCall::julia_setup(JULIA_HOME = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/")
+knitr::opts_chunk$set(engine.path = list(
+  python = "/opt/anaconda3/bin/python3.12",
+  julia = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/"
+))
+```
+
+# Packages
+
+::: panel-tabset
+## R
+
+```{r pkg-install-r, eval = FALSE}
+install.packages("rpart")
+install.packages("rpart.plot")
+install.packages("partykit")
+```
+
+```{r pkg-load-r}
+library(rpart)
+library(rpart.plot)
+library(partykit)
+set.seed(123)
+```
+
+## Python
+
+```{bash pkg-install-py, eval = FALSE}
+!pip install scikit-learn matplotlib
+```
+
+```{python pkg-load-py}
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier, plot_tree
+from sklearn.linear_model import LinearRegression, LogisticRegression
+np.random.seed(123)
+```
+
+## Julia
+
+```{julia pkg-install-jl, eval = FALSE}
+using Pkg
+Pkg.add(["DecisionTree", "GLM", "DataFrames", "CSV", "CategoricalArrays",
+         "Statistics", "Random", "Plots", "Distributions"])
+```
+
+```{julia pkg-load-jl}
+using DecisionTree
+using GLM
+using DataFrames
+using CSV
+using CategoricalArrays
+using Statistics
+using Random
+using Distributions
+Random.seed!(123);
+```
+:::
+
+# Why trees?
+
+A classification or regression tree approximates $f(\mathbf{x}) = E[Y \mid X = \mathbf{x}]$ by a **piecewise-constant** function on a partition of the predictor space. This notebook walks through four examples of increasing complexity:
+
+1. continuous $Y$ with one continuous $X$ that has a non-linear shape -- OLS vs.\ a regression tree;
+2. binary $Y$ with one continuous $X$ -- logistic regression vs.\ a classification tree;
+3. binary $Y$ with one binary $X$ pair -- where the response is an interaction (XOR-style);
+4. the real Polish Job Vacancy Survey -- reproducing the toy tree from the slides.
+
+After each example there is a short exercise.
+
+# Example 1 -- continuous $Y$, continuous $X$ (non-linear)
+
+The data-generating process is
+$$
+Y_i = \sin(2\pi X_i) + \varepsilon_i, \qquad X_i \sim U(0, 1), \qquad \varepsilon_i \sim N(0, 0.3^2).
+$$
+
+The true regression function is smooth and non-monotone. OLS in $X$ alone can only fit a line; the tree carves the $X$-axis into intervals and predicts the mean of $Y$ on each.
+
+::: panel-tabset
+## R
+
+```{r ex1-sim-r}
+n <- 300
+x <- runif(n)
+y <- sin(2 * pi * x) + rnorm(n, sd = 0.3)
+d1 <- data.frame(x = x, y = y)
+```
+
+```{r ex1-fit-r}
+fit_lm   <- lm(y ~ x, data = d1)
+fit_tree <- rpart(y ~ x, data = d1,
+                  method = "anova",                ## "anova" = regression tree (SSR splits); use "class" for classification
+                  control = rpart.control(
+                    cp       = 0.01,               ## complexity threshold: refuse a split unless it cuts the (scaled) error by >= cp
+                    minsplit = 20))                ## a node with fewer than 20 obs is never split
+```
+
+```{r ex1-tree-r}
+rpart.plot(fit_tree, type = 4, extra = 1, digits = 3)
+```
+
+```{r ex1-compare-r, fig.width = 7, fig.height = 4}
+xs <- seq(0, 1, length = 400)
+yhat_lm   <- predict(fit_lm,   newdata = data.frame(x = xs))
+yhat_tree <- predict(fit_tree, newdata = data.frame(x = xs))
+
+plot(x, y, pch = 19, col = "grey60", cex = 0.7,
+     xlab = "x", ylab = "y", main = "OLS vs. regression tree")
+lines(xs, sin(2 * pi * xs), col = "black", lwd = 2)
+lines(xs, yhat_lm,   col = "red",  lwd = 2)
+lines(xs, yhat_tree, col = "blue", lwd = 2)
+legend("topright",
+       legend = c("truth", "OLS", "rpart"),
+       col    = c("black", "red", "blue"),
+       lwd = 2, bty = "n")
+```
+
+In-sample MSE:
+
+```{r ex1-mse-r}
+c(OLS  = mean((d1$y - predict(fit_lm))^2),
+  tree = mean((d1$y - predict(fit_tree))^2))
+```
+
+## Python
+
+```{python ex1-sim-py}
+n = 300
+x = np.random.uniform(0, 1, n)
+y = np.sin(2 * np.pi * x) + np.random.normal(0, 0.3, n)
+X = x.reshape(-1, 1)
+```
+
+```{python ex1-fit-py}
+fit_lm   = LinearRegression().fit(X, y)
+fit_tree = DecisionTreeRegressor(
+    max_depth         = 4,   ## hard cap on tree depth; None = grow until pure
+    min_samples_split = 20   ## a node with fewer than 20 obs is never split
+).fit(X, y)
+```
+
+```{python ex1-tree-py}
+fig, ax = plt.subplots(figsize = (8, 5))
+plot_tree(fit_tree, filled = True, rounded = True, feature_names = ["x"], ax = ax)
+plt.show()
+```
+
+```{python ex1-compare-py}
+xs = np.linspace(0, 1, 400).reshape(-1, 1)
+plt.figure(figsize = (7, 4))
+plt.scatter(x, y, color = "grey", s = 12)
+plt.plot(xs, np.sin(2 * np.pi * xs),  color = "black", lw = 2, label = "truth")
+plt.plot(xs, fit_lm.predict(xs),      color = "red",   lw = 2, label = "OLS")
+plt.plot(xs, fit_tree.predict(xs),    color = "blue",  lw = 2, label = "tree")
+plt.xlabel("x"); plt.ylabel("y"); plt.legend(); plt.title("OLS vs. regression tree")
+plt.show()
+```
+
+```{python ex1-mse-py}
+{"OLS":  float(((y - fit_lm.predict(X))**2).mean()),
+ "tree": float(((y - fit_tree.predict(X))**2).mean())}
+```
+
+## Julia
+
+```{julia ex1-sim-jl}
+n = 300;
+x = rand(n);
+y = sin.(2 * pi .* x) .+ randn(n) .* 0.3;
+X = reshape(x, n, 1);
+```
+
+```{julia ex1-fit-jl}
+fit_lm   = lm(@formula(y ~ x), DataFrame(x = x, y = y));
+fit_tree = DecisionTreeRegressor(
+    max_depth         = 4,    ## hard cap on tree depth; -1 = grow until pure
+    min_samples_split = 20    ## a node with fewer than 20 obs is never split
+);
+DecisionTree.fit!(fit_tree, X, y);
+```
+
+```{julia ex1-tree-jl}
+print_tree(fit_tree, 3)
+```
+
+```{julia ex1-mse-jl}
+yhat_lm   = GLM.predict(fit_lm);
+yhat_tree = DecisionTree.predict(fit_tree, X);
+(OLS  = mean((y .- yhat_lm).^2),
+ tree = mean((y .- yhat_tree).^2))
+```
+:::
+
+The tree fits a step function that follows the sine curve, while OLS misses the shape almost entirely. The in-sample MSE for the tree is much smaller -- the cost is a piecewise-constant fit with visible discontinuities at the splits.
+
+## Exercise 1
+
+Replace the sine wave with a **quadratic** trend, $Y_i = (X_i - 0.5)^2 + \varepsilon_i$, with the same noise level. Refit OLS and a regression tree. Two questions:
+
+1. Does the tree still help, or does plain OLS now suffice?
+2. Add the squared term $X^2$ to the OLS formula. How does its in-sample MSE compare to the tree's?
+
+# Example 2 -- binary $Y$, continuous $X$
+
+The DGP has a **non-monotone** success probability:
+$$
+P(Y_i = 1 \mid X_i) \;=\; \tfrac{1}{2} + 0.4 \cdot \sin(2\pi X_i), \qquad X_i \sim U(0, 1).
+$$
+
+A plain logistic regression in $X$ alone is constrained to a monotone S-curve and will fail to recover the bumps; a classification tree splits $X$ into bins matching the high- and low-probability regions.
+
+::: panel-tabset
+## R
+
+```{r ex2-sim-r}
+n <- 500
+x <- runif(n)
+p <- 0.5 + 0.4 * sin(2 * pi * x)
+y <- rbinom(n, size = 1, prob = p)
+d2 <- data.frame(x = x, y = factor(y))
+```
+
+```{r ex2-fit-r}
+fit_logit <- glm(y ~ x, data = d2, family = binomial())
+fit_ctree <- rpart(y ~ x, data = d2,
+                   method = "class",                ## "class" = classification tree (Gini splits by default)
+                   control = rpart.control(
+                     cp        = 0.005,             ## smaller cp than the default 0.01 -> allow a deeper tree
+                     minbucket = 20))               ## every leaf must contain at least 20 obs
+```
+
+```{r ex2-tree-r}
+rpart.plot(fit_ctree, type = 4, extra = 104, digits = 3)
+```
+
+```{r ex2-compare-r, fig.width = 7, fig.height = 4}
+xs <- seq(0, 1, length = 400)
+p_logit <- predict(fit_logit, newdata = data.frame(x = xs), type = "response")
+p_tree  <- predict(fit_ctree, newdata = data.frame(x = xs), type = "prob")[, "1"]
+
+plot(xs, 0.5 + 0.4 * sin(2 * pi * xs),
+     type = "l", lwd = 2, ylim = c(0, 1),
+     xlab = "x", ylab = "P(Y = 1 | x)", main = "Logistic vs. classification tree")
+lines(xs, p_logit, col = "red",  lwd = 2)
+lines(xs, p_tree,  col = "blue", lwd = 2)
+points(x, as.numeric(as.character(d2$y)), pch = "|", col = "grey60")
+legend("topright",
+       legend = c("truth", "logit", "tree"),
+       col    = c("black", "red", "blue"),
+       lwd = 2, bty = "n")
+```
+
+In-sample classification error:
+
+```{r ex2-err-r}
+err_logit <- mean((predict(fit_logit, type = "response") > 0.5) != (d2$y == "1"))
+err_tree  <- mean(predict(fit_ctree, type = "class") != d2$y)
+c(logit = err_logit, tree = err_tree)
+```
+
+## Python
+
+```{python ex2-sim-py}
+n = 500
+x = np.random.uniform(0, 1, n)
+p = 0.5 + 0.4 * np.sin(2 * np.pi * x)
+y = np.random.binomial(1, p)
+X = x.reshape(-1, 1)
+```
+
+```{python ex2-fit-py}
+fit_logit = LogisticRegression().fit(X, y)
+fit_ctree = DecisionTreeClassifier(
+    max_depth        = 4,    ## hard cap on tree depth
+    min_samples_leaf = 20    ## every leaf must contain at least 20 obs
+).fit(X, y)
+```
+
+```{python ex2-tree-py}
+fig, ax = plt.subplots(figsize = (8, 5))
+plot_tree(fit_ctree, filled = True, rounded = True,
+          feature_names = ["x"], class_names = ["0", "1"], ax = ax)
+plt.show()
+```
+
+```{python ex2-compare-py}
+xs = np.linspace(0, 1, 400).reshape(-1, 1)
+plt.figure(figsize = (7, 4))
+plt.plot(xs, 0.5 + 0.4 * np.sin(2 * np.pi * xs.ravel()),
+         color = "black", lw = 2, label = "truth")
+plt.plot(xs, fit_logit.predict_proba(xs)[:, 1], color = "red",  lw = 2, label = "logit")
+plt.plot(xs, fit_ctree.predict_proba(xs)[:, 1], color = "blue", lw = 2, label = "tree")
+plt.scatter(x, y, color = "grey", s = 4)
+plt.xlabel("x"); plt.ylabel("P(Y = 1 | x)"); plt.legend()
+plt.title("Logistic vs. classification tree")
+plt.show()
+```
+
+```{python ex2-err-py}
+{"logit": float((fit_logit.predict(X) != y).mean()),
+ "tree":  float((fit_ctree.predict(X) != y).mean())}
+```
+
+## Julia
+
+```{julia ex2-sim-jl}
+n = 500;
+x = rand(n);
+p = 0.5 .+ 0.4 .* sin.(2 * pi .* x);
+y = Int.(rand(n) .< p);
+X = reshape(x, n, 1);
+```
+
+```{julia ex2-fit-jl}
+fit_logit = glm(@formula(y ~ x), DataFrame(x = x, y = y), Binomial(), LogitLink());
+fit_ctree = DecisionTreeClassifier(
+    max_depth        = 4,     ## hard cap on tree depth
+    min_samples_leaf = 20     ## every leaf must contain at least 20 obs
+);
+DecisionTree.fit!(fit_ctree, X, y);
+```
+
+```{julia ex2-tree-jl}
+print_tree(fit_ctree, 3)
+```
+
+```{julia ex2-err-jl}
+yhat_logit = Int.(GLM.predict(fit_logit) .> 0.5);
+yhat_tree  = DecisionTree.predict(fit_ctree, X);
+(logit = mean(yhat_logit .!= y),
+ tree  = mean(yhat_tree  .!= y))
+```
+:::
+
+The logistic curve flattens at $0.5$ -- it correctly notices that on average $P(Y = 1) = 0.5$, but cannot see the bumps. The tree splits $x$ into regions and reports the bump heights.
+
+## Exercise 2
+
+Change the DGP to $P(Y = 1 \mid X) = \tfrac{1}{2} + 0.4 \cdot \sin(4\pi X)$ -- the probability now oscillates **twice** as fast. Refit both models. How deep does the tree need to be (parameter `cp` / `max_depth`) before it picks up all four turning points? Plot the resulting probability curves on top of the truth.
+
+# Example 3 -- binary $Y$, binary $X$ (interaction / XOR)
+
+A pure interaction effect: $Y$ depends on whether $X_1$ and $X_2$ **agree**, not on either one alone.
+
+|       | $X_2 = 0$ | $X_2 = 1$ |
+|-------|-----------|-----------|
+| $X_1 = 0$ | $P = 0.85$ | $P = 0.15$ |
+| $X_1 = 1$ | $P = 0.15$ | $P = 0.85$ |
+
+A logistic regression with **main effects only** sees both marginal effects as zero. A tree with depth 2 recovers the four cells exactly.
+
+::: panel-tabset
+## R
+
+```{r ex3-sim-r}
+n <- 1000
+x1 <- rbinom(n, 1, 0.5)
+x2 <- rbinom(n, 1, 0.5)
+p  <- ifelse(x1 == x2, 0.85, 0.15)
+y  <- rbinom(n, 1, p)
+d3 <- data.frame(x1 = factor(x1), x2 = factor(x2), y = factor(y))
+```
+
+```{r ex3-table-r}
+addmargins(prop.table(table(x1 = d3$x1, x2 = d3$x2, y = d3$y), c(1, 2)), 3)
+```
+
+```{r ex3-fit-r}
+fit_logit_main <- glm(y ~ x1 + x2,    data = d3, family = binomial())   ## main effects only -> blind to XOR
+fit_logit_int  <- glm(y ~ x1 * x2,    data = d3, family = binomial())   ## "x1 * x2" expands to x1 + x2 + x1:x2
+fit_tree3      <- rpart(y ~ x1 + x2,  data = d3, method = "class")      ## defaults: cp = 0.01, minsplit = 20, minbucket = round(minsplit/3)
+```
+
+```{r ex3-tree-r}
+rpart.plot(fit_tree3, type = 4, extra = 104, digits = 3)
+```
+
+```{r ex3-err-r}
+err <- function(pred, y) mean(pred != y)
+c(logit_main = err(predict(fit_logit_main, type = "response") > 0.5, d3$y == "1"),
+  logit_int  = err(predict(fit_logit_int,  type = "response") > 0.5, d3$y == "1"),
+  tree       = err(predict(fit_tree3, type = "class"), d3$y))
+```
+
+## Python
+
+```{python ex3-sim-py}
+n = 1000
+x1 = np.random.binomial(1, 0.5, n)
+x2 = np.random.binomial(1, 0.5, n)
+p  = np.where(x1 == x2, 0.85, 0.15)
+y  = np.random.binomial(1, p)
+X  = np.column_stack([x1, x2])
+```
+
+```{python ex3-fit-py}
+fit_logit_main = LogisticRegression(C = 1e6).fit(X, y)              ## C = 1 / penalty; large C ≈ unpenalised MLE
+X_int = np.column_stack([x1, x2, x1 * x2])                          ## add the x1 * x2 interaction column by hand
+fit_logit_int  = LogisticRegression(C = 1e6).fit(X_int, y)
+fit_tree3      = DecisionTreeClassifier(max_depth = 2).fit(X, y)    ## depth 2 is exactly enough for a 2x2 XOR
+```
+
+```{python ex3-tree-py}
+fig, ax = plt.subplots(figsize = (8, 5))
+plot_tree(fit_tree3, filled = True, rounded = True,
+          feature_names = ["x1", "x2"], class_names = ["0", "1"], ax = ax)
+plt.show()
+```
+
+```{python ex3-err-py}
+{"logit_main": float((fit_logit_main.predict(X)     != y).mean()),
+ "logit_int":  float((fit_logit_int.predict(X_int)  != y).mean()),
+ "tree":       float((fit_tree3.predict(X)          != y).mean())}
+```
+
+## Julia
+
+```{julia ex3-sim-jl}
+n = 1000;
+x1 = rand(0:1, n);
+x2 = rand(0:1, n);
+p  = ifelse.(x1 .== x2, 0.85, 0.15);
+y  = Int.(rand(n) .< p);
+X  = hcat(x1, x2);
+```
+
+```{julia ex3-fit-jl}
+df3 = DataFrame(x1 = x1, x2 = x2, y = y);
+fit_logit_main = glm(@formula(y ~ x1 + x2), df3, Binomial(), LogitLink());   ## main effects only -> blind to XOR
+fit_logit_int  = glm(@formula(y ~ x1 * x2), df3, Binomial(), LogitLink());   ## "x1 * x2" expands to x1 + x2 + x1&x2
+fit_tree3 = DecisionTreeClassifier(max_depth = 2);                           ## depth 2 is exactly enough for a 2x2 XOR
+DecisionTree.fit!(fit_tree3, X, y);
+```
+
+```{julia ex3-tree-jl}
+print_tree(fit_tree3, 3)
+```
+
+```{julia ex3-err-jl}
+yhat_main = Int.(GLM.predict(fit_logit_main) .> 0.5);
+yhat_int  = Int.(GLM.predict(fit_logit_int)  .> 0.5);
+yhat_tree = DecisionTree.predict(fit_tree3, X);
+(logit_main = mean(yhat_main .!= y),
+ logit_int  = mean(yhat_int  .!= y),
+ tree       = mean(yhat_tree .!= y))
+```
+:::
+
+The main-effects logistic predicts class $1$ in roughly half of the rows -- error rate $\approx 0.5$. The logistic with the explicit `x1:x2` interaction matches the tree exactly. **The tree did not need to be told about the interaction**: a depth-2 split in $x_1$ then $x_2$ recovers it from the data.
+
+## Exercise 3
+
+Switch to an *unbalanced* XOR: keep $P(Y = 1 \mid x_1 = x_2) = 0.85$, but lower $P(Y = 1 \mid x_1 \ne x_2)$ to $0.40$. Refit the three models and compare error rates again. Then add a **noise variable** $x_3 \sim$ Bernoulli$(0.5)$ that is independent of $Y$, refit the tree, and report which variable it splits on first.
+
+# Application -- the Polish Job Vacancy Survey
+
+Now move to the real data set used throughout the course.
+
+::: panel-tabset
+## R
+
+```{r jvs-data-r}
+df <- read.csv("data/polish-jvs.csv",
+               colClasses = c("character", "factor", rep("character", 4), "numeric"))
+df$size        <- factor(df$size, levels = c("Large", "Medium", "Small"))
+df$public      <- factor(df$public)
+df$nace        <- factor(df$nace)
+df$has_vacancy <- as.integer(df$vacancies > 0)
+nrow(df)
+```
+
+## Python
+
+```{python jvs-data-py}
+df = pd.read_csv("data/polish-jvs.csv",
+                 dtype = {"id": str, "woj": str, "public": str,
+                          "size": str, "nace_division": str, "nace": str})
+df["size"]        = pd.Categorical(df["size"], categories = ["Large", "Medium", "Small"])
+df["has_vacancy"] = (df["vacancies"] > 0).astype(int)
+len(df)
+```
+
+## Julia
+
+```{julia jvs-data-jl}
+df = CSV.read("data/polish-jvs.csv", DataFrame,
+              types = Dict(:id => String, :woj => String, :public => String,
+                           :size => String, :nace_division => String, :nace => String));
+df.size        = categorical(df.size, levels = ["Large", "Medium", "Small"]);
+df.public      = categorical(df.public);
+df.has_vacancy = ifelse.(df.vacancies .> 0, 1, 0);
+nrow(df)
+```
+:::
+
+## Reproducing the slide example -- a 3-leaf tree
+
+The slides show a tree of depth 2 on `has_vacancy` using `size` and `public`. Force the same shape here:
+
+::: panel-tabset
+## R
+
+```{r jvs-toy-r}
+## Gotcha: with method = "class" on a heavily imbalanced binary outcome
+## (88% zeros), rpart's cp filter is based on misclassification cost.
+## Because no single split flips the majority class in any leaf, every
+## split is scored as "zero improvement" and rpart returns the root only.
+## Fix: fit as a regression tree on the 0/1 indicator -- for binary Y the
+## SSR criterion is equivalent to Gini (var(Y) = p(1 - p) = Gini / 2).
+jvs_toy <- rpart(has_vacancy ~ size + public, data = df,
+                 method = "anova",                  ## regression on 0/1 = Gini classification for binary Y
+                 control = rpart.control(
+                   maxdepth = 2,                    ## stop at depth 2 (root = depth 0)
+                   cp       = 0))                   ## let depth (not cp) bind; leaf values are p(has_vacancy = 1)
+rpart.plot(jvs_toy, type = 4, extra = 101, digits = 3)
+```
+
+```{r jvs-toy-table-r}
+aggregate(cbind(n = rep(1, nrow(df)),
+                p_has = df$has_vacancy,
+                mean_vac = df$vacancies)
+          ~ size + public, data = df, FUN = sum) -> .agg
+within(.agg, {p_has <- p_has / n; mean_vac <- mean_vac / n})
+```
+
+## Python
+
+```{python jvs-toy-py}
+from sklearn.preprocessing import OrdinalEncoder
+enc = OrdinalEncoder(categories = [["Large", "Medium", "Small"], ["0", "1"]])
+X_toy = enc.fit_transform(df[["size", "public"]].astype(str))
+y_toy = df["has_vacancy"].to_numpy()
+jvs_toy = DecisionTreeClassifier(max_depth = 2).fit(X_toy, y_toy)   ## depth 2 ⇒ at most 4 leaves; matches the slide
+fig, ax = plt.subplots(figsize = (8, 5))
+plot_tree(jvs_toy, filled = True, rounded = True,
+          feature_names = ["size", "public"], class_names = ["0", "1"], ax = ax)
+plt.show()
+```
+
+```{python jvs-toy-table-py}
+(df.groupby(["size", "public"], observed = True)
+   .agg(n = ("has_vacancy", "size"),
+        p_has = ("has_vacancy", "mean"),
+        mean_vac = ("vacancies", "mean"))
+   .round(3))
+```
+
+## Julia
+
+```{julia jvs-toy-jl}
+size_code   = levelcode.(df.size);
+public_code = levelcode.(df.public);
+X_toy = hcat(size_code, public_code);             ## ";" suppresses printing the 57480x2 matrix
+y_toy = df.has_vacancy;
+jvs_toy = DecisionTreeClassifier(max_depth = 2)   ## depth 2 ⇒ at most 4 leaves; matches the slide
+DecisionTree.fit!(jvs_toy, X_toy, y_toy);
+print_tree(jvs_toy, 3)                            ## second argument = max depth to print (truncates display, not the model)
+```
+
+```{julia jvs-toy-table-jl}
+combine(groupby(df, [:size, :public]),
+        nrow => :n,
+        :has_vacancy => mean => :p_has,
+        :vacancies   => mean => :mean_vac)
+```
+:::
+
+The leaf probabilities and means line up with the numbers reported in the slides: Large/private $\approx 0.19$, Large/public $\approx 0.17$, Small or Medium $\approx 0.07$.
+
+## Exercise 4
+
+Re-fit the tree **without** the depth restriction (use the default `cp = 0.01`) and let it use `size`, `public`, **and** `nace_division` ($\approx 90$ levels). Report (i) the number of leaves, (ii) the first three variables it splits on, and (iii) the in-sample classification error. Does `nace_division` ever appear in the top of the tree?
+
+# Pruning with cost-complexity
+
+A fully grown tree overfits. CART grows a large tree and prunes it back by minimising
+$$
+R_\alpha(T) \;=\; \sum_{m = 1}^{|T|} \sum_{i \in R_m} \ell(y_i, \hat y_{R_m}) \;+\; \alpha\,|T|.
+$$
+
+The complexity parameter $\alpha$ is chosen by cross-validation. `rpart` does this for you and stores the CV table in `$cptable`.
+
+::: panel-tabset
+## R
+
+```{r prune-r}
+## Same gotcha as above: fit as anova on the 0/1 indicator so that rpart
+## actually grows a tree on this heavily imbalanced outcome.
+jvs_big <- rpart(has_vacancy ~ size + public + nace_division + woj, data = df,
+                 method = "anova",                  ## regression on 0/1; leaf values are p(has_vacancy = 1)
+                 control = rpart.control(
+                   cp        = 0.0005,              ## very small cp -> grow an over-large tree, prune it back below
+                   minbucket = 50))                 ## min 50 obs per leaf, otherwise the deeper splits are unstable
+printcp(jvs_big)                                    ## CV table of (cp, |T|, train error, xerror, xstd)
+plotcp(jvs_big)                                     ## visualises the same table with the 1-SE bar
+```
+
+```{r prune-1se-r}
+cp1se <- jvs_big$cptable[, "CP"][which.min(jvs_big$cptable[, "xerror"])]
+jvs_pruned <- prune(jvs_big, cp = cp1se)
+c(leaves_full   = sum(jvs_big$frame$var == "<leaf>"),
+  leaves_pruned = sum(jvs_pruned$frame$var == "<leaf>"))
+```
+
+## Python
+
+```{python prune-py}
+from sklearn.tree import DecisionTreeClassifier
+features_py = ["size", "public", "nace_division", "woj"]
+enc_py = OrdinalEncoder(handle_unknown = "use_encoded_value", unknown_value = -1)
+X_py   = enc_py.fit_transform(df[features_py].astype(str))
+y_py   = df["has_vacancy"].to_numpy()
+
+tree_full = DecisionTreeClassifier(
+    min_samples_leaf = 50,        ## min 50 obs per leaf
+    random_state     = 123        ## seed for tie-breaking among splits with equal impurity
+)
+path = tree_full.cost_complexity_pruning_path(X_py, y_py)    ## returns the (alpha, total_impurity) pruning path
+alphas = path.ccp_alphas[::max(1, len(path.ccp_alphas) // 20)]   ## subsample ~20 alphas along the path for a quick scan
+
+scores = []
+for a in alphas:
+    t = DecisionTreeClassifier(
+        min_samples_leaf = 50,
+        ccp_alpha        = a,     ## cost-complexity pruning weight; sklearn's name for rpart's `cp`
+        random_state     = 123
+    )
+    t.fit(X_py, y_py)
+    scores.append({"alpha": float(a),
+                   "leaves": int(t.get_n_leaves()),
+                   "train_err": float((t.predict(X_py) != y_py).mean())})
+pd.DataFrame(scores)
+```
+
+## Julia
+
+```{julia prune-jl}
+size_c = levelcode.(df.size);
+pub_c  = levelcode.(df.public);
+nace_c = levelcode.(categorical(df.nace_division));
+woj_c  = levelcode.(categorical(df.woj));
+X_full = hcat(size_c, pub_c, nace_c, woj_c);          ## ";" suppresses the big matrix print
+y_full = df.has_vacancy;
+
+depths = [2, 4, 6, 8, 10]
+results = DataFrame(max_depth = Int[], train_err = Float64[])
+for d in depths
+    t = DecisionTreeClassifier(
+        max_depth        = d,    ## sweep depth as a proxy for cost-complexity pruning (DecisionTree.jl has no ccp_alpha)
+        min_samples_leaf = 50    ## min 50 obs per leaf
+    )
+    DecisionTree.fit!(t, X_full, y_full)
+    push!(results, (d, mean(DecisionTree.predict(t, X_full) .!= y_full)))
+end
+results
+```
+:::
+
+The cross-validated pruning curve shows the classic U-shape: a tree that is too small under-fits, a tree that is too large over-fits, and the **1-SE rule** picks the smallest tree within one standard error of the best CV error.
+
+## Exercise 5
+
+Fit a **regression tree** for `vacancies` (not `has_vacancy`) with `method = "anova"` and the same predictors. Plot the pruning curve and select the tree at the 1-SE rule. What is the MSE of this pruned tree compared to a Poisson GLM with the same predictors?
+
+# Conditional inference trees and ensembles (teaser)
+
+Two extensions that fix the biggest weakness of CART (selection bias toward high-cardinality predictors and high variance of a single tree):
+
+* **Conditional inference trees** (`partykit::ctree`) -- decouple variable selection from split selection by using permutation tests.
+* **Random forest** -- average many trees fit on bootstrap samples with a random subset of predictors at each split.
+
+::: panel-tabset
+## R
+
+```{r ctree-r}
+ct <- partykit::ctree(factor(has_vacancy) ~ size + public + nace,
+                      data = df,
+                      control = partykit::ctree_control(
+                        maxdepth     = 3,           ## maximum tree depth
+                        mincriterion = 0.99))       ## 1 - p-value cut-off; only split when the permutation test p < 0.01
+print(ct)
+```
+
+## Python
+
+```{python rf-py}
+from sklearn.ensemble import RandomForestClassifier
+rf = RandomForestClassifier(
+    n_estimators     = 200,   ## number of bootstrap trees in the forest
+    min_samples_leaf = 50,    ## min 50 obs per leaf in every tree
+    random_state     = 123,   ## seed for bootstrapping and the random feature subset at each split
+    n_jobs           = -1     ## -1 = use all available CPU cores
+).fit(X_py, y_py)
+imp = pd.Series(rf.feature_importances_, index = features_py).sort_values(ascending = False)
+imp.round(3)
+```
+
+## Julia
+
+```{julia rf-jl}
+rf = RandomForestClassifier(
+    n_trees          = 200,    ## number of trees in the forest
+    partial_sampling = 0.7,    ## fraction of training rows used to grow each tree (bootstrap subsample fraction)
+    min_samples_leaf = 50      ## min 50 obs per leaf in every tree
+);
+DecisionTree.fit!(rf, X_full, y_full);
+mean(DecisionTree.predict(rf, X_full) .!= y_full)
+```
+:::
+
+## Exercise 6
+
+Compare a **single classification tree**, a **random forest**, and a **logistic regression** on the same set of predictors. Split the JVS data into a 70/30 train-test split, fit each model on the training set, and report **test-set accuracy** and **AUC** for each. Which model wins?
+
+# Further reading
+
+- **Textbook.** Hastie, T., Tibshirani, R., & Friedman, J. (2009). *The Elements of Statistical Learning* (2nd ed.), Chapter 9. Springer. doi:10.1007/978-0-387-84858-7.
+- **Gentle introduction.** James, G., Witten, D., Hastie, T., & Tibshirani, R. (2021). *An Introduction to Statistical Learning* (2nd ed.), Chapter 8. Springer. doi:10.1007/978-1-0716-1418-1.
+- **Original reference.** Breiman, L., Friedman, J. H., Olshen, R. A., & Stone, C. J. (1984). *Classification and Regression Trees*. Wadsworth.
+- **R packages.** Therneau, T. & Atkinson, B. -- `rpart` vignette on CRAN; Hothorn, T., Hornik, K., & Zeileis, A. (2006). Unbiased recursive partitioning. *JCGS*, 15(3), 651–674. doi:10.1198/106186006X133933 -- the `partykit::ctree` paper.
+- **Ensembles.** Breiman, L. (2001). Random forests. *Machine Learning*, 45(1), 5–32. doi:10.1023/A:1010933404324. Friedman, J. H. (2001). Greedy function approximation: A gradient boosting machine. *Annals of Statistics*, 29(5), 1189–1232. doi:10.1214/aos/1013203451. Chen, T., & Guestrin, C. (2016). XGBoost. *KDD '16*, 785–794. doi:10.1145/2939672.2939785.
+- **Fifty-year retrospective.** Loh, W.-Y. (2014). Fifty years of classification and regression trees. *International Statistical Review*, 82(3), 329–348. doi:10.1111/insr.12016.

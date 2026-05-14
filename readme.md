@@ -12,6 +12,7 @@
 8. Marginal effects - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/08-marginal-effects.html)
 9. GLM: Count data - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/09-glm-count.html)
 10. GLM: Logistic regression - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/10-glm-lr.html)
+11. Classification and regression trees - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/11-trees.html)
 
 
 ## Extra materials
@@ -44,7 +45,8 @@ School-absence analysis (count + binary regression in one 90-min slot) --
 | 10 | Marginal effects | [.R](codes/R/08-marginal-effects.R) | [.py](codes/python/08-marginal-effects.py) | [.jl](codes/julia/08-marginal-effects.jl) | [.ipynb](codes/notebooks/08-marginal-effects.ipynb) |
 | 11 | GLM: Count data | [.R](codes/R/09-glm-count.R) | [.py](codes/python/09-glm-count.py) | [.jl](codes/julia/09-glm-count.jl) | [.ipynb](codes/notebooks/09-glm-count.ipynb) |
 | 12 | GLM: Logistic regression | [.R](codes/R/10-glm-lr.R) | [.py](codes/python/10-glm-lr.py) | [.jl](codes/julia/10-glm-lr.jl) | [.ipynb](codes/notebooks/10-glm-lr.ipynb) |
-| 13 | Case study (school absence) | -- | -- | -- | [.qmd](case-study/case-study.qmd) |
+| 13 | Classification and regression trees | [.R](codes/R/11-trees.R) | [.py](codes/python/11-trees.py) | [.jl](codes/julia/11-trees.jl) | [.ipynb](codes/notebooks/11-trees.ipynb) |
+| 14 | Case study (school absence) | -- | -- | -- | [.qmd](case-study/case-study.qmd) |
 
 ## Problem sets
 
