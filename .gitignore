@@ -17,8 +17,19 @@ homeworks/*-answer-key*
 homeworks/*-solution-*
 homeworks/generate-all-keys*
 homeworks/hw*-data-*.csv
+
+# Case study worked solutions (not shared with students)
+case-study/*-solution.*
+case-study/solution
 /.quarto/
 **/*.quarto_ipynb
+
+# Stray R graphics device output
+Rplots.pdf
+**/Rplots.pdf
+
+# Quarto rendered figure directories (only present when embed-resources: false)
+codes/qmd/*_files/
 
 # OS metadata
 **/.DS_Store

@@ -13,6 +13,7 @@
 9. GLM: Count data - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/09-glm-count.html)
 10. GLM: Logistic regression - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/10-glm-lr.html)
 11. Classification and regression trees - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/11-trees.html)
+12. Zero-inflated and hurdle models - [notebook](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/codes/qmd/12-zero-inflated-hurdle.html)
 
 
 ## Extra materials
@@ -46,7 +47,8 @@ School-absence analysis (count + binary regression in one 90-min slot) --
 | 11 | GLM: Count data | [.R](codes/R/09-glm-count.R) | [.py](codes/python/09-glm-count.py) | [.jl](codes/julia/09-glm-count.jl) | [.ipynb](codes/notebooks/09-glm-count.ipynb) |
 | 12 | GLM: Logistic regression | [.R](codes/R/10-glm-lr.R) | [.py](codes/python/10-glm-lr.py) | [.jl](codes/julia/10-glm-lr.jl) | [.ipynb](codes/notebooks/10-glm-lr.ipynb) |
 | 13 | Classification and regression trees | [.R](codes/R/11-trees.R) | [.py](codes/python/11-trees.py) | [.jl](codes/julia/11-trees.jl) | [.ipynb](codes/notebooks/11-trees.ipynb) |
-| 14 | Case study (school absence) | -- | -- | -- | [.qmd](case-study/case-study.qmd) |
+| 14 | Zero-inflated and hurdle models | [.R](codes/R/12-zero-inflated-hurdle.R) | [.py](codes/python/12-zero-inflated-hurdle.py) | [.jl](codes/julia/12-zero-inflated-hurdle.jl) | [.ipynb](codes/notebooks/12-zero-inflated-hurdle.ipynb) |
+| 15 | Case study (school absence) | -- | -- | -- | [.qmd](case-study/case-study.qmd) |
 
 ## Problem sets
 

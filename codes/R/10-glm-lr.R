@@ -34,7 +34,7 @@ c(n         = nrow(df),
 
 
 lpm <- lm(has_vacancy ~ size + public + nace, data = df)
-preds_lpm <- predict(lpm)
+preds_lpm <- predict(lpm) ## y_hat = beta_0_hat + ... + ...
 c(min      = round(min(preds_lpm), 4),
   max      = round(max(preds_lpm), 4),
   n_below0 = sum(preds_lpm < 0),
@@ -53,7 +53,8 @@ c(odds_public  = round(odds_pub,  4),
   log_OR       = round(log(odds_pub / odds_priv), 4))
 
 
-m1 <- glm(has_vacancy ~ public, data = df, family = binomial(link = "logit"))
+m1 <- glm(has_vacancy ~ public, data = df, 
+          family = binomial(link = "logit"))
 summary(m1)
 
 
@@ -88,6 +89,9 @@ modelsummary(list(logit   = m_logit,
                   cloglog = m_cloglog),
              statistic = "({std.error})",
              gof_omit  = "F|RMSE")
+
+AIC(m_logit, m_probit, m_cloglog)
+BIC(m_logit, m_probit, m_cloglog)
 
 
 round(coef(m_logit) / coef(m_probit), 3)

@@ -46,6 +46,7 @@ TOPIC_ORDER = [
     "09-glm-count",
     "10-glm-lr",
     "11-trees",
+    "12-zero-inflated-hurdle",
 ]
 
 TOPIC_NAMES = {
@@ -62,6 +63,7 @@ TOPIC_NAMES = {
     "09-glm-count": "GLM: Count data",
     "10-glm-lr": "GLM: Logistic regression",
     "11-trees": "Classification and regression trees",
+    "12-zero-inflated-hurdle": "Zero-inflated and hurdle models",
 }
 
 

@@ -61,15 +61,15 @@ phi_py = float((pearson ** 2).sum() / pois.df_resid)
 round(phi_py, 2)
 
 
-## Iterative NB2 via GLM: estimate alpha from Poisson residuals, then refit
-alpha_hat = ((pois.resid_pearson ** 2).sum() / pois.df_resid - 1) / pois.fittedvalues.mean()
-for _ in range(25):
-    nb2 = smf.glm("vacancies ~ C(size) + C(public) + C(nace)", data=df,
-                  family=sm.families.NegativeBinomial(alpha=alpha_hat)).fit()
-    alpha_hat = ((nb2.resid_pearson ** 2).sum() / nb2.df_resid - 1) / nb2.fittedvalues.mean()
-
+## Joint MLE for NB2 via statsmodels' discrete NegativeBinomial.
+## Default Newton can diverge on this data; BFGS with Poisson start values
+## is robust and matches MASS::glm.nb to 4 decimals.
+start = np.append(pois.params.values, 1.0)
+nb2 = smf.negativebinomial("vacancies ~ C(size) + C(public) + C(nace)",
+                           data = df).fit(start_params = start,
+                                          method = "bfgs", maxiter = 500, disp = 0)
 print(nb2.summary())
-print(f"\nEstimated alpha (1/k): {alpha_hat:.4f}")
+print(f"\nEstimated alpha (1/k): {nb2.params['alpha']:.4f}")
 
 
 qp = smf.glm("vacancies ~ C(size) + C(public) + C(nace)",
@@ -77,8 +77,6 @@ qp = smf.glm("vacancies ~ C(size) + C(public) + C(nace)",
 qp.bse.head()
 
 
-## NB2 GLM log-likelihood is conditional on estimated alpha;
-## valid for LR test once alpha has converged
 lr_stat = 2 * (nb2.llf - pois.llf)
 from scipy.stats import chi2
 lr_pval = chi2.sf(lr_stat, df=1)

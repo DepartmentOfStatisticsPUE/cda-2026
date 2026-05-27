@@ -12,9 +12,8 @@ install.packages("partykit")
 library(rpart)
 library(rpart.plot)
 library(partykit)
+
 set.seed(123)
-
-
 n <- 300
 x <- runif(n)
 y <- sin(2 * pi * x) + rnorm(n, sd = 0.3)
@@ -22,6 +21,7 @@ d1 <- data.frame(x = x, y = y)
 
 
 fit_lm   <- lm(y ~ x, data = d1)
+set.seed(2026)
 fit_tree <- rpart(y ~ x, data = d1,
                   method = "anova",                ## "anova" = regression tree (SSR splits); use "class" for classification
                   control = rpart.control(
@@ -29,7 +29,7 @@ fit_tree <- rpart(y ~ x, data = d1,
                     minsplit = 20))                ## a node with fewer than 20 obs is never split
 
 
-rpart.plot(fit_tree, type = 4, extra = 1, digits = 3)
+rpart.plot(fit_tree, type = 4, extra = 1, digits = 2)
 
 
 xs <- seq(0, 1, length = 400)
@@ -50,7 +50,42 @@ legend("topright",
 c(OLS  = mean((d1$y - predict(fit_lm))^2),
   tree = mean((d1$y - predict(fit_tree))^2))
 
+## exercise 1
+set.seed(123)
+n <- 300
+x <- runif(n)
+y <- (x - 0.5)^2 + rnorm(n, sd = 0.3)
+d2 <- data.frame(x = x, y = y)
+fit_lm2   <- lm(y ~ x, data = d2)
+fit_lm2.1   <- lm(y ~ x + I(x^2), data = d2)
+fit_tree2 <- rpart(y ~ x, data = d2,
+                  method = "anova", 
+                  control = rpart.control(
+                    cp       = 0.01,
+                    minsplit = 20))  
+rpart.plot(fit_tree2, type = 4, extra = 1, digits = 2)
 
+c(OLS  = mean((d2$y - predict(fit_lm2))^2),
+  OLS_2  = mean((d2$y - predict(fit_lm2.1))^2),
+  tree = mean((d2$y - predict(fit_tree2))^2))
+
+xs <- seq(0, 1, length = 400)
+fit_lm2.1   <- predict(fit_lm2.1,   newdata = data.frame(x = xs))
+yhat_tree2 <- predict(fit_tree2, newdata = data.frame(x = xs))
+
+plot(x, y, pch = 19, col = "grey60", cex = 0.7,
+     xlab = "x", ylab = "y", main = "OLS vs. regression tree")
+lines(xs, (xs - 0.5)^2, col = "black", lwd = 2)
+lines(xs, fit_lm2.1,   col = "red",  lwd = 2)
+lines(xs, yhat_tree2, col = "blue", lwd = 2)
+legend("topright",
+       legend = c("truth", "OLS", "rpart"),
+       col    = c("black", "red", "blue"),
+       lwd = 2, bty = "n")
+
+
+####
+set.seed(123)
 n <- 500
 x <- runif(n)
 p <- 0.5 + 0.4 * sin(2 * pi * x)

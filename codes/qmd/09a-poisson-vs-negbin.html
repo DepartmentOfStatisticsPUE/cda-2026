@@ -2464,16 +2464,14 @@ window.Quarto = {
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>pois <span class="op">=</span> smf.glm(<span class="st">&quot;vacancies ~ C(size) + C(public) + C(nace)&quot;</span>, data<span class="op">=</span>df,</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>               family<span class="op">=</span>sm.families.Poisson()).fit()</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">## Iterative NB2 via GLM: estimate alpha from Poisson residuals, then refit</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>alpha_hat <span class="op">=</span> ((pois.resid_pearson <span class="op">**</span> <span class="dv">2</span>).<span class="bu">sum</span>() <span class="op">/</span> pois.df_resid <span class="op">-</span> <span class="dv">1</span>) <span class="op">/</span> pois.fittedvalues.mean()</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">25</span>):</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    nb2 <span class="op">=</span> smf.glm(<span class="st">&quot;vacancies ~ C(size) + C(public) + C(nace)&quot;</span>, data<span class="op">=</span>df,</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                  family<span class="op">=</span>sm.families.NegativeBinomial(alpha<span class="op">=</span>alpha_hat)).fit()</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    alpha_hat <span class="op">=</span> ((nb2.resid_pearson <span class="op">**</span> <span class="dv">2</span>).<span class="bu">sum</span>() <span class="op">/</span> nb2.df_resid <span class="op">-</span> <span class="dv">1</span>) <span class="op">/</span> nb2.fittedvalues.mean()</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Estimated alpha (1/k): </span><span class="sc">{</span>alpha_hat<span class="sc">:.4f}</span><span class="ss">&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">## Joint MLE for NB2 — BFGS with Poisson start values matches MASS::glm.nb</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>start <span class="op">=</span> np.append(pois.params.values, <span class="fl">1.0</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>nb2 <span class="op">=</span> smf.negativebinomial(<span class="st">&quot;vacancies ~ C(size) + C(public) + C(nace)&quot;</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>                           data <span class="op">=</span> df).fit(start_params <span class="op">=</span> start,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                                          method <span class="op">=</span> <span class="st">&quot;bfgs&quot;</span>, maxiter <span class="op">=</span> <span class="dv">500</span>, disp <span class="op">=</span> <span class="dv">0</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Estimated alpha (1/k): </span><span class="sc">{</span>nb2<span class="sc">.</span>params[<span class="st">&#39;alpha&#39;</span>]<span class="sc">:.4f}</span><span class="ss">&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Estimated alpha (1/k): 5.8695</code></pre>
+<pre><code>Estimated alpha (1/k): 16.5906</code></pre>
 </div>
 </div>
 </div>
@@ -2608,11 +2606,11 @@ E(Y_i \mid \mathbf{x}_i) = \exp(\mathbf{x}_i^\top \boldsymbol{\beta}).
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>}, index<span class="op">=</span>idx).<span class="bu">round</span>(<span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                   Poisson_naive  Poisson_robust     NB2
-Intercept                 0.0826          0.1963  0.1106
-C(size)[T.Medium]         0.0169          0.1084  0.0334
-C(size)[T.Small]          0.0316          0.0999  0.0459
-C(public)[T.1]            0.0151          0.2093  0.0487
-C(nace)[T.B]              0.1100          0.3832  0.1852</code></pre>
+Intercept                 0.0826          0.1963  0.1494
+C(size)[T.Medium]         0.0169          0.1084  0.0494
+C(size)[T.Small]          0.0316          0.0999  0.0602
+C(public)[T.1]            0.0151          0.2093  0.0647
+C(nace)[T.B]              0.1100          0.3832  0.2425</code></pre>
 </div>
 </div>
 </div>
@@ -2692,11 +2690,11 @@ C(nace)[T.B]              0.1100          0.3832  0.1852</code></pre>
 <span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>}, index<span class="op">=</span>idx).<span class="bu">round</span>(<span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                   Poisson      NB2     Diff
-Intercept         -1.52875 -0.98447 -0.54428
-C(size)[T.Medium] -1.98300 -1.89038 -0.09262
-C(size)[T.Small]  -3.19144 -3.11576 -0.07568
-C(public)[T.1]     0.11930 -0.19323  0.31252
-C(nace)[T.B]       1.44042  0.82079  0.61963</code></pre>
+Intercept         -1.52875 -0.78643 -0.74232
+C(size)[T.Medium] -1.98300 -1.87024 -0.11276
+C(size)[T.Small]  -3.19144 -3.09830 -0.09314
+C(public)[T.1]     0.11930 -0.25130  0.37060
+C(nace)[T.B]       1.44042  0.57711  0.86331</code></pre>
 </div>
 </div>
 </div>

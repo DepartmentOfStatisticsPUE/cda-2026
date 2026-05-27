@@ -46,20 +46,15 @@
 \titlegraphic{\includegraphics[scale=0.5]{settings/uep-logo.jpg}}
 \author[Maciej Beręsewicz -- Department of Statistics PUE]{Maciej Beręsewicz \\ Department of Statistics, Poznań University of Economics}
 
-%\AtBeginPart{}
-\AtBeginSection{
-\begin{frame}[plain]{Outline}
-\tableofcontents[currentsection, sectionstyle=show/shaded, subsectionstyle=show,hideothersubsections]
-\end{frame}
-}
+\setbeamerfont{section in toc}{size=\small}
+\makeatletter
+\patchcmd{\beamer@sectionintoc}{\vskip1.5em}{\vskip0.7em}{}{}
+\makeatother
+\newcommand{\tocframe}[1]{\begin{frame}[plain]{Outline}\tableofcontents[#1]\end{frame}}
 
-%\AtBeginSubsection{}
+\AtBeginSection{\tocframe{currentsection,sectionstyle=show/shaded,hideallsubsections}}
 
-\AtBeginSubsection{
-\begin{frame}[plain]{Outline}
-\tableofcontents[currentsection,currentsubsection,sectionstyle=show/hide,subsectionstyle=show/shaded/hide,subsubsectionstyle=show/show/shaded/shaded]
-\end{frame}
-}
+\AtBeginSubsection{\tocframe{currentsection,currentsubsection,sectionstyle=show/hide,subsectionstyle=show/shaded/hide,subsubsectionstyle=show/show/shaded/shaded}}
 
 %\AtBeginSubsubsection{}
 

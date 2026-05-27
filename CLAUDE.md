@@ -120,6 +120,16 @@ The `example-test/` directory holds the example final exam (public). Render it i
 cd example-test && quarto render example-test.qmd
 ```
 
+## Case study
+
+The `case-study/` directory holds a single 90-min in-class case study (`case-study.qmd`, school-absence count + binary regression) and its data file `school-absence-for-lecture.xlsx`. Like `example-test/`, it sits outside the `.tools` pipeline and has its own `_quarto.yml` with `execute-dir: file`, so its qmd reads the Excel via a bare filename (not project-rooted). Render with:
+
+```bash
+cd case-study && quarto render case-study.qmd
+```
+
+Worked solutions (`case-study/*-solution.*` and `case-study/solution/`) are gitignored — the public `.qmd` only contains tasks/hints.
+
 ## Data
 
 Single main dataset: `data/polish-jvs.csv` — Polish job vacancy survey (~57K rows). Used across all topic notebooks.

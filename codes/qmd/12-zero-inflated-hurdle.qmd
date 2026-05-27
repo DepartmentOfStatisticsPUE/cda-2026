@@ -1,0 +1,420 @@
+---
+title: "Generalized linear models: zero-inflated and hurdle models"
+author: "Maciej Beręsewicz"
+format:
+  html:
+    embed-resources: true
+    table-of-contents: true
+    number-sections: true
+    df-print: kable
+editor: source
+execute:
+  eval: true
+  warning: false
+  message: false
+filters:
+  - ripper
+ripper:
+  output-dir: "extracted"
+  script-links-position: "none"
+  include-yaml: true
+---
+
+```{r setup, echo = FALSE}
+JuliaCall::julia_setup(JULIA_HOME = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/")
+knitr::opts_chunk$set(engine.path = list(
+  python = "/opt/anaconda3/bin/python3.12",
+  julia = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin/"
+))
+```
+
+# Setup
+
+::: panel-tabset
+## R
+
+```{r, eval = F}
+install.packages("pscl")
+install.packages("countreg", repos="http://R-Forge.R-project.org")
+install.packages("topmodels", repos="http://R-Forge.R-project.org") ## rootogram
+install.packages("distributions3")
+install.packages("modelsummary")
+install.packages("marginaleffects")
+install.packages("performance")
+install.packages("rstudioapi")
+```
+
+```{r}
+library(MASS) ## glm.nb
+library(countreg)
+library(pscl)
+library(topmodels)
+library(modelsummary)
+library(boot)
+library(marginaleffects)
+library(performance)
+```
+
+Read in the dataset for the lecture and specify column classes (types).
+
+```{r}
+df <- read.csv("data/polish-jvs.csv", colClasses = c("character", "factor", rep("character", 4), "numeric"))
+head(df)
+```
+
+## Python
+
+Load modules
+
+```{bash, eval = F}
+!pip install statsmodels
+```
+
+```{python}
+from patsy import dmatrices
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+```
+
+Read in the dataset for the lecture and specify column classes (types).
+
+```{python}
+df = pd.read_csv("data/polish-jvs.csv", dtype={"id": np.int64, "woj":str, "public":str,"size": str, "nace_division": str, "nace": str})
+df.head()
+```
+
+## Julia
+
+```{julia, eval = F}
+using Pkg
+Pkg.add(["Effects", "StatsBase", "CSV", "CategoricalArrays", "GLM"])
+```
+
+Load packages
+
+```{julia, eval = F}
+using Effects
+using StatsBase
+using CSV
+using CategoricalArrays
+using GLM
+using Statistics
+using DataFrames
+```
+
+Read in the dataset for the lecture and specify column classes (types).
+
+```{julia, eval = F}
+df=CSV.read("data/polish-jvs.csv", DataFrame,
+            types = Dict(:id => Int64, :woj=> String, :public=> String,
+                         :size => String, :nace_division => String, :nace => String));
+first(df, 5)
+```
+:::
+
+# Zero-inflated Poisson (ZIP)
+
+::: panel-tabset
+## R
+
+```{r}
+mean(df$vacancies == 0) ## share of 0s in our data
+table(df$vacancies == 0) ## freq of 0s in our data
+```
+
+Why companies report 0 vacancies?
+
+- b2b, contract of mandate -- the type of contract
+- type of company
+- at a given quarter these companies did not have vacancies at all (but in future they may, or they had in the past)
+
+```{r}
+m1 <- pscl::zeroinfl(formula = vacancies ~ size + public,
+                     dist = "poisson", ## E(Y|X) -- that is why the model is called zero-inflation poisson regression
+                     link = "logit",   ## P(Y = 0 | X) -- logistic regression
+                     data = df)
+```
+
+```{r}
+summary(m1)
+```
+
+Task for you:
+
+- run the following model: vacancies ~ nace
+- provide interpretation for selected levels: in particular section J (Information and communication)
+
+```{r}
+exercise1 <- pscl::zeroinfl(formula = vacancies ~ nace,
+                     dist = "poisson", ## E(Y|X) -- that is why the model is called zero-inflation poisson regression
+                     link = "logit",   ## P(Y = 0 | X) -- logistic regression
+                     data = df)
+summary(exercise1)
+
+## count: naceJ         2.6053     0.1130  23.052  < 2e-16 ***
+## zi: naceJ           -0.92210    0.14460  -6.377 1.81e-10 ***
+```
+
+```{r}
+rootogram(m1, plot = "base", xlim = c(0,11))
+```
+
+Estimate average marginal effects
+
+```{r}
+avg_slopes(m1, type = "zero") ## P(Y=0|X)
+```
+
+```{r}
+avg_slopes(m1, type = "response") ## AME for E(Y|X)
+```
+
+Interpretation:
+
++ Count Model (Poisson component):
+    + Public sector coefficient: exp(-0.580550)  ≈ 0.560 -- Being a public organization is associated with approximately 44% fewer vacancies compared to private organizations, holding other factors constant.
+    + Public sector coefficient (AME):  -0.563 -- On average, public organizations have 0.563 fewer vacancies than private organizations, holding other variables constant.
+
++ Zero-Inflation Model (logit component):
+    + Public sector coefficient: exp(0.02671) ≈ 1.027 -- Public organizations have approximately 2.7% higher odds of having zero vacancies compared to private organizations, but this effect is not statistically significant (p = 0.331).
+    + Public sector coefficient (AME): 0.00291 -- Being a public organization is associated with a 0.291 percentage point increase in the probability of having zero vacancies compared to private organizations.
+
+Exercise:
+
+1. fit Poisson regression with the following variables: vacancies ~ size + nace
+2. fit ZI Poisson regression with the following variables: vacancies ~ size + nace
+3. what is the fit? which model is better and why?
+
+```{r}
+ex2_po <- glm(formula = vacancies ~ size + nace,
+              family = poisson(), data=df)
+
+ex2_zip <- pscl::zeroinfl(formula = vacancies ~ size + nace,
+                          dist = "poisson",  link = "logit",  data = df)
+
+data.frame(AIC = AIC(ex2_po, ex2_zip), BIC = BIC(ex2_po, ex2_zip))
+```
+
+```{r}
+par(mfrow=c(1,2))
+rootogram(ex2_po, plot = "base", xlim = c(0,11), main = "Poisson")
+rootogram(ex2_zip, plot = "base", xlim = c(0,11), main = "ZIP")
+```
+
+
+## Python
+
+```{python}
+y, x = dmatrices("vacancies ~ size + public", df, return_type='dataframe')
+```
+
+```{python}
+m1 = sm.ZeroInflatedPoisson(endog=y, exog=x, exog_infl=x, inflation='logit').fit(maxiter = 100)
+print(m1.summary())
+```
+
+## Julia
+:::
+
+# Zero-inflated Negative Binomial (ZINB)
+
+::: panel-tabset
+## R
+
+```{r}
+m2 <- pscl::zeroinfl(formula = vacancies ~ size + public,
+                     dist = "negbin",
+                     link = "logit",
+                     data = df)
+```
+
+```{r}
+summary(m2)
+```
+
+```{r}
+BIC(m1, ## ZI poisson
+    m2  ## ZI neg bin
+    )
+```
+
+```{r}
+rootogram(m2, plot = "base", xlim = c(0,11))
+```
+
+```{r}
+BIC(m1, m2)
+```
+
+**Exercise**:
+
+1. fit Poisson regression with the following variables: vacancies ~ size + nace
+2. fit ZI Poisson regression with the following variables: vacancies ~ size + nace
+3. fit NB regression with the following variables: vacancies ~ size + nace
+4. fit ZI NB regression with the following variables: vacancies ~ size + nace
+5. what is the fit? which model is better and why?
+
+```{r}
+ex2_po <- glm(formula = vacancies ~ size + nace,
+              family = poisson(), data=df)
+
+ex2_zip <- pscl::zeroinfl(formula = vacancies ~ size + nace,
+                          dist = "poisson",  link = "logit",  data = df)
+
+ex2_nb <- glm.nb(formula = vacancies ~ size + nace, data=df)
+
+ex2_zinb <- pscl::zeroinfl(formula = vacancies ~ size + nace,
+                          dist = "negbin",  link = "logit",  data = df)
+
+
+data.frame(AIC = AIC(ex2_po, ex2_zip, ex2_nb, ex2_zinb),
+           BIC = BIC(ex2_po, ex2_zip, ex2_nb, ex2_zinb))
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+rootogram(ex2_po, plot = "base", xlim = c(0,11), main = "Poisson")
+rootogram(ex2_zip, plot = "base", xlim = c(0,11), main = "ZIP")
+
+rootogram(ex2_nb, plot = "base", xlim = c(0,11), main = "NegBin")
+rootogram(ex2_zinb, plot = "base", xlim = c(0,11), main = "ZINB")
+
+```
+
+E(Y|X), P(Y=0|Z)
+
+Y ~ X | Z
+
+```{r}
+ex2_zip <- pscl::zeroinfl(formula = vacancies ~ size + nace | nace,
+                          dist = "poisson",  link = "logit",  data = df)
+summary(ex2_zip)
+```
+
+## Python
+
+```{python}
+m2 = sm.ZeroInflatedNegativeBinomialP(endog=y, exog=x, exog_infl=x, inflation='logit').fit(maxiter = 500)
+print(m2.summary())
+```
+
+## Julia
+:::
+
+# Hurdle Poisson
+
+::: panel-tabset
+## R
+
+ZI model:    E(Y|X) - counts,      P(Y=0 |Z) - zero-inflation part
+HURDE model: E(Y|X, X>0) - counts, P(Y > 0|Z) - hurdle part
+
+```{r}
+m1 <- countreg::hurdle(formula = vacancies ~ size + public,
+                   dist = "poisson", ## vacancies ~ zero-truncated Poisson distribution
+                   link = "logit", ## P(Y > 0 | Z) | w oneinf P(Y = 0 | Z)
+                   data = df)
+summary(m1)
+```
+
+```{r}
+m1a <- countreg::zeroinfl(formula = vacancies ~ size + public,
+                   dist = "poisson",
+                   link = "logit",
+                   data = df)
+```
+
+```{r name-error}
+modelsummary(list("ZIP"=m1a, "HP"=m1))
+```
+
+```{r}
+BIC(m1, m1a)
+```
+
+```{r}
+# avg_slopes(m1, type = "zero") # P(Y > 0 | Z) not working
+```
+
+```{r}
+avg_slopes(m1, type = "response")
+```
+
+## Python
+
+```{python matrices, eval = FALSE}
+y, x = dmatrices("vacancies ~ size + public", df, return_type='dataframe')
+```
+
+This code works under `statsmodels >= 0.14.0` but as I have older version it does not work.
+
+```{python, eval = FALSE}
+m1 = HurdleCountModel(endog=y, exog=x, exog_infl=x, inflation='logit').fit(maxiter = 100)
+print(m1.summary())
+```
+
+
+## Julia
+:::
+
+# Hurdle Negative Binomial
+
+::: panel-tabset
+## R
+
+```{r}
+m2 <- pscl::hurdle(formula = vacancies ~ size + public,
+                     dist = "negbin", ## zero-truncated NB vs zeroinf mamy NB
+                     link = "logit",
+                     data = df)
+```
+
+```{r}
+summary(m2)
+```
+
+```{r}
+BIC(m1, m2) #hurdle Poisson vs hurdle NB
+```
+
+```{r}
+m3 <- pscl::zeroinfl(formula = vacancies ~ size + public,
+                     dist = "negbin",
+                     link = "logit",
+                     data = df)
+
+summary(m3)
+```
+
+```{r}
+BIC(m2,m3)
+```
+
+```{r}
+modelsummary(list("HurdleNB"=m2, "ZINB"=m3))
+```
+
+## Python
+
+## Julia
+:::
+
+Exercise:
+
+1. fit NB regression with the following variables: vacancies ~ size + nace
+2. fit Hurdle NB regression with the following variables: vacancies ~ size + nace
+3. fit ZI NB regression with the following variables: vacancies ~ size + nace
+4. what is the fit? which model is better and why?
+
+
+# Model quality
+
+```{r}
+pR2(m1) |> round(2)
+pR2(m1a) |> round(2)
+pR2(m2) |> round(2)
+pR2(m3) |> round(2)
+```

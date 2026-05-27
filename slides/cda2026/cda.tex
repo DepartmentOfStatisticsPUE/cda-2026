@@ -3997,6 +3997,356 @@ Now, proceed to the example of regression and classification trees in R / Python
 \end{itemize}
 \end{frame}
 
+\section{How to deal with extra zeros?}
+\subsection{Zero-inflated models}
+
+\begin{frame}{Motivation: zeros in the Polish Job Vacancy Survey}
+\small
+\begin{itemize}
+\justifying
+    \item Throughout this section we analyse vacancy counts from \texttt{data/polish-jvs.csv}
+          ($n = 57{,}480$ firm observations); the outcome variable is the \textbf{number of
+          vacancies} reported by a firm in a given quarter.
+    \item \textbf{Estimate:} $87.9\%$ of firms report \textbf{zero} vacancies --- the data
+          are heavily zero-dominated.
+    \item A standard Poisson model fitted with the same mean ($\hat{\mu} \approx 1.02$) predicts
+          the share of zeros as $e^{-1.02} \approx 0.36$ (36\%) --- far below the observed 88\%:
+          \begin{center}
+          \begin{tabular}{lc}
+          \hline
+          & Share of zeros \\
+          \hline
+          Observed                & $\approx 88\%$ \\
+          Poisson-predicted       & $\approx 36\%$ \\
+          \hline
+          \end{tabular}
+          \end{center}
+    \item The data are also \textbf{severely overdispersed}: mean $\approx 1.02$, variance
+          $\approx 95.9$, so variance $\gg$ mean --- pointing to Negative Binomial rather than
+          Poisson even among the non-zero counts.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Motivation: zeros in the Polish Job Vacancy Survey}
+\begin{itemize}
+\justifying
+    \item \textbf{Why so many zeros?} Several distinct mechanisms operate simultaneously:
+          \begin{itemize}
+              \item Hiring via B2B or contract-of-mandate arrangements that are \textit{not}
+                    counted as official vacancies.
+              \item Firms with no hiring need in the reference quarter.
+              \item Some firm types (very small, family-run) that essentially never post vacancies.
+          \end{itemize}
+    \item This motivates models that explicitly handle excess zeros:
+          \textbf{zero-inflated} (ZIP/ZINB) and \textbf{hurdle} models --- covered in this section.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Introduction to Zero-Inflated Regression}
+\begin{itemize}
+\justifying
+\item Zero-inflated models are used in statistical modelling when the data exceeds zero outcomes.
+\item The term "zero-inflated" describes a situation where zero is a frequently observed value.
+\item Two situations typically give rise to zero-inflated data: One where zero is a "natural" outcome (structural), and another where zeros can occur for a different reason (such as a data collection process).
+\item For example, a study on the number of cars a household owns: Some households may own no cars, others may own more than one.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Understanding Zero-Inflated Data}
+\begin{itemize}
+\justifying
+\item When looking at data, we might notice that the zeros are more frequent than expected based on the standard distribution we are considering (Poisson, Negative Binomial, etc). This leads to "zero-inflation".
+\item Example: In a survey about the number of alcohol drinks consumed in a week, there will be many zeros, because many people do not drink. But also, among the people who drink, the number of drinks can be modeled by a Poisson distribution.
+\item The key is that we have \textit{two different processes} generating zeros: non-drinkers and drinkers who happen not to drink in a specific week.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{More examples}
+\begin{itemize}
+\justifying
+    \item \textbf{Insurance Claims}
+    \begin{itemize}
+        \item In insurance data (e.g.\ auto insurance), zero-inflated count distributions often arise because \textit{a significant proportion of policyholders do not make any claims}.
+        \item This can be due to a low underlying claim rate (e.g.\ safe driving) or because some policies are structurally unable to generate a claim, as opposed to at-risk policyholders who simply had no incident this period.
+        \item \textbf{The structural (excess) zeros} correspond to a latent subgroup of policyholders not at risk of a claim, \textit{over and above} the zeros the count process itself produces for at-risk policyholders who simply had no incident in the period; the positive counts come from at-risk policyholders who experience one or more claims.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{More examples (cont.)}
+\begin{itemize}
+\justifying
+    \item \textbf{Job Search Activities}
+    \begin{itemize}
+        \item When studying job search activities, zero-inflated count distributions can be observed in the number of job applications or interviews.
+        \item Many job seekers may not actively engage in these activities for various reasons, such as job market conditions, personal constraints, or being currently employed.
+        \item \textbf{The structural (excess) zeros} correspond to individuals not in the job-search process at all (e.g.\ those currently employed), \textit{in addition to} the zeros from active searchers who happened to submit no applications in the observation window; the positive counts capture those who actively apply.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Example of zero-inflated data -- viz}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{figs/zip.png}
+    \caption{Source: Zero-Inflated Models Statistics Honors Thesis Report Hope Johnson December 2016}
+\end{figure}
+\end{frame}
+
+
+
+\begin{frame}{Zero-Inflated Regression Models}
+\begin{itemize}
+\item Zero-Inflated Regression Models are a combination of two parts:
+\begin{enumerate}
+\item A binary (logistic) model predicting whether an observation belongs to the "always-zero" group or the "not-necessarily-zero" group.
+\item A count model (Poisson or Negative Binomial) for the non-zero observations.
+\end{enumerate}
+\item Each observation is modeled as potentially belonging to either of these two processes.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Mathematical Representation}
+Let's denote:
+\begin{itemize}
+\item $Y$ as the outcome variable,
+\item $X$ as the predictor variables for the count part,
+\item $W$ as the predictor variables for the binary part.
+\end{itemize}
+The Zero-Inflated Poisson (ZIP) model is formulated as follows:
+
+$$
+f\left(y \mid \pi, \mu\right)=\left\{\begin{array}{ll}\pi+(1-\pi) \operatorname{Poisson}(0 \mid \mu) & \text { if } y =0, \text { and } \\ (1-\pi)  \operatorname{Poisson}\left(y  \mid \mu\right) & \text { if } y >0\end{array}\right.
+$$
+
+where $\mu_i = \exp(\mathbf{x}_i^\top \boldsymbol{\beta})$ is the count mean and $\pi_i$ is the zero-inflation probability, modelled via logistic regression: $\operatorname{logit}(\pi_i) = \mathbf{w}_i^\top \boldsymbol{\gamma}$.
+
+Similarly, a Zero-Inflated Negative Binomial (ZINB) model can be defined.
+\end{frame}
+
+\begin{frame}{Testing for zero-inflation}
+\begin{itemize}
+    \item van den Broek J (1995). ''A Score Test for Zero Inflation in a Poisson Distribution''. Biometrics, 51, 738–743.
+    \item \texttt{countreg::zitest} -- Poisson only!
+    \item Standard way: compare models with Log-Lik Ratio tests, BIC, AIC, cross-validation.
+    \item Remember, the correct interpretation of results from zero-inflated models requires careful understanding of the two processes generating the data.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Examples}
+
+\end{frame}
+
+\subsection{Hurdle models}
+
+\begin{frame}{Introduction to Hurdle Models}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.45\textwidth]{figs/hur1.png}
+        \includegraphics[width=0.45\textwidth]{figs/hur2.png}
+        \caption{One-inflated (left) and hurdle (right) distribution. Based on Hu, M. C., Pavlicova, M., \& Nunes, E. V. (2011). Zero-inflated and hurdle models of count data with extra zeros: examples from an HIV-risk reduction intervention trial. The American journal of drug and alcohol abuse, 37(5), 367-375.}
+    \end{figure}
+\end{frame}
+
+
+\begin{frame}{Introduction to Hurdle Models}
+\begin{itemize}
+\item Hurdle models are statistical models used to analyze data with excess zeros.
+\item Similar to zero-inflated models, hurdle models address situations where zero outcomes are more frequent than expected.
+\item Hurdle models use a two-component approach to tackle the excess zeros.
+\item Hurdle models are commonly used when a large portion of the data contains zeros, but there is also a non-zero count component.
+\item Example: 
+\begin{itemize}
+    \item You first decide if you need to buy something, and then you decide on the quantity of that something (which must be positive)
+    \item Imagine you have data on the number of times users visit a particular website in a month. Many users might not visit the website at all, resulting in a large number of zeros. Among those who do visit the website, the number of visits might follow a different distribution. 
+\end{itemize}. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Understanding Excess Zeros}
+\begin{itemize}
+\item Excess zeros are observed when a substantial proportion of the data consists of zeros beyond what would be expected from a standard distribution.
+\item In hurdle models, excess zeros are usually the result of a separate process from the count component.
+\item The hurdle model uses two components, but \textbf{all zeros come from a single process} -- the binary hurdle. The (zero-truncated) count process generates only positive counts and cannot produce zeros. This contrasts with zero-inflated models, where zeros arise from \textbf{two} sources.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Hurdle Model Components}
+\begin{itemize}
+\item Hurdle models consist of two components:
+\begin{enumerate}
+\item A binary model predicting the probability of observing a zero count (hurdle component).
+\item A count model (Poisson or Negative Binomial) predicting the positive counts (count component).
+\end{enumerate}
+\item The binary model estimates the probability of belonging to the zero group, while the count model estimates the distribution of positive counts.
+\item The hurdle component models the process of "getting over the hurdle" of zero counts, while the count component models the distribution of non-zero counts.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Hurdle models}
+  \begin{itemize}
+      \item The hurdle model is similar to the zero-inflated model, but more flexible in that the zero outcomes can be deflated as well as inflated. 
+      \item The probability mass function for the hurdle likelihood is defined by
+      $$
+f(y \mid \pi, \mu)=\left\{\begin{array}{ll}\pi & \text { if } y=0, \text { and } \\ (1-\pi) \frac{\text { Poisson }(y \mid \mu)}{1-\text { PoissonCDF }(0 \mid \mu)} & \text { if } y>0\end{array}\right.
+$$
+where \texttt{PoissonCDF} is the cumulative distribution function for the Poisson distribution, so $1-\operatorname{PoissonCDF}(0\mid\mu) = 1-e^{-\mu}$.
+\item Extension: Here we assume that both models are independent, but in practice this may not be the case. Thus, hurdle models can be extended to selection models (allowing for correlation between y=0 and y>0 models).
+  \end{itemize}  
+\end{frame}
+
+\begin{frame}{Zero-inflated vs hurdle models: recap}
+\begin{itemize}
+    \item \textbf{Zero-inflated (ZI) models} -- a \textbf{mixture} of two latent classes:
+    \begin{itemize}
+        \item A \textbf{structural} ``always-zero'' class (probability $\pi$): these units can \emph{never} produce a positive count.
+        \item An \textbf{at-risk} class (probability $1-\pi$): units follow an ordinary (untruncated) Poisson/NB and may still record a zero.
+        \item Zeros come from \textbf{two sources}: $P(Y=0) = \pi + (1-\pi)\,\mathrm{Poisson}(0\mid\mu)$.
+    \end{itemize}
+    \item \textbf{Hurdle models} -- a \textbf{two-part sequential} process:
+    \begin{itemize}
+        \item A \textbf{single binary gate} decides zero vs.\ positive (probability of zero $= \pi$).
+        \item Conditional on crossing the hurdle ($Y>0$), counts follow a \textbf{zero-truncated} Poisson/NB (renormalized so zeros are impossible).
+        \item \textbf{All zeros come from one source}: $P(Y=0) = \pi$.
+    \end{itemize}
+    \item \textbf{Key contrast:} ZI has zeros from \emph{two sources}, count part is \emph{untruncated}; hurdle has zeros from \emph{one source}, count part is \emph{zero-truncated}.
+    \item \textbf{Practical note:} ZI models can only \emph{inflate} zeros; hurdle models can model both zero \emph{inflation} and zero \emph{deflation}.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Hurdle vs zero-inflated Poisson models}
+\begin{itemize}
+    \item Zero-inflated models pmf/pdf
+
+$$
+f\left(y \mid \pi, \mu\right)=\left\{\begin{array}{ll}\pi+(1-\pi) \operatorname{Poisson}(0 \mid \mu) & \text { if } y=0, \text { and } \\ (1-\pi)  \operatorname{Poisson}\left(y \mid \mu\right) & \text { if } y>0\end{array}\right.
+$$
+
+    \item Hurdle models pmf/pdf
+
+$$
+f(y \mid \pi, \mu)=\left\{\begin{array}{ll}\pi & \text { if } y=0, \text { and } \\ (1-\pi) \frac{\text { Poisson }(y \mid \mu)}{1-\text { PoissonCDF }(0 \mid \mu)} & \text { if } y>0\end{array}\right.
+$$
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Model selection}
+\begin{itemize}
+    \item Up to now we have discussed model selection based on information criteria (i.e., AIC, BIC) and rootograms.
+    \item If we have selected the appropriate distribution, we can now work on variable selection (i.e., both models are fitted to the same distribution). For that purpose we can use the \textbf{Likelihood Ratio (LR) test} (alternatively Wald test).
+    \begin{itemize}
+        \item \textbf{Test Statistic:} $LR = -2[\ell_R - \ell_U] \sim \chi^2_{df}$
+        \item \textbf{Degrees of Freedom:} $df = p_U - p_R$
+    \end{itemize}
+    \item Requirements:
+    \begin{itemize}
+        \item \textbf{Nested Models}: One model must be a special case of the other.
+        \item \textbf{Same Data}: Both models fitted to identical observations.
+        \item \textbf{Maximum Likelihood}: Both models estimated via ML.
+        \item \textbf{Large Sample}: Asymptotic $\chi^2$ distribution assumption.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Model fit -- pseudo-$R^2$ for Count Models}
+
+\textbf{What is pseudo-$R^2$?}
+
+Traditional $R^2$ measures proportion of variance explained in linear regression. For count models (Poisson, Negative Binomial), we use maximum likelihood estimation, so we need alternative goodness-of-fit measures called pseudo $R^2$.
+
+\vspace{0.1cm}
+
+\textbf{Most Common: McFadden's Pseudo $R^2$}
+$$R^2_{McFadden} = 1 - \frac{\ell(\hat{\beta})}{\ell_0}$$
+
+where:
+\begin{itemize}
+\item $\ell(\hat{\beta})$ = log-likelihood of the fitted model
+\item $\ell_0$ = log-likelihood of the intercept-only (null) model
+\end{itemize}
+
+\vspace{0.1cm}
+
+\textbf{Interpretation:}
+\begin{itemize}
+\item Range: $[0, 1]$ with higher values indicating better fit
+\item Values are typically much lower than OLS $R^2$
+\item $R^2 > 0.20$ is considered excellent fit for count models
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Other pseudo-$R^2$ Measures}
+
+\textbf{Cox-Snell pseudo-$R^2$}
+$$R^2_{Cox-Snell} = 1 - \left(\frac{L_0}{L_1}\right)^{2/n}$$
+
+\textbf{Nagelkerke pseudo-$R^2$} (adjusted Cox-Snell)
+$$R^2_{Nagelkerke} = \frac{R^2_{Cox-Snell}}{1 - (L_0)^{2/n}}$$
+
+\textbf{Cragg-Uhler pseudo-$R^2$}
+$$R^2_{Cragg-Uhler} = \frac{1 - (L_0/L_1)^{2/n}}{1 - (L_0)^{2/n}}$$
+
+\vspace{0.5cm}
+
+where $L_0$ and $L_1$ are the likelihoods of null and fitted models, and $n$ is sample size.
+
+\vspace{0.5cm}
+
+\textbf{Note:} Different measures can give different values for the same model. McFadden's is most commonly reported.
+
+\end{frame}
+
+
+\begin{frame}[fragile]{An example R code (\texttt{pscl})}
+\begin{small}
+\begin{verbatim}
+R> round(pscl::pR2(m1), 2)
+fitting null model for pseudo-r2
+       llh    llhNull         G2   McFadden       r2ML       r2CU 
+-175507.42 -201143.48   51272.12       0.13       0.59       0.59 
+
+R> round(pscl::pR2(m2), 2)
+fitting null model for pseudo-r2
+       llh    llhNull         G2   McFadden       r2ML       r2CU 
+-161869.30 -201143.48   78548.35       0.20       0.75       0.75 
+
+R> round(pscl::pR2(m3), 2)
+fitting null model for pseudo-r2
+       llh    llhNull         G2   McFadden       r2ML       r2CU 
+-161838.47 -201143.48   78610.02       0.20       0.75       0.75 
+\end{verbatim}  
+\end{small}
+
+\end{frame}
+
+\begin{frame}[fragile]{An example R code (\texttt{performance})}
+\begin{verbatim}
+> library(performance)
+> r2_mcfadden(m3)
+# R2 for Generalized Linear Regression
+       R2: 0.195
+  adj. R2: 0.195
+
+> r2_nagelkerke(m3)
+Nagelkerke's R2 
+      0.7462817 
+
+> r2_coxsnell(m3)
+Cox & Snell's R2 
+       0.7452841 
+\end{verbatim}
+\end{frame}
+
+\begin{frame}{Examples}
+
+\end{frame}
+
+
 
 \end{document}
 
