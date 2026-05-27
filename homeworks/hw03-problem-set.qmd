@@ -1,0 +1,310 @@
+---
+title: "Problem Set 3: Insurance claims --- zero-inflated counts"
+author: "Categorical Data Analysis 2025/26"
+format:
+  html:
+    embed-resources: true
+    number-sections: true
+    df-print: kable
+---
+
+## Instructions
+
+- Use the **numeric prefix of your university email** as the seed --- e.g. `12345` from `12345@student.ue.poznan.pl`. Every student works with a **unique simulated dataset**.
+- You may use **R or Python** (pick one and use it consistently for the analysis tabs).
+- **Total: 7 points. Deadline: 9.06.2026.**
+
+::: {.callout-warning}
+## Submission requirements
+
+1. Submit a **single self-contained HTML file** via **Moodle**.
+2. The file name must follow the pattern: `hw03-<id>.html` (e.g., `hw03-12345.html`).
+3. The file **must contain**:
+   - Your **student identifier** (the numeric prefix of your email) clearly stated at the top.
+   - All **code** used to produce the answers (visible in the document).
+   - All **outputs** (numbers, tables, plots) rendered inline.
+   - Written answers to interpretation questions.
+4. **How to produce the HTML file:**
+   - **R users**: Save this file as `hw03-<id>.qmd`, fill in the R blocks (delete Python blocks), and render with `quarto render hw03-<id>.qmd`.
+   - **Python users**: Use the `.ipynb` version provided (convert from this qmd if needed). Fill in the Python cells and export: *File → Download as → HTML*.
+5. **Before submitting**, verify that the HTML file opens in a browser and shows all outputs correctly.
+6. Submissions that do not contain visible code and outputs will **not be graded**.
+
+**All students must run the R setup block in Step 0 to generate the personalised dataset CSV.** Python users load that CSV in their own analysis blocks.
+:::
+
+## Step 0: simulate your insurance-claims dataset
+
+Replace `XXXXX` with the numeric prefix of your email. The R block below generates a personalised insurance-claims dataset and writes it to `hw03-data-<id>.csv` in the working directory. **All users (R/Python) must run this R block once.**
+
+```{r, setup, eval = FALSE}
+## Replace XXXXX with the numeric prefix of your university email
+STUDENT_ID <- XXXXX
+set.seed(STUDENT_ID)
+
+N <- 1200
+age_group <- factor(sample(c("Young","Middle","Senior"), N, replace = TRUE,
+                           prob = c(0.30, 0.45, 0.25)),
+                    levels = c("Young","Middle","Senior"))
+vehicle <- factor(sample(c("Car","Van","Truck"), N, replace = TRUE,
+                         prob = c(0.60, 0.25, 0.15)),
+                  levels = c("Car","Van","Truck"))
+urban <- rbinom(N, 1, 0.55)
+policy_years <- round(runif(N, 0, 15), 1)
+zi_lin <- 0.4 - 0.07 * policy_years - 0.5 * urban
+pz <- plogis(zi_lin)
+struct_zero <- rbinom(N, 1, pz)
+age_eff <- c(Young = 0.5, Middle = 0, Senior = -0.3)[as.character(age_group)]
+veh_eff <- c(Car = 0, Van = 0.2, Truck = 0.5)[as.character(vehicle)]
+mu <- exp(-0.2 + age_eff + veh_eff + 0.3 * urban - 0.02 * policy_years)
+claims <- ifelse(struct_zero == 1L, 0L, rpois(N, mu))
+insurance <- data.frame(customer_id = 1:N, age_group, vehicle, urban,
+                        policy_years, claims)
+write.csv(insurance, paste0("hw03-data-", STUDENT_ID, ".csv"), row.names = FALSE)
+cat("Simulated", nrow(insurance), "rows for student", STUDENT_ID, "\n")
+str(insurance)
+```
+
+Load the CSV in the language you will use for the analysis:
+
+::: panel-tabset
+### R
+
+```{r, eval=FALSE}
+library(pscl)
+library(lmtest)
+library(marginaleffects)
+insurance <- read.csv(paste0("hw03-data-", STUDENT_ID, ".csv"))
+insurance$age_group <- factor(insurance$age_group,
+                              levels = c("Young", "Middle", "Senior"))
+insurance$vehicle   <- factor(insurance$vehicle,
+                              levels = c("Car", "Van", "Truck"))
+```
+
+### Python
+
+```{python, eval=FALSE}
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+from patsy import dmatrices
+
+STUDENT_ID = XXXXX
+insurance = pd.read_csv(f"hw03-data-{STUDENT_ID}.csv")
+insurance["age_group"] = pd.Categorical(insurance["age_group"],
+                                        categories=["Young", "Middle", "Senior"])
+insurance["vehicle"]   = pd.Categorical(insurance["vehicle"],
+                                        categories=["Car", "Van", "Truck"])
+```
+:::
+
+**My student identifier:** *XXXXX*
+
+**Number of rows:** *...*
+
+**Observed share of zeros:** *...*
+
+
+## Part A: Model selection (3 points)
+
+### a) Poisson GLM and predicted zeros (1 pt)
+
+Fit a Poisson GLM
+$$ \texttt{claims} \sim \texttt{age\_group} + \texttt{vehicle} + \texttt{urban} + \texttt{policy\_years}. $$
+Report its **AIC** and the **mean predicted $P(Y=0)$** under Poisson (the mean of $\exp(-\hat\mu_i)$ over all rows). Compare this mean predicted $P(Y=0)$ to the **observed share of zeros** --- does Poisson under-predict the zeros?
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+
+```
+:::
+
+**Answer:**
+
+- Poisson AIC: *...*
+- Observed share of zeros: *...*
+- Mean predicted $P(Y=0)$ under Poisson: *...*
+- Does Poisson under-predict zeros? *yes / no*
+
+
+### b) Zero-Inflated Poisson (1 pt)
+
+Fit a Zero-Inflated Poisson (ZIP) with **count formula** `age_group + vehicle + urban + policy_years` and **zero-inflation formula** `urban + policy_years`. Report its **AIC**.
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+
+```
+:::
+
+**Answer:**
+
+- ZIP AIC: *...*
+
+
+### c) Comparing PO and ZIP (1 pt)
+
+Compare the Poisson and ZIP models via **AIC**, **BIC**, and a **likelihood-ratio test**. In R, run `lmtest::lrtest(po, zip)`. In Python, compute the LR test manually: LR $= 2(\ell_{\text{ZIP}} - \ell_{\text{PO}})$, with degrees of freedom equal to the difference in the number of estimated parameters, and the p-value from `scipy.stats.chi2.sf`. Which model is preferred and why? Also show **side-by-side rootograms** for the two models.
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+## Manual LR test: 
+
+```
+:::
+
+**Answer:**
+
+- Poisson AIC / BIC: *...* / *...*
+- ZIP AIC / BIC: *...* / *...*
+- LR test: statistic *...*, df *...*, p-value *...*
+- Preferred model and why: *...*
+
+*Caveat:* Poisson is a boundary case of ZIP (the zero-inflation probability $\to 0$ lies on the edge of the parameter space), so the LRT p-value is only approximate/conservative and should be read together with AIC/BIC.
+
+
+## Part B: Comparing PO and ZIP estimates (2 points)
+
+### a) The `urban` coefficient in PO vs ZIP (1 pt)
+
+Report the coefficient on `urban` from the **Poisson** model and the **count-component** coefficient on `urban` from the **ZIP** model. Are they similar? Explain in one sentence why they can differ.
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+
+```
+:::
+
+**Answer:**
+
+- Poisson `urban` coefficient: *...*
+- ZIP count-component `urban` coefficient: *...*
+- Are they similar? Why can they differ? *...*
+
+
+### b) Reproducing the zeros (1 pt)
+
+Report the **observed share of zeros**, the **mean predicted $P(Y=0)$ under Poisson**, and the **mean predicted $P(Y=0)$ under ZIP**. Which model reproduces the zeros better?
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+
+```
+:::
+
+**Answer:**
+
+- Observed share of zeros: *...*
+- Mean predicted $P(Y=0)$ under Poisson: *...*
+- Mean predicted $P(Y=0)$ under ZIP: *...*
+- Which model reproduces zeros better? *...*
+
+
+## Part C: Marginal effects (2 points)
+
+Use the **ZIP model from A(b)** throughout Part C.
+
+### a) AME of `urban` on E(Y|X) (1 pt)
+
+Compute the **Average Marginal Effect** of `urban` on the expected number of claims $E(Y \mid X)$.
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+
+```
+:::
+
+**Answer:** AME of `urban` on $E(Y\mid X)$: *...*
+
+
+### b) AME of `policy_years` on P(Y=0) (1 pt)
+
+Compute the **Average Marginal Effect** of `policy_years` on the probability of a zero $P(Y=0)$, from the **zero-inflation** part of the ZIP model. Interpret the sign in one sentence.
+
+::: panel-tabset
+#### R
+
+```{r}
+## Your code here (R)
+
+```
+
+#### Python
+
+```{python}
+## Your code here (Python)
+
+```
+:::
+
+**Answer:**
+
+- AME of `policy_years` on $P(Y=0)$: *...*
+- Interpretation of the sign: *...*
+
+
+## Interpretation (required, manually reviewed)
+
+In 2--3 sentences, based on the AIC/BIC/LR-test results and the zero-reproduction comparison, state whether **zero-inflation is warranted** for this dataset and what the **structural zeros** plausibly represent (e.g. customers with no real claim exposure / very safe drivers). Quote specific numbers from your answers.
+
+**Answer:** *Write your interpretation here...*

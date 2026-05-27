@@ -58,7 +58,7 @@ Submit solutions as a **single HTML file** via **Moodle**.
 |---|-------|------|-----|---------|----------|
 | 1 | Vacancy analysis (categorical data, distributions, MLE) | [html](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/homeworks/hw01-problem-set.html) | [qmd](homeworks/hw01-problem-set.qmd) | [ipynb](homeworks/hw01-problem-set.ipynb) | 2026-03-31 23:59 |
 | 2 | Retail store analysis (GOF, linear regression, marginal effects) | [html](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/homeworks/hw02-problem-set.html) | [qmd](homeworks/hw02-problem-set.qmd) | -- | 2026-05-08 23:59 |
-| 3 | TBA | -- | -- | -- | TBA |
+| 3 | Insurance claims (zero-inflated counts: Poisson vs ZIP, model selection, marginal effects) | [html](https://htmlpreview.github.io/?https://raw.githubusercontent.com/DepartmentOfStatisticsPUE/cda-2026/refs/heads/main/homeworks/hw03-problem-set.html) | [qmd](homeworks/hw03-problem-set.qmd) | -- | 2026-06-09 23:59 |
 
 ## Example final test
 
